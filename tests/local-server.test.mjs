@@ -49,6 +49,8 @@ function request(server, { method = 'GET', pathname = '/', headers = {}, body } 
     req.end(body);
   });
 }
+const save = (t, name = '艾林') => ({ t, state: { phase: 'play', scene: 'prologue_1', player: { name }, log: [{ k: 'gm', t: '雨夜' }] } });
+const put = (server, key, body, type = 'application/json') => request(server, { method: 'PUT', pathname: `/__save/slot/${key}`, headers: { 'Content-Type': type }, body: typeof body === 'string' ? body : JSON.stringify(body) });
 const post = (server, prompt) => request(server, { method: 'POST', pathname: '/__gpt/narrate', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) });
 const events = body => body.split(/\r?\n/).filter(line => line.startsWith('data:')).map(line => JSON.parse(line.slice(5)));
 
@@ -159,6 +161,62 @@ test('concurrent narration is rejected while the first request can finish', asyn
   assert.equal(calls, 1);
   gate.resolve();
   assert.deepEqual(events((await first).body), [{ type: 'done', text: 'finished' }]);
+});
+
+test('saves round-trip through disk and list only metadata', async t => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'dragon-oath-save-test-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await writeFile(path.join(root, 'index.html'), 'x');
+  const server = await startServer(t, { root });
+  assert.equal((await request(server, { pathname: '/__save/slot/auto' })).status, 404);
+  assert.deepEqual(JSON.parse((await request(server, { pathname: '/__save/list' })).body), { slots: {}, backups: [] });
+  const data = save(1700000000000);
+  assert.equal((await put(server, 'auto', data)).status, 200);
+  assert.deepEqual(JSON.parse((await request(server, { pathname: '/__save/slot/auto' })).body), data);
+  const list = JSON.parse((await request(server, { pathname: '/__save/list' })).body);
+  assert.deepEqual(list.slots.auto, { t: 1700000000000, name: '艾林', scene: 'prologue_1', combat: false });
+  assert.doesNotMatch(JSON.stringify(list), /雨夜/);
+  // 存档文件不会被当成静态文件送出去
+  assert.equal((await request(server, { pathname: '/.dragon-oath-local/saves/auto.json' })).status, 404);
+});
+
+test('save endpoints reject bad keys, bodies and foreign origins', async t => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'dragon-oath-save-test-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const server = await startServer(t, { root });
+  const port = server.address().port;
+  for (const key of ['slot9', '..%2fauto', 'AUTO', '']) assert.equal((await put(server, key, save(1))).status, 404, key);
+  for (const pathname of ['/__save/slot/../../index.html', '/__save/backup/auto-1', '/__save/backup/..%2fauto', '/__save/nothing']) assert.equal((await request(server, { pathname })).status, 404, pathname);
+  assert.equal((await put(server, 'auto', save(1), 'text/plain')).status, 415);
+  for (const body of ['{', '[]', '{}', JSON.stringify({ t: 'x', state: save(1).state }), JSON.stringify({ t: 1, state: { phase: 'create', player: {}, log: [] } })]) {
+    assert.equal((await put(server, 'auto', body)).status, 400, body);
+  }
+  const foreign = await request(server, { method: 'PUT', pathname: '/__save/slot/auto', headers: { 'Content-Type': 'application/json', Origin: 'https://attacker.test' }, body: JSON.stringify(save(1)) });
+  assert.equal(foreign.status, 403);
+  assert.equal((await request(server, { pathname: '/__save/list', headers: { Host: `attacker.test:${port}` } })).status, 403);
+  assert.equal((await request(server, { pathname: '/__save/slot/auto' })).status, 404);
+});
+
+test('overwriting a slot keeps a bounded set of readable backups', async t => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'dragon-oath-save-test-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const server = await startServer(t, { root, backupGapMs: 0, maxBackups: 3 });
+  for (let i = 1; i <= 6; i++) assert.equal((await put(server, 'auto', save(1700000000000 + i * 1000, '第' + i + '次'))).status, 200);
+  const { slots, backups } = JSON.parse((await request(server, { pathname: '/__save/list' })).body);
+  assert.equal(slots.auto.name, '第6次');
+  assert.deepEqual(backups.map(b => b.name), ['第5次', '第4次', '第3次']);
+  const old = JSON.parse((await request(server, { pathname: `/__save/backup/${backups[2].id}` })).body);
+  assert.equal(old.state.player.name, '第3次');
+  // 两次写入间隔不够时不重复备份
+  const root2 = await mkdtemp(path.join(os.tmpdir(), 'dragon-oath-save-test-'));
+  t.after(() => rm(root2, { recursive: true, force: true }));
+  const gap = await startServer(t, { root: root2, backupGapMs: 60000 });
+  for (let i = 1; i <= 4; i++) await put(gap, 'auto', save(1700000000000 + i * 1000));
+  assert.equal(JSON.parse((await request(gap, { pathname: '/__save/list' })).body).backups.length, 1);
+  // 但进度倒退（开新局）时不管间隔都要备份
+  const restart = save(1700000009000, '新角色'); restart.state.log = [];
+  await put(gap, 'auto', restart);
+  assert.equal(JSON.parse((await request(gap, { pathname: '/__save/list' })).body).backups.length, 2);
 });
 
 test('client disconnect aborts narration, emits no done, and releases the next request', async t => {

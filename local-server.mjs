@@ -1,6 +1,6 @@
 import http from 'node:http';
 import { createReadStream } from 'node:fs';
-import { stat, realpath } from 'node:fs/promises';
+import { stat, realpath, mkdir, readFile, writeFile, rename, readdir, unlink } from 'node:fs/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 import { accountStatus, narrateWithChatGPT } from './local-codex.mjs';
@@ -13,14 +13,14 @@ function json(res, status, object) {
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
   res.end(JSON.stringify(object));
 }
-async function readPrompt(req) {
+async function readBody(req, limit) {
   if (!(req.headers['content-type'] || '').toLowerCase().startsWith('application/json')) throw { http: 415, code: 'invalid_request' };
   const chunks = []; let length = 0;
   await new Promise((resolve, reject) => {
     const cleanup = () => { req.off('data', data); req.off('end', end); req.off('error', error); req.off('aborted', aborted); };
     const data = chunk => {
       length += chunk.length;
-      if (length > 512 * 1024) { cleanup(); req.resume(); reject({ http: 413, code: 'invalid_request' }); }
+      if (length > limit) { cleanup(); req.resume(); reject({ http: 413, code: 'invalid_request' }); }
       else chunks.push(chunk);
     };
     const end = () => { cleanup(); resolve(); };
@@ -30,11 +30,63 @@ async function readPrompt(req) {
   });
   let data;
   try { data = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { throw { http: 400, code: 'invalid_request' }; }
-  if (!data || typeof data !== 'object' || Array.isArray(data) || typeof data.prompt !== 'string' || !data.prompt.trim() || data.prompt.length > 200000) throw { http: 400, code: 'invalid_request' };
+  if (!data || typeof data !== 'object' || Array.isArray(data)) throw { http: 400, code: 'invalid_request' };
+  return data;
+}
+async function readPrompt(req) {
+  const data = await readBody(req, 512 * 1024);
+  if (typeof data.prompt !== 'string' || !data.prompt.trim() || data.prompt.length > 200000) throw { http: 400, code: 'invalid_request' };
   return data.prompt;
 }
 
-export function createGameServer({ port = DEFAULT_PORT, getStatus = accountStatus, narrate = narrateWithChatGPT, root = ROOT } = {}) {
+// ---------- 硬盘存档：.dragon-oath-local/saves/{auto,slot1..3}.json，覆盖前把旧版本留进 backups/ ----------
+const SAVE_KEYS = new Set(['auto', 'slot1', 'slot2', 'slot3']);
+const BACKUP_ID = /^(auto|slot[1-3])-(\d{13})$/;
+const SAVE_LIMIT = 20 * 1024 * 1024;
+const validSave = d => typeof d.t === 'number' && Number.isFinite(d.t) && d.state && typeof d.state === 'object' && !Array.isArray(d.state)
+  && d.state.phase === 'play' && d.state.player && typeof d.state.player === 'object' && Array.isArray(d.state.log);
+const saveMeta = d => ({ t: d.t, name: String(d.state?.player?.name ?? '').slice(0, 40), scene: String(d.state?.scene ?? '').slice(0, 40), combat: !!d.state?.combat });
+function createSaveStore(dir, { backupGapMs, maxBackups }) {
+  const backups = path.join(dir, 'backups');
+  let queue = Promise.resolve();
+  const serial = fn => (queue = queue.then(fn, fn)); // 写操作排队，避免同时改同一个文件
+  const readJson = async file => JSON.parse(await readFile(file, 'utf8'));
+  const listBackups = async () => (await readdir(backups).catch(() => []))
+    .map(f => f.replace(/\.json$/, '')).filter(id => BACKUP_ID.test(id))
+    .sort((a, b) => Number(BACKUP_ID.exec(b)[2]) - Number(BACKUP_ID.exec(a)[2]));
+  return {
+    async list() {
+      const slots = {};
+      for (const key of SAVE_KEYS) { try { slots[key] = saveMeta(await readJson(path.join(dir, key + '.json'))); } catch {} }
+      const list = [];
+      for (const id of await listBackups()) { try { list.push({ id, slot: BACKUP_ID.exec(id)[1], ...saveMeta(await readJson(path.join(backups, id + '.json'))) }); } catch {} }
+      return { slots, backups: list };
+    },
+    read: key => readFile(path.join(dir, key + '.json'), 'utf8'),
+    readBackup: id => readFile(path.join(backups, id + '.json'), 'utf8'),
+    write: (key, data) => serial(async () => {
+      await mkdir(backups, { recursive: true });
+      const file = path.join(dir, key + '.json');
+      let prev = null;
+      try { prev = await readJson(file); } catch {}
+      if (prev && validSave(prev) && prev.t !== data.t) {
+        const last = (await listBackups()).find(id => id.startsWith(key + '-'));
+        // 进度倒退（开新局、读旧档后接着玩）一定备份；平时最多每 backupGapMs 留一份
+        const regress = data.state.log.length < prev.state.log.length;
+        if (regress || !last || prev.t - Number(BACKUP_ID.exec(last)[2]) >= backupGapMs) {
+          await writeFile(path.join(backups, `${key}-${String(Math.trunc(prev.t)).padStart(13, '0')}.json`), JSON.stringify(prev));
+          for (const old of (await listBackups()).slice(maxBackups)) await unlink(path.join(backups, old + '.json')).catch(() => {});
+        }
+      }
+      const tmp = file + '.tmp';
+      await writeFile(tmp, JSON.stringify(data));
+      await rename(tmp, file);
+    }),
+  };
+}
+
+export function createGameServer({ port = DEFAULT_PORT, getStatus = accountStatus, narrate = narrateWithChatGPT, root = ROOT, backupGapMs = 10 * 60 * 1000, maxBackups = 20 } = {}) {
+  const saves = createSaveStore(path.join(root, '.dragon-oath-local', 'saves'), { backupGapMs, maxBackups });
   let active = false;
   const inflight = new Set();
   const server = http.createServer(async (req, res) => {
@@ -84,6 +136,26 @@ export function createGameServer({ port = DEFAULT_PORT, getStatus = accountStatu
           if (!res.writableEnded) res.end();
         }
         return;
+      }
+      if (url.pathname.startsWith('/__save/')) {
+        const [, , kind, name] = url.pathname.split('/');
+        if (kind === 'list' && name === undefined && req.method === 'GET') return json(res, 200, await saves.list());
+        if (kind === 'slot' && SAVE_KEYS.has(name)) {
+          if (req.method === 'GET') {
+            try { return json(res, 200, JSON.parse(await saves.read(name))); } catch { return json(res, 404, { error: 'not_found' }); }
+          }
+          if (req.method === 'PUT') {
+            let data;
+            try { data = await readBody(req, SAVE_LIMIT); } catch (error) { return json(res, error.http || 400, { error: 'invalid_request' }); }
+            if (!validSave(data)) return json(res, 400, { error: 'invalid_request' });
+            await saves.write(name, { t: data.t, state: data.state });
+            return json(res, 200, { ok: true, t: data.t });
+          }
+        }
+        if (kind === 'backup' && BACKUP_ID.test(name || '') && req.method === 'GET') {
+          try { return json(res, 200, JSON.parse(await saves.readBackup(name))); } catch { return json(res, 404, { error: 'not_found' }); }
+        }
+        return json(res, 404, { error: 'not_found' });
       }
       if (url.pathname.startsWith('/__gpt/')) return json(res, 405, { error: 'method_not_allowed' });
       if (req.method !== 'GET' && req.method !== 'HEAD') return json(res, 405, { error: 'method_not_allowed' });

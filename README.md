@@ -29,7 +29,7 @@
 2. **OpenAI 兼容 API**：用浏览器直接打开 `index.html`，或部署到 GitHub Pages 后，填入接口地址、模型名和 API 密钥即可。GPT、DeepSeek、Kimi 等兼容 `/chat/completions` 的服务都可以用。密钥只保存在你自己的浏览器里。
 3. **ChatGPT（本机）**：从 `开始游玩.cmd` 打开的本机页面使用；账号授权由本机 Codex 管理，网页不接触账号令牌。此模式消耗账号套餐额度，不是离线模型。
 
-本机模式使用固定地址，存档仍保存在该浏览器的 localStorage 中；与 claude.ai 或 `file://` 页面的存档位置各自独立。详细接入与实测范围见 `HANDOFF.md` 的“本机 ChatGPT 接入”。
+本机模式的存档写在硬盘的 `.dragon-oath-local/saves/` 里（浏览器里另有一份副本），换浏览器、清理浏览器数据都不会丢，覆盖前还会自动留历史备份。claude.ai 和直接打开文件时，存档只在浏览器里。不同入口之间、换电脑时，用存档菜单里的“导出当前进度”和“从文件导入”搬存档。详细接入与实测范围见 `HANDOFF.md` 的“本机 ChatGPT 接入”。
 
 开启 GitHub Pages：仓库 Settings → Pages → Source 选 `main` 分支根目录，保存后就能通过 `https://<用户名>.github.io/dragon-oath/` 访问。
 
@@ -55,7 +55,7 @@
 | `applyCombatFx()` `combatBrief()` | 即兴行动效果的校验执行、给说书人的战况 |
 | `renderCombat()` | 战斗面板 |
 | `recentLines()` `remember()` `summarize()` | 记忆：最近剧情原文、角色记忆、后台整理前情提要 |
-| `newGame()` `save()` | 存档结构（localStorage） |
+| `newGame()` `save()` `diskInit()` | 存档：浏览器 localStorage 一份，本机服务上再写硬盘（`/__save/*` 接口，见 `local-server.mjs`）；导出 / 导入 |
 
 加新的一幕：在 `SCENES` 里追加场景、在 `FLAG_KEYS` 里登记新标记、在 `COMPANIONS` 里加新同伴，然后把上一幕最后一场的 `next` 指向新场景。
 

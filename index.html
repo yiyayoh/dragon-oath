@@ -610,15 +610,99 @@ function newGame(d) {
   };
 }
 
+/* 存档：浏览器 localStorage 一份；在本机服务（开始游玩.cmd）上另外写进硬盘 .dragon-oath-local/saves，
+   服务器覆盖前会留历史备份。读档时取两边较新的一份。 */
+const DISK_KEY = k => k === AUTO ? "auto" : "slot" + k.slice(-1);
+const SAVE_FORMAT = "dragon-oath-save";
+const disk = { on: false, meta: {}, backups: [], pending: {}, writing: {} };
+let saveWarnAt = 0;
+function saveWarn(msg) { if (Date.now() - saveWarnAt > 60000) { saveWarnAt = Date.now(); toast(msg, "down"); } }
+const metaOf = p => ({ t: p.t, name: p.state.player.name, scene: p.state.scene, combat: !!p.state.combat });
+function snapshot() { const s = JSON.parse(JSON.stringify(state)); s.log.forEach(e => delete e.live); return { t: Date.now(), state: s }; }
 function save(key) {
-  if (!state || state.phase !== "play") return;
+  if (!state || state.phase !== "play") return false;
+  key = key || AUTO;
+  let p;
+  try { p = snapshot(); } catch (e) { return false; }
+  let local = true;
+  try { localStorage.setItem(key, JSON.stringify(p)); } catch (e) { local = false; }
+  if (disk.on) diskWrite(key, p);
+  else if (!local) { if (key === AUTO) saveWarn("自动存档失败：浏览器存储已满或不可用。请在存档菜单里导出备份。"); else toast("存档失败：浏览器存储不可用", "down"); }
+  return local || disk.on;
+}
+async function diskWrite(key, p) {
+  disk.pending[key] = p;
+  if (disk.writing[key]) return; // 正在写就只留最新的一份，写完再补
+  disk.writing[key] = true;
   try {
-    const s = JSON.parse(JSON.stringify(state));
-    s.log.forEach(e => delete e.live);
-    localStorage.setItem(key || AUTO, JSON.stringify({ t: Date.now(), state: s }));
-  } catch (e) { if (key) toast("存档失败：浏览器存储不可用"); }
+    while (disk.pending[key]) {
+      const next = disk.pending[key]; delete disk.pending[key];
+      try {
+        const res = await fetch("/__save/slot/" + DISK_KEY(key), { method: "PUT", mode: "same-origin", credentials: "omit", headers: { "Content-Type": "application/json" }, body: JSON.stringify(next) });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        disk.meta[DISK_KEY(key)] = metaOf(next);
+      } catch (e) { saveWarn("硬盘存档失败：请确认“开始游玩.cmd”的窗口还开着。浏览器里仍有一份存档。"); }
+    }
+  } finally { disk.writing[key] = false; }
+}
+async function diskGet(path) {
+  try { const res = await fetch("/__save/" + path, { mode: "same-origin", credentials: "omit", cache: "no-store" }); return res.ok ? await res.json() : null; } catch (e) { return null; }
+}
+async function diskList() {
+  const d = await diskGet("list"); if (!d) return false;
+  disk.on = true; disk.meta = d.slots || {}; disk.backups = d.backups || [];
+  return true;
 }
 function readSave(key) { try { return JSON.parse(localStorage.getItem(key) || "null"); } catch (e) { return null; } }
+function slotMeta(key) {
+  const l = readSave(key), lm = l?.state?.player ? metaOf(l) : null, dm = disk.meta[DISK_KEY(key)];
+  return dm && (!lm || dm.t > lm.t) ? { ...dm, from: "disk" } : lm ? { ...lm, from: "local" } : null;
+}
+async function loadSave(key) { const m = slotMeta(key); return !m ? null : m.from === "disk" ? diskGet("slot/" + DISK_KEY(key)) : readSave(key); }
+const validState = s => !!s && typeof s === "object" && s.phase === "play" && !!s.player && Array.isArray(s.log) && !!SCENES[s.scene];
+function loadState(s) {
+  state = s;
+  state.log.forEach(e => delete e.live); state.log = state.log.filter(e => e.t || e.k === "chapter");
+  lastAction = null; pick = null; cbGen++;
+  closeModal(); render();
+  if (state.pendingCheck) openDice(); else if (state.combat) advanceCombat();
+}
+// 开页时和硬盘对一次：硬盘更新（换了浏览器、清过缓存）就换成硬盘的；浏览器更新就补写到硬盘
+async function diskInit() {
+  if (!LOCAL_GPT) return;
+  const boot = state, bootLen = state ? state.log.length : -1;
+  if (!(await diskList())) return;
+  for (const key of [AUTO, SLOT(1), SLOT(2), SLOT(3)]) {
+    const l = readSave(key), dm = disk.meta[DISK_KEY(key)];
+    if (l?.state?.player && (!dm || l.t > dm.t)) diskWrite(key, l);
+  }
+  const l = readSave(AUTO), dm = disk.meta.auto;
+  const untouched = state === boot && (!state || state.log.length === bootLen) && !busy;
+  if (dm && (!l || dm.t > l.t) && untouched) {
+    const sv = await diskGet("slot/auto");
+    if (sv && validState(sv.state) && state === boot) {
+      try { localStorage.setItem(AUTO, JSON.stringify(sv)); } catch (e) {} // 补回浏览器里的副本，时间戳保持不变
+      loadState(sv.state); toast("已读取硬盘上的最新存档");
+    }
+  }
+  if (!state || state.phase !== "play") $("mLoad").hidden = !hasSaves();
+}
+function exportSave() {
+  if (!state || state.phase !== "play") return;
+  const p = Object.assign({ format: SAVE_FORMAT, version: 1 }, snapshot());
+  const a = el("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(p)], { type: "application/json" }));
+  a.download = `醉龙酒馆-${state.player.name}-${new Date(p.t).toLocaleString("zh-CN").replace(/[\/:\s]/g, "-")}.json`;
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  toast("已导出存档文件");
+}
+async function readImport(file) {
+  try {
+    const d = JSON.parse(await file.text());
+    return validState(d?.state) ? d : null;
+  } catch (e) { return null; }
+}
 
 /* =========================================================
    规则
@@ -1894,7 +1978,7 @@ function render() {
   $("menu").hidden = !play; $("mLoad").hidden = play || !hasSaves();
   if (play) renderPlay(); else { $("where").textContent = "创建角色"; renderCreate(); }
 }
-function hasSaves() { return !!(readSave(AUTO) || [1, 2, 3].some(n => readSave(SLOT(n)))); }
+function hasSaves() { return [AUTO, SLOT(1), SLOT(2), SLOT(3)].some(k => slotMeta(k)) || disk.backups.length > 0; }
 
 /* =========================================================
    弹窗
@@ -1986,25 +2070,60 @@ function openJournal() {
     if (f.length) { s.append(el("div", "label", "你做过的选择")); const l = el("div", "skills-list"); for (const [k, v] of f) l.append(el("span", "tag", k.replace("prologue.", "") + "：" + v)); s.append(l); }
   });
 }
+const SLOT_LABEL = { auto: "自动存档", slot1: "存档 1", slot2: "存档 2", slot3: "存档 3" };
+const metaLine = m => `${m.name} · ${SCENES[m.scene]?.title || m.scene} · ${new Date(m.t).toLocaleString("zh-CN")}${m.combat ? " · 战斗中" : ""}`;
 function openSaves(loadOnly) {
+  const playing = state?.phase === "play";
   modal(loadOnly ? "读取存档" : "存档", s => {
+    const body = el("div", "step"); s.append(body);
+    const btn = (label, fn, cls) => { const b = el("button", "btn small" + (cls ? " " + cls : ""), label); b.type = "button"; b.disabled = busy; b.onclick = fn; return b; };
+    const open = async (b, get, label) => {
+      b.disabled = true;
+      const sv = await get();
+      if (sv && validState(sv.state)) { loadState(sv.state); toast("已读取：" + label); } else { b.disabled = false; toast("读取失败：存档不存在或已损坏", "down"); }
+    };
     const draw = () => {
-      [...s.querySelectorAll(".slot,.note")].forEach(n => n.remove());
-      const keys = [[AUTO, "自动存档"], [SLOT(1), "存档 1"], [SLOT(2), "存档 2"], [SLOT(3), "存档 3"]];
-      for (const [key, label] of keys) {
-        const sv = readSave(key);
-        const row = el("div", "slot"); const t = el("div");
-        t.append(el("b", null, label));
-        t.append(el("div", "meta", sv ? `${sv.state.player.name} · ${SCENES[sv.state.scene]?.title || ""} · ${new Date(sv.t).toLocaleString("zh-CN")}` : "空"));
-        row.append(t);
-        const btns = el("div", "row");
-        if (!loadOnly && key !== AUTO) { const b = el("button", "btn small", "保存到这里"); b.type = "button"; b.disabled = busy; b.onclick = () => { save(key); toast("已保存"); draw(); }; btns.append(b); }
-        if (sv) { const b = el("button", "btn small", "读取"); b.type = "button"; b.disabled = busy; b.onclick = () => { state = sv.state; state.log = state.log.filter(e => e.t); lastAction = null; pick = null; cbGen++; closeModal(); render(); toast("已读取：" + label); if (state.pendingCheck) openDice(); else if (state.combat) advanceCombat(); }; btns.append(b); }
-        row.append(btns); s.append(row);
+      body.textContent = "";
+      for (const key of [AUTO, SLOT(1), SLOT(2), SLOT(3)]) {
+        const m = slotMeta(key), label = SLOT_LABEL[DISK_KEY(key)];
+        const row = el("div", "slot"), t = el("div"), btns = el("div", "row");
+        t.append(el("b", null, label), el("div", "meta", m ? metaLine(m) : "空"));
+        if (!loadOnly && playing && key !== AUTO) btns.append(btn("保存到这里", () => { const ok = save(key); toast(ok ? "已保存到" + label : "保存失败", ok ? undefined : "down"); draw(); }));
+        if (m) { const b = btn("读取", () => open(b, () => loadSave(key), label)); btns.append(b); }
+        row.append(t, btns); body.append(row);
       }
-      s.append(el("div", "note label", "存档保存在这个浏览器里。换设备或清理浏览器数据后会丢失。"));
+      if (disk.backups.length) {
+        body.append(el("div", "label", "硬盘上的历史备份：覆盖存档前自动保留的旧版本，最近的在前"));
+        for (const bk of disk.backups) {
+          const row = el("div", "slot"), t = el("div"), btns = el("div", "row");
+          t.append(el("b", null, "备份 · " + SLOT_LABEL[bk.slot]), el("div", "meta", metaLine(bk)));
+          const b = btn("读取", () => open(b, () => diskGet("backup/" + bk.id), "备份")); btns.append(b);
+          row.append(t, btns); body.append(row);
+        }
+      }
+      // 导出 / 导入：所有入口都能用，用来换电脑或在入口之间搬存档
+      const tools = el("div", "row");
+      if (playing) tools.append(btn("导出当前进度", exportSave));
+      const file = el("input"); file.type = "file"; file.accept = ".json,application/json"; file.hidden = true;
+      const imp = btn("从文件导入", () => file.click());
+      file.onchange = async () => {
+        const d = file.files[0] && await readImport(file.files[0]); file.value = "";
+        if (!d) { toast("这不是有效的醉龙酒馆存档文件", "down"); return; }
+        confirmBox.textContent = "";
+        confirmBox.append(el("div", "meta", `要导入「${metaLine(metaOf(d))}」吗？${playing ? (disk.on ? "当前进度会被替换（硬盘上会自动留一份备份）。" : "当前进度会被替换，需要的话先导出一份。") : ""}`));
+        const go = btn("确认导入", () => { loadState(d.state); save(); toast("已导入存档"); }, "gold");
+        const no = btn("取消", () => { confirmBox.textContent = ""; });
+        const r = el("div", "row"); r.append(go, no); confirmBox.append(r);
+      };
+      tools.append(imp, file);
+      const confirmBox = el("div", "step");
+      body.append(tools, confirmBox);
+      body.append(el("div", "note label", disk.on
+        ? "存档写在硬盘的 .dragon-oath-local/saves 文件夹里，浏览器里另有一份。换浏览器、清理浏览器数据都不会丢；要换电脑就用“导出当前进度”。"
+        : "存档保存在这个浏览器里，换设备或清理浏览器数据后会丢失。建议不时导出一份备份。"));
     };
     draw();
+    if (disk.on) diskList().then(() => { if (!$("modal").hidden && body.isConnected) draw(); }); // 刷新硬盘上的备份列表
   });
 }
 function savePref() { prefSaved = true; try { localStorage.setItem(PREF, JSON.stringify(pref)); } catch (e) {} }
@@ -2121,4 +2240,5 @@ window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude
 })();
 // 本机 ChatGPT 只在“开始游玩.cmd”起的本地服务上可用；claude.ai 或直接打开文件时不显示、也不去探测
 if (LOCAL_GPT) refreshChatgptStatus(); else { chatgpt.known = true; chatgpt.error = "chatgpt_unavailable"; }
+diskInit();
 </script>
