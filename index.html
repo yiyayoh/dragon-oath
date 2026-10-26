@@ -464,7 +464,7 @@ const PREF = "dragon-oath-pref";
 let state = null;
 let draft = null;
 let sample = null, sampleKnown = false, busy = false, ctl = null, lastAction = null;
-let pref = { tier: "default" };
+let pref = { tier: "default", api: "claude", base: "https://api.openai.com/v1", model: "gpt-4o", key: "" };
 try { pref = Object.assign(pref, JSON.parse(localStorage.getItem(PREF) || "{}")); } catch (e) {}
 
 function freshDraft() {
@@ -614,13 +614,66 @@ const ERR = {
   rate_limited: "说书人需要喘口气（请求太频繁或额度用尽），稍后点“重试上一步”。",
   session_expired: "登录已过期，请重新登录 claude.ai 后再试。",
   refused: "说书人拒绝了这个行动，换个说法试试。",
+  bad_key: "API 密钥无效，请在设置里检查。",
+  network: "连不上 API。检查网址和网络；在 claude.ai 里打开时外部 API 会被拦截，请改用 Claude。",
+  no_narrator: "没有可用的说书人：在 claude.ai 中打开本页，或在设置里填写 API 密钥。",
 };
 
 function push(k, t, extra) { const e = Object.assign({ k, t }, extra || {}); state.log.push(e); return e; }
 
+/* 说书人接口：claude.ai 内用 sample 能力；其他地方用 OpenAI 兼容 API（密钥只存在本浏览器）。
+   想接别的模型，只需改 narrate()：输入完整提示词，流式回调全文，返回最终文本。 */
+const useApi = () => pref.api === "openai" && !!pref.key && !!pref.model;
+const narratorReady = () => useApi() || !!sample;
+function narratorLabel() {
+  if (useApi()) return `说书人：${pref.model}（API）`;
+  if (sample) return "AI 说书人已就位。第一次行动时会请你允许使用 Claude（消耗你自己的额度）。";
+  return sampleKnown ? "没有可用的说书人：在 claude.ai 中打开本页，或在设置里填写 API 密钥。" : "正在召唤说书人……";
+}
+async function narrate(prompt, onText, signal) {
+  if (useApi()) return apiNarrate(prompt, onText, signal);
+  if (sample) {
+    const { text } = await sample(prompt, { cache: false, signal, modelTier: pref.tier, onText: ({ text }) => onText(text) });
+    return text;
+  }
+  throw { code: "no_narrator" };
+}
+async function apiNarrate(prompt, onText, signal) {
+  let res;
+  try {
+    res = await fetch(pref.base.replace(/\/+$/, "") + "/chat/completions", {
+      method: "POST", signal,
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + pref.key },
+      body: JSON.stringify({ model: pref.model, stream: true, temperature: 0.9, messages: [{ role: "user", content: prompt }] }),
+    });
+  } catch (e) {
+    throw { code: signal.aborted ? "cancelled" : "network" };
+  }
+  if (!res.ok) throw { code: res.status === 401 ? "bad_key" : res.status === 429 ? "rate_limited" : "upstream_error", message: await res.text().catch(() => "") };
+  const reader = res.body.getReader(), dec = new TextDecoder();
+  let buf = "", text = "";
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split("\n"); buf = lines.pop();
+      for (const line of lines) {
+        const l = line.trim(); if (!l.startsWith("data:")) continue;
+        const data = l.slice(5).trim(); if (data === "[DONE]") continue;
+        try { const d = JSON.parse(data).choices?.[0]?.delta?.content; if (d) { text += d; onText(text); } } catch (e) {}
+      }
+    }
+  } catch (e) {
+    throw { code: signal.aborted ? "cancelled" : "network", text };
+  }
+  if (!text.trim()) throw { code: "empty_completion" };
+  return text;
+}
+
 async function gm(action, shown) {
   if (busy || state.ended) return;
-  if (!sample) { push("sys", sampleKnown ? "AI 说书人不可用：请在 claude.ai 中打开此页面并允许它使用 Claude。" : "说书人还没到，稍等几秒再试。"); renderPlay(); return; }
+  if (!narratorReady()) { push("sys", narratorLabel()); renderPlay(); return; }
   lastAction = { action, shown };
   const prompt = buildPrompt(action);
   if (shown) push("you", shown);
@@ -629,10 +682,9 @@ async function gm(action, shown) {
   busy = true; ctl = new AbortController();
   renderPlay();
   try {
-    const { text } = await sample(prompt, {
-      cache: false, signal: ctl.signal, modelTier: pref.tier,
-      onText: ({ text }) => { entry.t = splitReply(text)[0]; const n = document.querySelector('[data-live="1"]'); if (n) { n.textContent = entry.t; scrollStory(); } },
-    });
+    const text = await narrate(prompt, t => {
+      entry.t = splitReply(t)[0]; const n = document.querySelector('[data-live="1"]'); if (n) { n.textContent = entry.t; scrollStory(); }
+    }, ctl.signal);
     const [narr, tail] = splitReply(text);
     entry.t = narr; delete entry.live;
     let data = {};
@@ -918,7 +970,8 @@ function renderSummary() {
   const go = el("button", "btn gold", "推开酒馆的门"); go.type = "button"; go.id = "startBtn";
   go.onclick = startGame;
   box.append(go);
-  box.append(el("div", "label", sample ? "AI 说书人已就位。第一次行动时会请你允许使用 Claude（消耗你自己的额度）。" : sampleKnown ? "此处无法连接 Claude，请在 claude.ai 中打开本页。" : "正在召唤说书人……"));
+  box.append(el("div", "label", narratorLabel()));
+  const set = el("button", "btn small", "说书人设置"); set.type = "button"; set.onclick = openSettings; box.append(set);
 }
 function loadPortrait(file) {
   if (!file) return;
@@ -1123,13 +1176,33 @@ function openSaves(loadOnly) {
     draw();
   });
 }
+function savePref() { try { localStorage.setItem(PREF, JSON.stringify(pref)); } catch (e) {} }
 function openSettings() {
   modal("设置", s => {
-    s.append(el("div", "label", "说书人模式"));
+    s.append(el("div", "label", "说书人接口"));
+    const apis = el("div", "chips");
+    for (const [k, t, d] of [["claude", "Claude（claude.ai 内）", "在 claude.ai 以 Artifact 打开时使用，消耗你的 Claude 额度"], ["openai", "OpenAI 兼容 API", "GPT、DeepSeek、Kimi 等。在 GitHub Pages 或本地打开时使用"]]) {
+      const b = el("button", "chip"); b.type = "button"; b.setAttribute("aria-pressed", String(pref.api === k));
+      b.append(el("b", null, t), el("small", null, d));
+      b.onclick = () => { pref.api = k; savePref(); closeModal(); openSettings(); };
+      apis.append(b);
+    }
+    s.append(apis);
+    if (pref.api === "openai") {
+      const mk = (label, key, type, ph) => {
+        const f = el("label", "field"); f.append(el("span", "label", label));
+        const i = el("input"); i.type = type; i.id = "set-" + key; i.value = pref[key]; i.placeholder = ph; i.autocomplete = "off";
+        i.onchange = () => { pref[key] = i.value.trim(); savePref(); if (state?.phase !== "play") renderSummary(); };
+        f.append(i); return f;
+      };
+      s.append(mk("接口地址", "base", "url", "https://api.openai.com/v1"), mk("模型名", "model", "text", "gpt-4o"), mk("API 密钥", "key", "password", "sk-..."));
+      s.append(el("div", "label", "密钥只保存在这个浏览器里，只会发送到上面的接口地址。在 claude.ai 里打开时外部网络会被拦截，这个选项不起作用。"));
+    }
+    s.append(el("div", "label", "Claude 说书人模式"));
     for (const [k, t, d] of [["default", "精细", "文笔和判断更好，每轮需要 5–30 秒"], ["quick", "快速", "几乎立刻回应，文笔稍简单"], ["complex", "深思", "最强的叙事与推理，回应最慢"]]) {
       const b = el("button", "chip"); b.type = "button"; b.setAttribute("aria-pressed", String(pref.tier === k));
       b.append(el("b", null, t), el("small", null, d));
-      b.onclick = () => { pref.tier = k; try { localStorage.setItem(PREF, JSON.stringify(pref)); } catch (e) {} closeModal(); openSettings(); };
+      b.onclick = () => { pref.tier = k; savePref(); closeModal(); openSettings(); };
       s.append(b);
     }
     const nb = el("button", "btn", "放弃本局，重新创建角色"); nb.type = "button";
