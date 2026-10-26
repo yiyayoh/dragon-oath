@@ -21,10 +21,15 @@
 
 ## 怎么玩
 
-说书人有两种接法，在游戏的 **设置 → 说书人接口** 里切换：
+本机自用可以直接双击 `开始游玩.cmd`，打开 `http://127.0.0.1:8787/`，在设置里选择 **ChatGPT（本机）**。它使用本机 Codex 已登录的 ChatGPT 账号和套餐额度，不需要填写 API Key；需要 Node.js、Codex 和网络。以后如登录失效，先在 Codex 中重新登录 ChatGPT，再点游戏设置里的“重新检查”。
+
+说书人有三种接法，在游戏的 **设置 → 说书人接口** 里切换：
 
 1. **Claude（claude.ai 内）**：在 claude.ai 以 Artifact 打开时，游戏通过 `sample` 能力调用 Claude，消耗你自己的 Claude 额度，不需要密钥。
 2. **OpenAI 兼容 API**：用浏览器直接打开 `index.html`，或部署到 GitHub Pages 后，填入接口地址、模型名和 API 密钥即可。GPT、DeepSeek、Kimi 等兼容 `/chat/completions` 的服务都可以用。密钥只保存在你自己的浏览器里。
+3. **ChatGPT（本机）**：从 `开始游玩.cmd` 打开的本机页面使用；账号授权由本机 Codex 管理，网页不接触账号令牌。此模式消耗账号套餐额度，不是离线模型。
+
+本机模式使用固定地址，存档仍保存在该浏览器的 localStorage 中；与 claude.ai 或 `file://` 页面的存档位置各自独立。详细接入与实测范围见 `HANDOFF.md` 的“本机 ChatGPT 接入”。
 
 开启 GitHub Pages：仓库 Settings → Pages → Source 选 `main` 分支根目录，保存后就能通过 `https://<用户名>.github.io/dragon-oath/` 访问。
 
