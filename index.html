@@ -1,0 +1,1200 @@
+<title>醉龙酒馆：龙誓</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600;900&display=swap">
+<style>
+/* Layout: BG3-style dialogue screen. Party rail on the left, a portrait stage above the story scroll, choices below. One deliberate night-tavern look: smoked oak, brass trim, silver for the dragon oath. */
+:root {
+  color-scheme: dark;
+  --oak: #17110d;
+  --oak-2: #221912;
+  --oak-3: #33261b;
+  --line: #4a3726;
+  --ink: #efe3cb;
+  --muted: #a48f74;
+  --brass: #d4ab5c;
+  --ember: #e48a3f;
+  --silver: #c9d6e3;
+  --wine: #b3434f;
+  --moss: #86ab70;
+  --f-display: "Ma Shan Zheng", "STKaiti", "KaiTi", serif;
+  --f-body: "Noto Serif SC", "Songti SC", "SimSun", serif;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  background: radial-gradient(ellipse at 50% -20%, rgba(228,138,63,.16), transparent 60%), var(--oak);
+  color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.75;
+}
+button, input, textarea, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: .5; }
+:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+.wrap {
+  max-width: 1240px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 14px 28px;
+}
+.btn {
+  background: var(--oak-2); border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; color: var(--ink);
+}
+.btn:hover:not(:disabled) { border-color: var(--brass); }
+.btn.gold {
+  background: linear-gradient(#e2bb6c, #b48638); color: #23170b; border-color: #87652a;
+  font-weight: 600; padding: 9px 20px; box-shadow: 0 2px 0 #573f1d;
+}
+.btn.small { padding: 3px 10px; font-size: 13px; }
+.label { font-size: 12px; letter-spacing: .16em; color: var(--muted); }
+h1, h2, h3 { text-wrap: balance; }
+
+/* top bar */
+.top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.top h1 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4.5vw, 40px); line-height: 1; color: var(--brass); text-shadow: 0 0 16px rgba(228,138,63,.3); }
+.top .where { color: var(--muted); font-size: 13px; }
+.top .sp { flex: 1; }
+.top .menu { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* ---------- creation ---------- */
+.create { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
+.panel { background: var(--oak-2); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 16px; }
+.panel h2 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 26px; color: var(--ink); line-height: 1.2; }
+.step { display: grid; gap: 8px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.field { display: grid; gap: 4px; flex: 1; min-width: 160px; }
+.field input, .field textarea, .field select {
+  background: var(--oak); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; width: 100%;
+}
+.field textarea { resize: vertical; min-height: 64px; }
+.chips { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.chip {
+  text-align: left; background: var(--oak); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px;
+  display: grid; gap: 2px; align-content: start;
+}
+.chip b { font-weight: 600; }
+.chip small { color: var(--muted); font-size: 12px; line-height: 1.5; }
+.chip[aria-pressed="true"] { border-color: var(--brass); box-shadow: inset 0 0 0 1px var(--brass); }
+.pb { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.pb-cell { background: var(--oak); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; display: grid; gap: 4px; }
+.pb-top { display: flex; justify-content: space-between; align-items: baseline; }
+.pb-top b { font-weight: 600; }
+.pb-val { display: flex; align-items: center; gap: 8px; font-variant-numeric: tabular-nums; }
+.pb-val .n { font-size: 22px; font-weight: 600; min-width: 2ch; text-align: center; }
+.pb-val .m { color: var(--brass); font-size: 13px; }
+.pb-val .r { color: var(--muted); font-size: 12px; }
+.pb-val button { width: 28px; height: 28px; border-radius: 50%; padding: 0; background: var(--oak-2); border: 1px solid var(--line); }
+.points { font-variant-numeric: tabular-nums; }
+.points b { color: var(--brass); }
+.summary { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
+.portrait-pick { display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: center; }
+.portrait-pick img { width: 96px; aspect-ratio: 2/3; object-fit: cover; border-radius: 6px; border: 1px solid var(--line); max-width: 100%; }
+.kv { display: flex; justify-content: space-between; gap: 8px; font-variant-numeric: tabular-nums; font-size: 14px; }
+.kv b { font-weight: 600; }
+.skills-list { display: flex; flex-wrap: wrap; gap: 4px; }
+.tag { font-size: 12px; border: 1px solid var(--line); border-radius: 4px; padding: 0 6px; background: var(--oak); }
+.warn { color: var(--ember); font-size: 13px; }
+
+/* ---------- play ---------- */
+.play { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 16px; align-items: start; }
+.rail { display: grid; gap: 8px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
+.pc {
+  display: grid; grid-template-columns: 44px 1fr; gap: 8px; align-items: center; text-align: left;
+  background: var(--oak-2); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; width: 100%;
+}
+.pc img { width: 44px; height: 56px; object-fit: cover; border-radius: 4px; }
+.pc .nm { font-weight: 600; font-size: 14px; line-height: 1.3; }
+.pc .sub { font-size: 11.5px; color: var(--muted); line-height: 1.4; font-variant-numeric: tabular-nums; }
+.pc.away { opacity: .55; }
+.hpbar { height: 5px; background: #0d0806; border-radius: 3px; overflow: hidden; margin-top: 3px; }
+.hpbar i { display: block; height: 100%; background: linear-gradient(90deg, #7d2a33, var(--wine)); transition: width .4s; }
+.rail .note { font-size: 12px; color: var(--muted); padding: 2px 4px; }
+
+.main { display: grid; gap: 12px; min-width: 0; }
+.stage {
+  position: relative; border-radius: 10px; overflow: hidden; border: 1px solid var(--line);
+  height: 300px; background: var(--scene, linear-gradient(160deg, #3b2614, #120c08));
+  transition: background .8s;
+}
+.stage::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(10,6,4,.85) 0%, rgba(10,6,4,.2) 55%, transparent); pointer-events: none; }
+.stage .scene-name { position: absolute; left: 18px; top: 16px; z-index: 2; max-width: 55%; }
+.stage .scene-name .t { font-family: var(--f-display); font-size: 30px; line-height: 1.1; color: var(--ink); }
+.stage .scene-name .l { font-size: 13px; color: var(--muted); margin-top: 4px; }
+.stage .speaker { position: absolute; right: 16px; bottom: 0; height: 290px; z-index: 1; display: flex; flex-direction: column; align-items: center; }
+.stage .speaker img { height: 254px; aspect-ratio: 2/3; object-fit: cover; border-radius: 8px 8px 0 0; box-shadow: 0 0 40px rgba(0,0,0,.6); max-width: 100%; }
+.stage .speaker .plate {
+  background: linear-gradient(#2a1d14, #1a120d); border: 1px solid var(--brass); border-radius: 4px; padding: 1px 14px;
+  font-weight: 600; font-size: 14px; margin-top: -14px; position: relative; white-space: nowrap;
+}
+.stage .others { position: absolute; left: 18px; bottom: 14px; z-index: 2; display: flex; gap: 8px; }
+.stage .others img { width: 52px; height: 70px; object-fit: cover; border-radius: 6px; border: 1px solid var(--line); }
+.stage .mark-glow { position: absolute; inset: 0; z-index: 3; pointer-events: none; background: radial-gradient(circle at 70% 40%, rgba(201,214,227,.55), transparent 55%); animation: flash 1.6s ease-out forwards; }
+@keyframes flash { from { opacity: 1; } to { opacity: 0; } }
+
+.story {
+  background: linear-gradient(rgba(255,255,255,.015), transparent), var(--oak-2);
+  border: 1px solid var(--line); border-radius: 10px; padding: 16px clamp(14px, 3vw, 26px);
+  height: min(46vh, 520px); min-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
+}
+.e { max-width: 70ch; white-space: pre-wrap; overflow-wrap: anywhere; }
+.e.gm { font-size: 15.5px; line-height: 1.95; }
+.e.you { align-self: flex-end; text-align: right; color: var(--brass); font-style: italic; }
+.e.roll { align-self: center; font-size: 13px; font-variant-numeric: tabular-nums; border: 1px solid var(--line); border-radius: 99px; padding: 1px 14px; background: var(--oak); }
+.e.roll.ok { color: var(--moss); border-color: rgba(134,171,112,.5); }
+.e.roll.bad { color: #e48b94; border-color: rgba(179,67,79,.55); }
+.e.sys { align-self: center; font-size: 12.5px; color: var(--muted); }
+.e.sys.appr-up { color: var(--moss); }
+.e.sys.appr-down { color: #e48b94; }
+.e.chapter { align-self: center; font-family: var(--f-display); font-size: 24px; color: var(--brass); padding-top: 6px; }
+.e.live:empty::before { content: "说书人正在构思……"; color: var(--muted); font-style: italic; }
+.e.live::after { content: "▍"; color: var(--brass); animation: blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+.opts { display: grid; gap: 6px; }
+.opt {
+  text-align: left; background: linear-gradient(var(--oak-3), var(--oak-2)); border: 1px solid #5b4430; border-radius: 8px;
+  padding: 9px 12px; display: flex; gap: 10px; align-items: baseline; color: var(--ink);
+}
+.opt:hover:not(:disabled) { border-color: var(--brass); }
+.opt .k { flex: none; color: var(--brass); font-weight: 900; font-variant-numeric: tabular-nums; }
+.opt .tx { flex: 1; min-width: 0; }
+.opt .ck { flex: none; font-size: 12px; color: var(--brass); }
+.free { display: flex; gap: 8px; }
+.free textarea {
+  flex: 1; min-width: 0; resize: none; height: 48px; background: var(--oak-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;
+}
+.free textarea::placeholder { color: var(--muted); }
+.status { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.status .sp { flex: 1; }
+
+/* toasts */
+.toasts { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 14px); left: 50%; transform: translateX(-50%); z-index: 40; display: grid; gap: 6px; justify-items: center; pointer-events: none; }
+.toast { background: rgba(23,17,13,.94); border: 1px solid var(--line); border-radius: 99px; padding: 4px 16px; font-size: 14px; animation: toast 2.6s ease forwards; }
+.toast.up { color: var(--moss); border-color: rgba(134,171,112,.5); }
+.toast.down { color: #e48b94; border-color: rgba(179,67,79,.5); }
+@keyframes toast { 0% { opacity: 0; transform: translateY(-8px); } 12% { opacity: 1; transform: none; } 80% { opacity: 1; } 100% { opacity: 0; } }
+
+/* modal */
+.modal {
+  position: fixed; inset: 0; z-index: 30; background: rgba(8,5,3,.8); display: grid; place-items: center;
+  padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+}
+.sheet {
+  background: var(--oak-2); border: 1px solid #5b4430; border-radius: 12px; width: min(760px, 100%); max-height: 100%; overflow-y: auto;
+  padding: 20px; display: grid; gap: 14px; box-shadow: 0 20px 60px rgba(0,0,0,.6);
+}
+.sheet h3 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: 28px; color: var(--brass); line-height: 1.2; }
+.sheet .head { display: flex; align-items: center; gap: 10px; }
+.sheet .head .sp { flex: 1; }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.tabs button[aria-selected="true"] { border-color: var(--brass); color: var(--brass); }
+.cs { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 16px; }
+.cs img { width: 150px; aspect-ratio: 2/3; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); max-width: 100%; }
+.abil { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.abil div { background: var(--oak); border: 1px solid var(--line); border-radius: 6px; text-align: center; padding: 4px 0; }
+.abil .v { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.abil .s { font-size: 11px; color: var(--muted); }
+.sk { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 2px 14px; font-size: 13px; }
+.sk span { display: flex; justify-content: space-between; font-variant-numeric: tabular-nums; }
+.sk .pr { color: var(--brass); }
+.appr { display: grid; grid-template-columns: 70px 1fr 44px; gap: 8px; align-items: center; font-size: 13px; }
+.apbar { height: 8px; background: #0d0806; border-radius: 4px; position: relative; overflow: hidden; }
+.apbar i { position: absolute; top: 0; bottom: 0; }
+.slot { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; background: var(--oak); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; }
+.slot .meta { font-size: 12.5px; color: var(--muted); }
+
+/* dice */
+.dice-card { width: min(400px, 100%); justify-items: center; text-align: center; }
+.dice-card .why { color: var(--muted); font-size: 14px; margin: 0; }
+.dice-row { display: flex; gap: 14px; justify-content: center; }
+.d20 {
+  width: 130px; height: 130px; clip-path: polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+  background: linear-gradient(150deg, rgba(255,255,255,.35), transparent 40%), conic-gradient(from 30deg, #b8323e, #7d1d28, #b8323e, #8f2530, #b8323e);
+  display: grid; place-items: center; font-size: 48px; font-weight: 900; color: #fbe9d0; text-shadow: 0 2px 0 #3d0d12; font-variant-numeric: tabular-nums;
+}
+.d20.dim { filter: grayscale(.8) brightness(.6); }
+.d20.small { width: 90px; height: 90px; font-size: 34px; }
+.d20.spin { animation: wob .12s linear infinite; }
+@keyframes wob { 0% { transform: rotate(-8deg) scale(.96); } 50% { transform: rotate(8deg) scale(1.04); } 100% { transform: rotate(-8deg) scale(.96); } }
+.math { font-variant-numeric: tabular-nums; min-height: 1.6em; }
+.verdict { font-family: var(--f-display); font-size: 30px; line-height: 1; min-height: 1em; }
+.verdict.ok { color: var(--moss); } .verdict.bad { color: var(--wine); }
+
+.endcard { text-align: center; justify-items: center; }
+.endcard p { max-width: 54ch; color: var(--muted); }
+
+@media (max-width: 860px) {
+  .create { grid-template-columns: 1fr; }
+  .summary { position: static; }
+  .play { grid-template-columns: 1fr; }
+  .rail { position: static; grid-auto-flow: column; grid-auto-columns: minmax(150px, 1fr); overflow-x: auto; padding-bottom: 4px; }
+  .rail .note { display: none; }
+  .stage { height: 220px; }
+  .stage .speaker { height: 210px; }
+  .stage .speaker img { height: 180px; }
+  .stage .scene-name .t { font-size: 22px; }
+  .stage .others { display: none; }
+  .cs { grid-template-columns: 1fr; }
+  .abil { grid-template-columns: repeat(3, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .d20.spin, .e.live::after, .toast, .stage .mark-glow { animation: none; }
+}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>醉龙酒馆：龙誓</h1>
+    <span class="where" id="where"></span>
+    <span class="sp"></span>
+    <div class="menu" id="menu" hidden>
+      <button class="btn small" type="button" id="mSheet">角色</button>
+      <button class="btn small" type="button" id="mJournal">日志</button>
+      <button class="btn small" type="button" id="mSave">存档</button>
+      <button class="btn small" type="button" id="mSettings">设置</button>
+    </div>
+    <button class="btn small" type="button" id="mLoad" hidden>读取存档</button>
+  </header>
+
+  <main id="createView" class="create" hidden></main>
+
+  <main id="playView" class="play" hidden>
+    <aside class="rail" id="rail" aria-label="队伍"></aside>
+    <section class="main">
+      <div class="stage" id="stage"></div>
+      <div class="story" id="story" aria-live="polite"></div>
+      <div class="opts" id="opts"></div>
+      <form class="free" id="freeForm">
+        <textarea id="freeText" placeholder="写下你想做的任何事，比如“我端着酒走到壁炉边，问那位精灵骑士这把剑有什么故事”"></textarea>
+        <button class="btn gold" type="submit" id="freeBtn">行动</button>
+      </form>
+      <div class="status"><span id="statusText"></span><span class="sp"></span><button class="btn small" type="button" id="stopBtn" hidden>停止</button><button class="btn small" type="button" id="retryBtn" hidden>重试上一步</button></div>
+    </section>
+  </main>
+</div>
+
+<div class="toasts" id="toasts"></div>
+<div class="modal" id="modal" hidden></div>
+
+<script>
+/* =========================================================
+   数据
+   ========================================================= */
+const AB = { str: "力量", dex: "敏捷", con: "体质", int: "智力", wis: "感知", cha: "魅力" };
+const AB_KEYS = Object.keys(AB);
+const SKILLS = {
+  athletics: ["运动", "str"], acrobatics: ["杂技", "dex"], sleight: ["巧手", "dex"], stealth: ["隐匿", "dex"],
+  arcana: ["奥秘", "int"], history: ["历史", "int"], investigation: ["调查", "int"], nature: ["自然", "int"], religion: ["宗教", "int"],
+  animal: ["驯兽", "wis"], insight: ["洞悉", "wis"], medicine: ["医疗", "wis"], perception: ["察觉", "wis"], survival: ["求生", "wis"],
+  deception: ["欺瞒", "cha"], intimidation: ["威吓", "cha"], performance: ["表演", "cha"], persuasion: ["说服", "cha"],
+};
+const RACES = {
+  human: { name: "人类", bonus: { str: 1, dex: 1, con: 1, int: 1, wis: 1, cha: 1 }, trait: "全属性 +1，适应力强" },
+  elf: { name: "精灵", bonus: { dex: 2, wis: 1 }, trait: "黑暗视觉；察觉熟练" , skill: "perception" },
+  half_elf: { name: "半精灵", bonus: { cha: 2, dex: 1 }, trait: "黑暗视觉；左右逢源" },
+  dwarf: { name: "矮人", bonus: { con: 2, str: 1 }, trait: "黑暗视觉；抗毒" },
+  halfling: { name: "半身人", bonus: { dex: 2, cha: 1 }, trait: "幸运：掷出 1 可重掷一次" },
+  tiefling: { name: "提夫林", bonus: { cha: 2, int: 1 }, trait: "黑暗视觉；火焰抗性" },
+  half_orc: { name: "半兽人", bonus: { str: 2, con: 1 }, trait: "坚韧：每日一次倒地时保留 1 生命；威吓熟练", skill: "intimidation" },
+  dragonborn: { name: "龙裔", bonus: { str: 2, cha: 1 }, trait: "龙息；印记与你格外共鸣" },
+};
+const CLASSES = {
+  fighter: { name: "战士", hd: 10, ac: [16, false], atk: ["str", "dex"], skills: ["athletics", "intimidation"], items: ["长剑", "链甲", "盾牌", "治疗药水"], desc: "可靠的前线，武器与盔甲专家" },
+  ranger: { name: "游荡者", hd: 10, ac: [13, true], atk: ["dex"], skills: ["survival", "perception", "stealth"], items: ["长弓", "双短剑", "皮甲", "猎人斗篷"], desc: "荒野猎手，远程与追踪" },
+  rogue: { name: "盗贼", hd: 8, ac: [11, true], atk: ["dex"], skills: ["stealth", "sleight", "deception", "acrobatics"], items: ["匕首", "短弓", "撬锁工具", "灰斗篷"], desc: "潜行、开锁、致命偷袭" },
+  wizard: { name: "法师", hd: 6, ac: [13, true], atk: ["int"], skills: ["arcana", "history", "investigation"], items: ["法杖", "法术书", "墨水与羽毛笔", "火绒盒"], desc: "博学的施法者，法术最多" },
+  warlock: { name: "术士", hd: 8, ac: [11, true], atk: ["cha"], skills: ["arcana", "deception"], items: ["契约护符", "匕首", "黑皮手套"], desc: "与神秘存在立约换取力量" },
+  cleric: { name: "牧师", hd: 8, ac: [16, false], atk: ["wis"], skills: ["medicine", "religion", "insight"], items: ["钉头锤", "鳞甲", "圣徽", "治疗药水"], desc: "神的代行者，治疗与庇护" },
+  paladin: { name: "圣武士", hd: 10, ac: [18, false], atk: ["str"], skills: ["athletics", "religion", "persuasion"], items: ["长剑", "板甲（旧）", "盾牌", "誓言徽章"], desc: "以誓言为力量的圣骑士" },
+  bard: { name: "吟游诗人", hd: 8, ac: [11, true], atk: ["cha"], skills: ["performance", "persuasion", "insight"], items: ["鲁特琴", "细剑", "旅行斗篷"], desc: "用言语与音乐改变战局" },
+};
+const BACKGROUNDS = {
+  soldier: { name: "士兵", skills: ["athletics", "intimidation"], insp: "在危险中挺身保护同伴" },
+  urchin: { name: "街头儿童", skills: ["sleight", "stealth"], insp: "用街头智慧绕过权势" },
+  sage: { name: "学者", skills: ["arcana", "history"], insp: "揭开知识或真相" },
+  noble: { name: "贵族", skills: ["history", "persuasion"], insp: "当众为弱者出头" },
+  acolyte: { name: "侍僧", skills: ["insight", "religion"], insp: "以信仰抚慰他人或面对邪恶" },
+  entertainer: { name: "艺人", skills: ["acrobatics", "performance"], insp: "用表演扭转局面" },
+  sailor: { name: "水手", skills: ["athletics", "perception"], insp: "在海上或码头展现本事" },
+  outlander: { name: "弃徒", skills: ["survival", "animal"], insp: "拒绝屈从于不公的规矩" },
+};
+const PB_COST = { 8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9 };
+
+const PEOPLE = {
+  selene: { name: "赛勒涅", title: "精灵圣武士", color: "#7d93b5" },
+  vex: { name: "维克斯", title: "提夫林盗贼", color: "#9c3a43" },
+  kassian: { name: "卡西安", title: "半兽人牧师", color: "#5f8a6e" },
+  borin: { name: "博林", title: "矮人战士", color: "#b5612f" },
+  martha: { name: "玛莎", title: "酒馆老板娘", color: "#8a6a4a" },
+  tom: { name: "小汤姆", title: "酒馆帮工", color: "#8c7a56" },
+  hooded: { name: "兜帽客", title: "身份不明", color: "#4a4f5c" },
+  cultist: { name: "灰烬教团", title: "狂信徒", color: "#6b2a20" },
+  hestia: { name: "赫斯提雅", title: "银龙", color: "#b7c6d6" },
+};
+const EXPRS = ["neutral", "smile", "angry", "sad", "tender"];
+
+const COMPANIONS = {
+  selene: {
+    race: "月精灵", cls: "圣武士", lvl: 1,
+    ab: { str: 16, dex: 10, con: 14, int: 10, wis: 12, cha: 15 }, hp: 12, ac: 18, atk: "str",
+    prof: ["athletics", "religion", "insight", "history"],
+    personality: "克制、严肃、守信，干巴巴的冷幽默。晨星骑士团最后的骑士，一直在等银龙的召唤。",
+    likes: "守信、保护弱者、坦诚认错、尊重亡者、拒绝印记的低语",
+    dislikes: "撒谎（尤其对她）、伤害无辜、滥用印记、与教团联手",
+    secret: "她原本就是银龙选定的重生容器，自己不知道。（GM 不要透露）",
+    join: "教团袭击时会主动挺身，战后若玩家没有做出伤害无辜之事，她主动请求同行。",
+  },
+  vex: {
+    race: "提夫林", cls: "盗贼", lvl: 1,
+    ab: { str: 8, dex: 17, con: 12, int: 13, wis: 10, cha: 15 }, hp: 9, ac: 14, atk: "dex",
+    prof: ["stealth", "sleight", "deception", "acrobatics", "perception"],
+    personality: "嘴贫、轻佻、永远先算自己的好处，对穷人出奇大方，从不承认自己是好人。",
+    likes: "机智的解决方式、捉弄权贵、帮助穷人、拿到额外报酬、为朋友冒险",
+    dislikes: "愚忠、说教、出卖朋友、歧视提夫林、向权力低头",
+    secret: "他在兜售的“银宝石”是暴风夜从沉船湾捡的，其实是银龙的最后一颗龙蛋。他欠黑潮会首领“老鳗”一大笔债，妹妹莉丝被扣为人质。（GM 不要直接透露）",
+    join: "袭击后想开溜。玩家用说服或威吓（DC 13）可留住他；失败则他离开（写 prologue.vex_left）。",
+  },
+  kassian: {
+    race: "半兽人", cls: "牧师", lvl: 1,
+    ab: { str: 15, dex: 10, con: 15, int: 9, wis: 16, cha: 12 }, hp: 10, ac: 16, atk: "str",
+    prof: ["medicine", "religion", "insight", "athletics"],
+    personality: "温和的巨人，话少，爱做点心，对动物和孩子极有耐心；真正动怒时很可怕。",
+    likes: "仁慈、给敌人第二次机会、照顾动物和孩子、诚实、为无助者出头",
+    dislikes: "无谓的杀戮、虐待俘虏、赌博式的斗殴、嘲笑信仰",
+    secret: "曾是黑潮会斗兽场头牌角斗士“碎潮”，十年前在场上打死了好友，此后皈依海洋女神。",
+    join: "若玩家在袭击中保护过小汤姆，或真诚请求，他会同行。",
+  },
+  borin: {
+    race: "山地矮人", cls: "战士", lvl: 1,
+    ab: { str: 17, dex: 10, con: 16, int: 10, wis: 11, cha: 10 }, hp: 13, ac: 17, atk: "str",
+    prof: ["athletics", "intimidation", "history", "survival"],
+    personality: "嗓门大、豪爽、爱讲笑话，是气氛担当；用酒精压住悲伤，从不在人前哭。",
+    likes: "勇敢、豪爽、一起喝酒、保护酒馆和玛莎、对朋友忠诚",
+    dislikes: "临阵逃跑、和教团谈判、浪费好酒、背弃伙伴",
+    secret: "五年前哥哥达林“为掩护同伴死于教团之手”——其实达林没死。（GM 不要透露）",
+    join: "袭击时第一个掀桌子冲上去，战后自动加入。",
+  },
+};
+
+/* 序幕场景锚点（GM 可见） */
+const SCENES = {
+  prologue_1: {
+    title: "酒馆里的人", loc: "醉龙酒馆 · 大堂", bg: "linear-gradient(160deg,#5a3517,#24150b 60%,#120c08)",
+    anchor: "雨夜，下了三天。在场：老板娘玛莎在吧台擦杯子；博林在角落挑战全场掰手腕；卡西安在给被老鼠咬伤腿的小汤姆包扎；赛勒涅独自在壁炉边擦剑；维克斯四处兜售一颗“银宝石”；窗边坐着沉默的兜帽客（形变者奈雅伪装，被搭话会敷衍，随后溜走）。地板下偶尔传来抓挠声（地窖闹老鼠）。玩家可以自由与任何人互动，第一印象影响赞同度（±1~5）。必然事件：当玩家已与 2~3 人互动，或大约 5 轮之后，银龙坠落：此时把 advance 设为 prologue_2，并在叙述末尾写出天空中的银光。不要提前透露印记的事。",
+    next: "prologue_2",
+  },
+  prologue_2: {
+    title: "坠龙", loc: "醉龙酒馆 · 大堂", bg: "linear-gradient(160deg,#55677a,#1d2530 60%,#0c0f14)", flash: true,
+    anchor: "一道银光划过天空坠入海湾，酒馆剧烈震动。银光穿墙而入，在六个人掌心烙下银色龙鳞印记：玩家、赛勒涅、维克斯、卡西安、博林、兜帽客；第七道光飞出窗外，落向北边的旧学院废塔。烙印时所有持有者同时看到一只巨大的银色眼睛，并短暂看到彼此的记忆碎片。剧痛。兜帽客趁乱消失。众人惊疑、议论、互相查看掌心。玩家反应 1~3 轮后，门外传来沉重的撞门声，把 advance 设为 prologue_3。",
+    next: "prologue_3",
+  },
+  prologue_3: {
+    title: "教团袭击", loc: "醉龙酒馆 · 大堂", bg: "linear-gradient(160deg,#7a2e17,#2a0f08 60%,#120706)",
+    anchor: "十分钟后，6 名灰烬教团狂信徒和 1 名烬火术士破门而入，要求“交出带印记的人”。区域：大堂、吧台、二楼回廊、地窖门。解决方式全部有效：①战斗：用 attack 检定（命中则敌人倒下或重伤）与技能检定叙述，同伴会协同行动；②谈判：威吓 DC 15 吓跑一半，欺瞒 DC 13 谎称持有者已从后门逃走；③环境：推倒炭盆、砍断吊灯、把酒桶滚下楼梯（GM 定 DC）；④黑暗选择：交出一个同伴——该同伴被带走（flags 写 prologue.betrayed_companion = 其 id），其余同伴赞同 −15~−20。第 3 轮左右地窖门被撞开，巨鼠涌出攻击最近的人（敌我不分）。可活捉一名狂信徒。本战不会致死：玩家 HP 归零会倒地，由同伴救起并付出代价。敌人被击退或驱散后，把 advance 设为 prologue_4。",
+    next: "prologue_4",
+  },
+  prologue_4: {
+    title: "余烬", loc: "醉龙酒馆 · 残局", bg: "linear-gradient(160deg,#4a2e1a,#1d130c 60%,#0f0a07)",
+    anchor: "战后。玛莎讲述“守誓人”的传说（只讲传说层面：千年前银龙赫斯提雅封印了黑龙烬王，她亡夫曾是守誓人；酒馆就是守誓人的老据点）。招募：用 recruit 字段加入同伴，条件见同伴资料。可选支线：下地窖处理“鼠王”（狗那么大的独眼巨鼠，尾巴缠铜链，会召唤鼠群；可用博林的铜哨或模仿教团哨音 魅力 DC 14 让它退兵，可用火墙 智力 DC 12 驱散；放过写 prologue.rat_king=spared）。当玩家决定休息/睡觉/长休时，把 advance 设为 prologue_5。",
+    next: "prologue_5",
+  },
+  prologue_5: {
+    title: "第一个梦", loc: "梦境 · 银雾", bg: "linear-gradient(160deg,#8fa2b6,#2f3a47 55%,#11161c)",
+    anchor: "玩家入睡。银色雾中，赫斯提雅入梦（银发老妇人，脸颊有淡淡龙鳞；也可显现为巨大的垂死银龙）。她温柔地说：“我选中了你们。去誓约神殿。”她回避“代价”的问题（洞悉 DC 16 可察觉她有所隐瞒，但看不出是什么）。根据玩家回应（信任/质问/拒绝）给 hestia_trust 变化（−20~+20），并写 flags prologue.hestia_answer = trust|question|refuse。对话 1~3 轮后，玩家醒来，晨光照进酒馆，把 scene_end 设为 true，序幕结束。",
+    next: null,
+  },
+};
+const SCENE_ORDER = ["prologue_1", "prologue_2", "prologue_3", "prologue_4", "prologue_5"];
+
+const FLAG_KEYS = {
+  "prologue.betrayed_companion": "id", "prologue.tom_saved": "bool", "prologue.talked_hooded": "bool", "prologue.saw_gem": "bool",
+  "prologue.fight_style": ["fought", "talked", "tricked", "hid", "mixed"], "prologue.captured_cultist": "bool",
+  "prologue.rat_king": ["killed", "spared", "driven"], "prologue.vex_left": "bool",
+  "prologue.hestia_answer": ["trust", "question", "refuse"], "prologue.martha_legend": "bool",
+};
+
+/* =========================================================
+   工具
+   ========================================================= */
+const $ = id => document.getElementById(id);
+function el(tag, cls, text) { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
+const mod = s => Math.floor((s - 10) / 2);
+const sgn = n => (n >= 0 ? "+" : "") + n;
+const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+const num = (v, lim) => clamp(Math.round(Number(v) || 0), -lim, lim);
+const str = (v, n) => String(v ?? "").slice(0, n);
+
+function placeholder(id) {
+  const p = PEOPLE[id] || { name: "你", color: "#a07a3c" };
+  const label = id === "player" ? (state?.player?.name || "你") : p.name;
+  const c = id === "player" ? "#a07a3c" : p.color;
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 300'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='${c}' stop-opacity='.7'/><stop offset='1' stop-color='#120c08'/></linearGradient></defs><rect width='200' height='300' fill='url(#g)'/><circle cx='100' cy='108' r='44' fill='#0b0705' fill-opacity='.55'/><path d='M14 300C20 206 58 168 100 168S180 206 186 300Z' fill='#0b0705' fill-opacity='.55'/><text x='100' y='122' text-anchor='middle' font-size='34' fill='#efe3cb' fill-opacity='.8' font-family='serif'>${label.replace(/[<&>']/g, "").slice(0, 1)}</text></svg>`;
+  return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+}
+const failed = new Set();
+function portrait(img, id, expr) {
+  if (id === "player" && state?.player?.portraitData) { img.src = state.player.portraitData; return; }
+  const cands = [];
+  if (id !== "player") {
+    if (expr && expr !== "neutral") cands.push(`portraits/${id}_${expr}.png`);
+    cands.push(`portraits/${id}_neutral.png`);
+  }
+  const list = cands.filter(u => !failed.has(u));
+  const next = () => {
+    const u = list.shift();
+    if (!u) { img.onerror = null; img.src = placeholder(id); return; }
+    img.onerror = () => { failed.add(u); next(); };
+    img.src = u;
+  };
+  next();
+  img.alt = id === "player" ? (state?.player?.name || "你") : (PEOPLE[id]?.name || "");
+}
+function toast(text, kind) {
+  const t = el("div", "toast" + (kind ? " " + kind : ""), text);
+  $("toasts").append(t);
+  setTimeout(() => t.remove(), 2700);
+}
+
+/* =========================================================
+   状态
+   ========================================================= */
+const AUTO = "dragon-oath-auto";
+const SLOT = n => "dragon-oath-slot-" + n;
+const PREF = "dragon-oath-pref";
+let state = null;
+let draft = null;
+let sample = null, sampleKnown = false, busy = false, ctl = null, lastAction = null;
+let pref = { tier: "default" };
+try { pref = Object.assign(pref, JSON.parse(localStorage.getItem(PREF) || "{}")); } catch (e) {}
+
+function freshDraft() {
+  return { name: "艾林", gender: "女", appearance: "黑色短发，左眼下有一颗泪痣，穿旧皮夹克，总是带着漫不经心的笑。", race: "half_elf", cls: "rogue", bg: "urchin",
+    base: { str: 10, dex: 15, con: 13, int: 12, wis: 10, cha: 14 }, portraitData: null };
+}
+function finalAbilities(d) {
+  const b = RACES[d.race].bonus, out = {};
+  for (const k of AB_KEYS) out[k] = d.base[k] + (b[k] || 0);
+  return out;
+}
+function pointsUsed(d) { return AB_KEYS.reduce((s, k) => s + PB_COST[d.base[k]], 0); }
+function profsOf(d) {
+  const set = new Set([...CLASSES[d.cls].skills, ...BACKGROUNDS[d.bg].skills]);
+  if (RACES[d.race].skill) set.add(RACES[d.race].skill);
+  return [...set];
+}
+function acOf(cls, dexMod) { const [base, addDex] = CLASSES[cls].ac; return addDex ? base + dexMod : base; }
+
+function newGame(d) {
+  const ab = finalAbilities(d), c = CLASSES[d.cls];
+  const hp = c.hd + mod(ab.con);
+  const companions = {};
+  for (const [id, cd] of Object.entries(COMPANIONS)) companions[id] = { recruited: false, alive: true, taken: false, approval: 0, romance: "none", hp: cd.hp, hpMax: cd.hp };
+  return {
+    version: 1, phase: "play", act: 0, scene: "prologue_1", day: 1, location: SCENES.prologue_1.loc,
+    player: { name: d.name, gender: d.gender, appearance: d.appearance, race: d.race, cls: d.cls, bg: d.bg, level: 1,
+      abilities: ab, profs: profsOf(d), hp, hpMax: hp, ac: acOf(d.cls, mod(ab.dex)), gold: 15, inventory: c.items.slice(),
+      draconic: 0, inspiration: 0, portraitData: d.portraitData },
+    companions, flags: {}, hestiaTrust: 0, journal: [{ quest: "暴风之夜", note: "在醉龙酒馆躲雨。" }],
+    log: [], suggestions: [], speakers: [], expressions: {}, pendingCheck: null, ended: false, turns: 0,
+  };
+}
+
+function save(key) {
+  if (!state || state.phase !== "play") return;
+  try {
+    const s = JSON.parse(JSON.stringify(state));
+    s.log.forEach(e => delete e.live);
+    localStorage.setItem(key || AUTO, JSON.stringify({ t: Date.now(), state: s }));
+  } catch (e) { if (key) toast("存档失败：浏览器存储不可用"); }
+}
+function readSave(key) { try { return JSON.parse(localStorage.getItem(key) || "null"); } catch (e) { return null; } }
+
+/* =========================================================
+   规则
+   ========================================================= */
+function present() {
+  if (state.scene === "prologue_5") return [];
+  return Object.keys(COMPANIONS).filter(id => {
+    const c = state.companions[id];
+    if (!c.alive || c.taken) return false;
+    if (id === "vex" && state.flags["prologue.vex_left"]) return false;
+    return true;
+  });
+}
+function party() { return Object.keys(COMPANIONS).filter(id => state.companions[id].recruited && !state.companions[id].taken && state.companions[id].alive); }
+
+function bonusFor(who, key) {
+  // who: "player" | companion id ; key: skill | ability | "attack" | "save_xxx"
+  const isP = who === "player";
+  const ab = isP ? state.player.abilities : COMPANIONS[who].ab;
+  const profs = isP ? state.player.profs : COMPANIONS[who].prof;
+  const pb = 2;
+  if (key === "attack") {
+    const atk = isP ? CLASSES[state.player.cls].atk : [COMPANIONS[who].atk];
+    const best = Math.max(...atk.map(a => mod(ab[a])));
+    return { total: best + pb, parts: [["属性", best], ["熟练", pb]], label: "攻击" };
+  }
+  if (key.startsWith("save_")) {
+    const a = key.slice(5); const m = mod(ab[a]);
+    return { total: m, parts: [[AB[a], m]], label: AB[a] + "豁免" };
+  }
+  if (AB[key]) { const m = mod(ab[key]); return { total: m, parts: [[AB[key], m]], label: AB[key] }; }
+  const [name, a] = SKILLS[key];
+  const m = mod(ab[a]); const p = profs.includes(key) ? pb : 0;
+  const parts = [[AB[a], m]]; if (p) parts.push(["熟练", p]);
+  return { total: m + p, parts, label: name };
+}
+function validCheckKey(k) { return k === "attack" || !!SKILLS[k] || !!AB[k] || (k.startsWith("save_") && !!AB[k.slice(5)]); }
+function whoName(who) { return who === "player" ? state.player.name : PEOPLE[who]?.name || who; }
+function relLabel(v) { return v <= -60 ? "敌对" : v <= -20 ? "不满" : v < 20 ? "中立" : v < 40 ? "朋友" : v < 60 ? "亲密" : v < 80 ? "深情" : "生死之交"; }
+
+/* =========================================================
+   AI 说书人
+   ========================================================= */
+const SYSTEM = `你是奇幻跑团游戏《醉龙酒馆：龙誓》的游戏主持人（GM）。风格参考《博德之门3》：高自由度、角色鲜活、选择有后果。
+
+【叙述规则】
+- 简体中文，第二人称“你”。每轮 100–300 字，有画面、声音和气味。
+- 不替玩家决定行动、台词和感受。只描写世界和 NPC 的反应。
+- NPC 和同伴用引号说话，严格符合其资料中的性格、喜恶。同伴会主动插话、吐槽、反对玩家。
+- 玩家的任何行动都可以尝试。永远不说“你不能”，只给出检定或后果。
+- 场景锚点是必然发生的事件，但到达方式由玩家决定。玩家偏离时用世界内的事件自然引导。
+- 不透露标注“GM 不要透露”的秘密，除非玩家通过剧情或检定发现。
+- 恋爱内容要大胆直白：可以具体描写亲吻、拥抱、抚摸、体温和心跳，以及情欲张力和调情台词。所有可恋爱角色都是成年人。不写露骨的性行为过程，到那一步时用一句暗示性的转场结束。
+
+【规则】
+- 检定：d20 + 属性调整值 + 熟练加值 ≥ DC。DC：5 很简单，10 简单，15 中等，20 困难，25 极难。自然 20 必成，自然 1 必败。
+- 结果不确定且有风险时才要求检定。要求检定时，叙述只写到行动发起的一刻，结果留到下一轮。一次只要求一个检定。
+- 攻击用 skill "attack"，DC 写目标的 AC（狂信徒 12，烬火术士 12，巨鼠 11，鼠王 13）。
+- 失败不能让剧情卡死，而是带来代价或另一条路。
+- 你不计算数值。所有数值变化通过 JSON 提出，由程序执行。
+- 赞同度：只有在场的同伴会变化。小事 ±1~3，重大选择 ±5~15，必须按同伴的喜恶判断。
+- 当玩家的举动符合其背景的“灵感条件”时，可给 inspiration: 1。
+
+【输出格式】先写叙述正文（纯文本，可分段，不要标题、不要 Markdown）。然后单独一行写 @@@ 。然后写一个 JSON 对象（不要代码块），没有变化的字段可以省略：
+{"location":"简短地点","speakers":["borin"],"expressions":{"borin":"smile"},"check":null,"approval":[{"id":"selene","delta":3,"reason":"你保护了小汤姆"}],"flags":{},"hp":[{"id":"player","delta":-2}],"gold":0,"items_add":[],"items_remove":[],"draconic":0,"inspiration":0,"recruit":[],"hestia_trust":0,"journal":[{"quest":"任务名","note":"一句话进展"}],"advance":null,"scene_end":false,"suggestions":[{"text":"建议行动","check":"说服"}]}
+- speakers：本轮主要说话或被聚焦的角色 id（最多 3 个，第一个最重要）。可用 id：selene vex kassian borin martha tom hooded cultist hestia。
+- expressions：可选，表情取 neutral smile angry sad tender。
+- check：需要检定时写 {"skill":"技能键","dc":15,"who":"player","reason":"一句话难点","advantage":false,"disadvantage":false}，此时 suggestions 写 []。who 可以是 player 或已加入的同伴 id。
+- 技能键：athletics 运动、acrobatics 杂技、sleight 巧手、stealth 隐匿、arcana 奥秘、history 历史、investigation 调查、nature 自然、religion 宗教、animal 驯兽、insight 洞悉、medicine 医疗、perception 察觉、survival 求生、deception 欺瞒、intimidation 威吓、performance 表演、persuasion 说服；也可用属性 str dex con int wis cha、攻击 attack、豁免 save_con 等。
+- suggestions：3~4 条建议行动，风格各异（善良的、狡猾的、冒险的）；需要检定的写上技能中文名。
+- advance：只能填场景资料里写明的下一个场景 id。
+- flags 只能用以下键：${Object.keys(FLAG_KEYS).join("、")}。`;
+
+function companionBrief(id) {
+  const c = COMPANIONS[id], s = state.companions[id], p = PEOPLE[id];
+  return `· ${p.name}（id: ${id}，${c.race}${c.cls}）${s.recruited ? "【已加入队伍】" : "【尚未加入】"} 赞同度 ${s.approval}（${relLabel(s.approval)}），HP ${s.hp}/${s.hpMax}
+  性格：${c.personality}
+  赞同：${c.likes}；反感：${c.dislikes}
+  秘密：${c.secret}
+  加入条件：${c.join}`;
+}
+function buildPrompt(action) {
+  const p = state.player, sc = SCENES[state.scene];
+  const profs = p.profs.map(k => SKILLS[k][0]).join("、");
+  const recent = state.log.filter(e => e.k !== "chapter").slice(-24).map(e =>
+    ({ gm: "GM：", you: "玩家：", roll: "检定：", sys: "系统：" }[e.k] || "") + e.t.slice(0, 1200)).join("\n");
+  const pres = present();
+  return SYSTEM +
+    `\n\n【当前场景】${state.scene}「${sc.title}」，地点：${state.location}\n场景锚点（GM 可见）：${sc.anchor}\n下一个场景 id：${sc.next || "无（本场景结束时 scene_end 为 true）"}` +
+    `\n\n【玩家角色】${p.name}，${p.gender}，${RACES[p.race].name}${CLASSES[p.cls].name}，背景：${BACKGROUNDS[p.bg].name}（灵感条件：${BACKGROUNDS[p.bg].insp}）。外貌：${p.appearance}` +
+    `\n属性：${AB_KEYS.map(k => AB[k] + p.abilities[k] + "(" + sgn(mod(p.abilities[k])) + ")").join(" ")}；熟练技能：${profs}` +
+    `\nHP ${p.hp}/${p.hpMax}，AC ${p.ac}，金币 ${p.gold}，灵感 ${p.inspiration}，龙化值 ${p.draconic}，物品：${p.inventory.join("、") || "无"}` +
+    `\n\n【在场同伴】\n${pres.length ? pres.map(companionBrief).join("\n") : "（无，玩家独自一人）"}` +
+    `\n\n【NPC】玛莎（martha）：独臂退休冒险者，嘴硬心软，酒馆老板娘。小汤姆（tom）：胆小热心的半身人帮工。兜帽客（hooded）：其实是教团间谍形变者奈雅，GM 不要透露。` +
+    `\n\n【世界标记】${JSON.stringify(state.flags)}；赫斯提雅信任 ${state.hestiaTrust}` +
+    `\n\n【最近剧情】\n${recent || "（冒险刚开始）"}` +
+    `\n\n【玩家本回合】${action}`;
+}
+function splitReply(t) { const i = t.indexOf("@@@"); return i < 0 ? [t.trim(), ""] : [t.slice(0, i).trim(), t.slice(i + 3)]; }
+
+const ERR = {
+  not_granted: "你没有允许这个页面使用 Claude，说书人无法继续。可以在页面的权限菜单里重新允许。",
+  sampling_disabled: "这个账户暂时无法使用 Claude。",
+  rate_limited: "说书人需要喘口气（请求太频繁或额度用尽），稍后点“重试上一步”。",
+  session_expired: "登录已过期，请重新登录 claude.ai 后再试。",
+  refused: "说书人拒绝了这个行动，换个说法试试。",
+};
+
+function push(k, t, extra) { const e = Object.assign({ k, t }, extra || {}); state.log.push(e); return e; }
+
+async function gm(action, shown) {
+  if (busy || state.ended) return;
+  if (!sample) { push("sys", sampleKnown ? "AI 说书人不可用：请在 claude.ai 中打开此页面并允许它使用 Claude。" : "说书人还没到，稍等几秒再试。"); renderPlay(); return; }
+  lastAction = { action, shown };
+  const prompt = buildPrompt(action);
+  if (shown) push("you", shown);
+  state.suggestions = [];
+  const entry = push("gm", "", { live: true });
+  busy = true; ctl = new AbortController();
+  renderPlay();
+  try {
+    const { text } = await sample(prompt, {
+      cache: false, signal: ctl.signal, modelTier: pref.tier,
+      onText: ({ text }) => { entry.t = splitReply(text)[0]; const n = document.querySelector('[data-live="1"]'); if (n) { n.textContent = entry.t; scrollStory(); } },
+    });
+    const [narr, tail] = splitReply(text);
+    entry.t = narr; delete entry.live;
+    let data = {};
+    const a = tail.indexOf("{"), b = tail.lastIndexOf("}");
+    if (a >= 0 && b > a) { try { data = JSON.parse(tail.slice(a, b + 1)); } catch (e) { console.warn("JSON 解析失败", e); } }
+    applyGM(data);
+    state.turns++;
+    lastAction = null;
+  } catch (e) {
+    delete entry.live;
+    entry.t = splitReply(e.text || "")[0];
+    if (!entry.t) state.log.splice(state.log.indexOf(entry), 1);
+    if (e.code !== "cancelled") push("sys", ERR[e.code] || "说书人的思路被打断了，点“重试上一步”再来一次。");
+    if (e.code === "not_granted" || e.code === "sampling_disabled") sample = null;
+    if (shown) { const i = state.log.findIndex(x => x.k === "you" && x.t === shown); if (i >= 0 && e.code !== "cancelled") state.log[i].retry = true; }
+  } finally {
+    busy = false; ctl = null;
+    save(); renderPlay();
+    if (state.pendingCheck) openDice();
+  }
+}
+
+function applyGM(d) {
+  const notes = [];
+  if (d.location) state.location = str(d.location, 30);
+  if (Array.isArray(d.speakers)) state.speakers = d.speakers.filter(id => PEOPLE[id]).slice(0, 3);
+  state.expressions = {};
+  if (d.expressions && typeof d.expressions === "object") for (const [k, v] of Object.entries(d.expressions)) if (PEOPLE[k] && EXPRS.includes(v)) state.expressions[k] = v;
+
+  // flags
+  if (d.flags && typeof d.flags === "object") for (const [k, v] of Object.entries(d.flags)) {
+    const rule = FLAG_KEYS[k]; if (!rule) { console.warn("未定义的标记被丢弃", k); continue; }
+    if (rule === "bool") state.flags[k] = !!v;
+    else if (rule === "id") { if (v === false || COMPANIONS[v]) state.flags[k] = v; }
+    else if (Array.isArray(rule) && rule.includes(v)) state.flags[k] = v;
+  }
+  const taken = state.flags["prologue.betrayed_companion"];
+  if (taken && COMPANIONS[taken] && !state.companions[taken].taken) {
+    state.companions[taken].taken = true; state.companions[taken].recruited = false;
+    notes.push([PEOPLE[taken].name + " 被教团带走了", "down"]);
+  }
+
+  // approval
+  const pres = present();
+  for (const a of (Array.isArray(d.approval) ? d.approval : [])) {
+    if (!pres.includes(a.id)) continue;
+    const delta = num(a.delta, 15); if (!delta) continue;
+    const c = state.companions[a.id];
+    c.approval = clamp(c.approval + delta, -100, 100);
+    const why = a.reason ? "（" + str(a.reason, 40) + "）" : "";
+    const t = `${PEOPLE[a.id].name} ${delta > 0 ? "赞同" : "不赞同"} ${sgn(delta)}`;
+    toast(t, delta > 0 ? "up" : "down");
+    notes.push([t + why, delta > 0 ? "up" : "down"]);
+  }
+
+  // hp
+  for (const h of (Array.isArray(d.hp) ? d.hp : [])) {
+    const delta = num(h.delta, 15); if (!delta) continue;
+    if (h.id === "player") {
+      const p = state.player; const before = p.hp;
+      p.hp = clamp(p.hp + delta, 0, p.hpMax);
+      if (p.hp !== before) notes.push(["生命 " + sgn(p.hp - before), p.hp < before ? "down" : "up"]);
+      if (p.hp === 0) { p.hp = 1; notes.push(["你倒下了……同伴把你拉了起来（生命 1）", "down"]); }
+    } else if (COMPANIONS[h.id]) {
+      const c = state.companions[h.id]; const before = c.hp;
+      c.hp = clamp(c.hp + delta, 0, c.hpMax);
+      if (c.hp !== before) notes.push([PEOPLE[h.id].name + " 生命 " + sgn(c.hp - before), c.hp < before ? "down" : "up"]);
+      if (c.hp === 0) { c.hp = 1; notes.push([PEOPLE[h.id].name + " 倒地后被扶起", "down"]); }
+    }
+  }
+  // gold, items
+  const gold = num(d.gold, 50);
+  if (gold) { const before = state.player.gold; state.player.gold = Math.max(0, before + gold); if (state.player.gold !== before) notes.push(["金币 " + sgn(state.player.gold - before), gold > 0 ? "up" : "down"]); }
+  for (const r of (Array.isArray(d.items_remove) ? d.items_remove : [])) {
+    const i = state.player.inventory.indexOf(String(r)); if (i >= 0) { state.player.inventory.splice(i, 1); notes.push(["失去：" + r, "down"]); }
+  }
+  for (const a of (Array.isArray(d.items_add) ? d.items_add : []).slice(0, 3)) {
+    const s = str(a, 20).trim(); if (s && !state.player.inventory.includes(s)) { state.player.inventory.push(s); notes.push(["获得：" + s, "up"]); }
+  }
+  // draconic, inspiration
+  const dr = num(d.draconic, 15);
+  if (dr) { state.player.draconic = clamp(state.player.draconic + dr, 0, 100); notes.push(["龙化值 " + sgn(dr), ""]); }
+  if (num(d.inspiration, 1) > 0 && state.player.inspiration < 4) { state.player.inspiration++; notes.push(["获得 1 点灵感", "up"]); toast("获得灵感", "up"); }
+  // hestia
+  const ht = num(d.hestia_trust, 20);
+  if (ht && state.scene === "prologue_5") state.hestiaTrust = clamp(state.hestiaTrust + ht, -100, 100);
+  // recruit
+  for (const id of (Array.isArray(d.recruit) ? d.recruit : [])) {
+    const c = state.companions[id];
+    if (!c || c.recruited || c.taken || !c.alive || !["prologue_3", "prologue_4"].includes(state.scene)) continue;
+    if (id === "vex" && state.flags["prologue.vex_left"]) continue;
+    c.recruited = true;
+    notes.push([PEOPLE[id].name + " 加入了队伍", "up"]); toast(PEOPLE[id].name + " 加入了队伍", "up");
+  }
+  // journal
+  for (const j of (Array.isArray(d.journal) ? d.journal : []).slice(0, 2)) {
+    const q = str(j.quest, 20).trim(), n = str(j.note, 80).trim(); if (!q || !n) continue;
+    const ex = state.journal.find(x => x.quest === q);
+    if (ex) ex.note = n; else { state.journal.push({ quest: q, note: n }); notes.push(["日志更新：" + q, ""]); }
+  }
+  for (const [t, kind] of notes) push("sys", t, { cls: kind === "up" ? "appr-up" : kind === "down" ? "appr-down" : "" });
+
+  // check
+  const ck = d.check;
+  if (ck && typeof ck === "object" && validCheckKey(String(ck.skill || ""))) {
+    const who = ck.who === "player" || !ck.who ? "player" : (party().includes(ck.who) || present().includes(ck.who) ? ck.who : "player");
+    state.pendingCheck = { skill: String(ck.skill), dc: clamp(Math.round(Number(ck.dc) || 12), 5, 30), who, reason: str(ck.reason, 60), adv: !!ck.advantage, dis: !!ck.disadvantage };
+    state.suggestions = [];
+  } else {
+    state.suggestions = (Array.isArray(d.suggestions) ? d.suggestions : []).slice(0, 4).map(s =>
+      typeof s === "string" ? { text: str(s, 80) } : { text: str(s.text, 80), check: s.check ? str(s.check, 10) : "" }).filter(s => s.text);
+  }
+
+  // scene flow
+  const sc = SCENES[state.scene];
+  if (d.advance && d.advance === sc.next) {
+    state.scene = d.advance;
+    const ns = SCENES[state.scene];
+    push("chapter", ns.title);
+    if (!d.location) state.location = ns.loc;
+    if (state.scene === "prologue_5") { const p = state.player; p.hp = p.hpMax; for (const c of Object.values(state.companions)) c.hp = c.hpMax; push("sys", "长休：全员生命恢复"); }
+    flashScene = !!ns.flash;
+  }
+  if (d.scene_end === true && state.scene === "prologue_5") { state.ended = true; state.pendingCheck = null; state.suggestions = []; }
+}
+
+/* =========================================================
+   掷骰
+   ========================================================= */
+let rolled = null;
+function rollD20() { return 1 + Math.floor(Math.random() * 20); }
+function openDice() {
+  const c = state.pendingCheck; if (!c) return;
+  rolled = null;
+  const b = bonusFor(c.who, c.skill);
+  const m = $("modal"); m.textContent = ""; m.hidden = false;
+  const card = el("div", "sheet dice-card"); card.setAttribute("role", "dialog"); card.setAttribute("aria-modal", "true");
+  card.append(el("h3", null, `${b.label}检定 · DC ${c.dc}`));
+  card.append(el("p", "why", (c.who === "player" ? "" : whoName(c.who) + "：") + (c.reason || "")));
+  const row = el("div", "dice-row");
+  const d1 = el("div", "d20", "?"); row.append(d1);
+  let d2 = null; if (c.adv !== c.dis) { d2 = el("div", "d20", "?"); row.append(d2); }
+  card.append(row);
+  if (c.adv !== c.dis) card.append(el("div", "why", c.adv ? "优势：掷两次取高" : "劣势：掷两次取低"));
+  const math = el("div", "math", "d20 " + b.parts.map(([n, v]) => sgn(v) + "（" + n + "）").join(" ")); card.append(math);
+  const verdict = el("div", "verdict"); card.append(verdict);
+  const btns = el("div", "row"); btns.style.justifyContent = "center";
+  const rollBtn = el("button", "btn gold", "掷骰"); rollBtn.type = "button";
+  const reBtn = el("button", "btn", ""); reBtn.type = "button"; reBtn.hidden = true;
+  btns.append(rollBtn, reBtn); card.append(btns);
+  m.append(card);
+  rollBtn.focus();
+
+  const doRoll = (reroll) => {
+    const r1 = rollD20(), r2 = d2 ? rollD20() : null;
+    let d = r1;
+    if (d2) d = c.adv ? Math.max(r1, r2) : Math.min(r1, r2);
+    if (d === 1 && state.player.race === "halfling" && c.who === "player" && !reroll) { d = rollD20(); toast("半身人的幸运：重掷了 1"); }
+    const total = d + b.total;
+    const ok = d === 20 || (d !== 1 && total >= c.dc);
+    rolled = { d, total, ok, bonus: b.total, label: b.label };
+    rollBtn.disabled = true; reBtn.hidden = true;
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const show = () => {
+      d1.classList.remove("spin"); d1.textContent = r1 === d || !d2 ? d : r1;
+      if (d2) { d2.classList.remove("spin"); d2.textContent = r2; (c.adv ? r1 >= r2 : r1 <= r2) ? d2.classList.add("dim") : d1.classList.add("dim"); }
+      math.textContent = `d20(${d}) ${sgn(b.total)} = ${total}　对抗 DC ${c.dc}`;
+      verdict.textContent = d === 20 ? "大成功！" : d === 1 ? "大失败……" : ok ? "成功" : "失败";
+      verdict.className = "verdict " + (ok ? "ok" : "bad");
+      rollBtn.textContent = "继续"; rollBtn.disabled = false; rollBtn.focus();
+      if (!ok && c.who === "player" && state.player.inspiration > 0 && !reroll) { reBtn.hidden = false; reBtn.textContent = `消耗灵感重掷（剩 ${state.player.inspiration}）`; }
+    };
+    if (reduce) return show();
+    d1.classList.add("spin"); d2 && d2.classList.add("spin"); d1.classList.remove("dim"); d2 && d2.classList.remove("dim");
+    let n = 0; const t = setInterval(() => { d1.textContent = rollD20(); if (d2) d2.textContent = rollD20(); if (++n > 12) { clearInterval(t); show(); } }, 70);
+  };
+  rollBtn.onclick = () => { if (rolled) finishRoll(); else doRoll(false); };
+  reBtn.onclick = () => { state.player.inspiration--; doRoll(true); };
+}
+function finishRoll() {
+  const c = state.pendingCheck, x = rolled;
+  $("modal").hidden = true;
+  state.pendingCheck = null; rolled = null;
+  const res = x.d === 20 ? "大成功" : x.d === 1 ? "大失败" : x.ok ? "成功" : "失败";
+  const who = c.who === "player" ? "" : whoName(c.who) + " · ";
+  push("roll", `${who}${x.label}　d20(${x.d}) ${sgn(x.bonus)} = ${x.total} / DC ${c.dc}　${res}`, { ok: x.ok });
+  gm(`【检定结果】${whoName(c.who)}的${x.label}检定：d20 掷出 ${x.d}，加值 ${sgn(x.bonus)}，总计 ${x.total}，DC ${c.dc}，${res}。请叙述结果并继续。`, null);
+}
+
+/* =========================================================
+   渲染：角色创建
+   ========================================================= */
+function renderCreate() {
+  const d = draft, v = $("createView"); v.textContent = "";
+  const left = el("div", "panel");
+  left.append(el("h2", null, "推门之前，报上名来"));
+  left.append(el("p", null, "雨下了三天。码头边那块歪斜的招牌下，是全镇唯一还亮着灯的地方。今晚，一条银龙将坠入这片海湾。"));
+
+  // identity
+  const s1 = el("div", "step"); s1.append(el("div", "label", "身份"));
+  const r1 = el("div", "row");
+  const f1 = el("label", "field"); f1.append(el("span", "label", "姓名"));
+  const nameIn = el("input"); nameIn.id = "cName"; nameIn.maxLength = 12; nameIn.value = d.name; nameIn.oninput = () => { d.name = nameIn.value; renderSummary(); };
+  f1.append(nameIn);
+  const f2 = el("label", "field"); f2.style.maxWidth = "140px"; f2.append(el("span", "label", "性别"));
+  const gs = el("select"); gs.id = "cGender"; for (const g of ["女", "男", "非二元"]) { const o = el("option", null, g); o.value = g; gs.append(o); } gs.value = d.gender; gs.onchange = () => { d.gender = gs.value; renderSummary(); };
+  f2.append(gs);
+  r1.append(f1, f2); s1.append(r1);
+  const f3 = el("label", "field"); f3.append(el("span", "label", "外貌（会写进说书人的描述，也可用来生成立绘）"));
+  const ap = el("textarea"); ap.id = "cLook"; ap.maxLength = 160; ap.value = d.appearance; ap.oninput = () => { d.appearance = ap.value; };
+  f3.append(ap); s1.append(f3);
+  left.append(s1);
+
+  const pick = (title, dict, key, sub) => {
+    const s = el("div", "step"); s.append(el("div", "label", title));
+    const g = el("div", "chips");
+    for (const [k, o] of Object.entries(dict)) {
+      const b = el("button", "chip"); b.type = "button"; b.setAttribute("aria-pressed", String(d[key] === k));
+      b.append(el("b", null, o.name), el("small", null, sub(o)));
+      b.onclick = () => { d[key] = k; renderCreate(); };
+      g.append(b);
+    }
+    s.append(g); return s;
+  };
+  left.append(pick("种族", RACES, "race", o => Object.entries(o.bonus).length === 6 ? o.trait : Object.entries(o.bonus).map(([a, n]) => AB[a] + "+" + n).join(" ") + " · " + o.trait));
+  left.append(pick("职业", CLASSES, "cls", o => `生命骰 d${o.hd} · ${o.desc}`));
+  left.append(pick("背景", BACKGROUNDS, "bg", o => o.skills.map(k => SKILLS[k][0]).join("、") + " · 灵感：" + o.insp));
+
+  // point buy
+  const s4 = el("div", "step");
+  const used = pointsUsed(d);
+  const head = el("div", "row"); head.append(el("div", "label", "属性（27 点购买，8–15）"));
+  const pts = el("span", "points"); pts.append("剩余点数 "); pts.append(el("b", null, String(27 - used))); head.append(pts);
+  s4.append(head);
+  const grid = el("div", "pb"); const fin = finalAbilities(d);
+  for (const k of AB_KEYS) {
+    const c = el("div", "pb-cell");
+    const top = el("div", "pb-top"); top.append(el("b", null, AB[k]), el("span", "label", k.toUpperCase())); c.append(top);
+    const val = el("div", "pb-val");
+    const minus = el("button", null, "−"); minus.type = "button"; minus.setAttribute("aria-label", AB[k] + "减一");
+    const plus = el("button", null, "+"); plus.type = "button"; plus.setAttribute("aria-label", AB[k] + "加一");
+    minus.disabled = d.base[k] <= 8;
+    plus.disabled = d.base[k] >= 15 || PB_COST[d.base[k] + 1] - PB_COST[d.base[k]] > 27 - used;
+    minus.onclick = () => { d.base[k]--; renderCreate(); };
+    plus.onclick = () => { d.base[k]++; renderCreate(); };
+    const bonus = RACES[d.race].bonus[k] || 0;
+    val.append(minus, el("span", "n", String(fin[k])), plus, el("span", "m", sgn(mod(fin[k]))));
+    if (bonus) val.append(el("span", "r", "种族+" + bonus));
+    c.append(val); grid.append(c);
+  }
+  s4.append(grid);
+  left.append(s4);
+
+  // summary
+  const right = el("div", "panel summary"); right.id = "summary";
+  v.append(left, right);
+  renderSummary();
+}
+function renderSummary() {
+  const d = draft, box = $("summary"); if (!box) return; box.textContent = "";
+  const fin = finalAbilities(d), c = CLASSES[d.cls];
+  box.append(el("h2", null, d.name || "无名旅人"));
+  box.append(el("div", "label", `${d.gender} · ${RACES[d.race].name}${c.name} · ${BACKGROUNDS[d.bg].name}`));
+  const pp = el("div", "portrait-pick");
+  const img = el("img"); img.src = d.portraitData || placeholder("player");
+  const pr = el("div", "step");
+  pr.append(el("div", "label", "立绘"));
+  const up = el("input"); up.type = "file"; up.accept = "image/*"; up.id = "cPortrait"; up.hidden = true;
+  const upBtn = el("button", "btn small", d.portraitData ? "更换立绘" : "上传立绘"); upBtn.type = "button"; upBtn.onclick = () => up.click();
+  up.onchange = () => loadPortrait(up.files[0]);
+  pr.append(upBtn, up, el("span", "label", "可选，竖版 2:3 最佳"));
+  pp.append(img, pr); box.append(pp);
+  const hp = c.hd + mod(fin.con);
+  for (const [k, v] of [["生命", hp], ["护甲 AC", acOf(d.cls, mod(fin.dex))], ["熟练加值", "+2"], ["攻击加值", sgn(Math.max(...c.atk.map(a => mod(fin[a]))) + 2)]]) {
+    const r = el("div", "kv"); r.append(el("span", null, k), el("b", null, String(v))); box.append(r);
+  }
+  const sk = el("div", "step"); sk.append(el("div", "label", "熟练技能"));
+  const sl = el("div", "skills-list"); for (const k of profsOf(d)) sl.append(el("span", "tag", SKILLS[k][0])); sk.append(sl); box.append(sk);
+  const it = el("div", "step"); it.append(el("div", "label", "初始装备"));
+  it.append(el("div", null, c.items.join("、"))); box.append(it);
+  const left = 27 - pointsUsed(d);
+  if (left > 0) box.append(el("div", "warn", `还有 ${left} 点属性没有分配。`));
+  const go = el("button", "btn gold", "推开酒馆的门"); go.type = "button"; go.id = "startBtn";
+  go.onclick = startGame;
+  box.append(go);
+  box.append(el("div", "label", sample ? "AI 说书人已就位。第一次行动时会请你允许使用 Claude（消耗你自己的额度）。" : sampleKnown ? "此处无法连接 Claude，请在 claude.ai 中打开本页。" : "正在召唤说书人……"));
+}
+function loadPortrait(file) {
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = () => {
+    const im = new Image();
+    im.onload = () => {
+      const W = 400, H = 600, cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+      const s = Math.max(W / im.width, H / im.height), w = im.width * s, h = im.height * s;
+      cv.getContext("2d").drawImage(im, (W - w) / 2, (H - h) / 2, w, h);
+      draft.portraitData = cv.toDataURL("image/jpeg", 0.82);
+      renderSummary();
+    };
+    im.src = r.result;
+  };
+  r.readAsDataURL(file);
+}
+function startGame() {
+  const d = draft;
+  d.name = (d.name || "").trim() || "无名旅人";
+  state = newGame(d);
+  push("chapter", "序幕 · 暴风之夜");
+  push("chapter", SCENES.prologue_1.title);
+  render();
+  gm("（冒险开始。请描写我推开醉龙酒馆大门、走进雨夜酒馆的开场：氛围，以及酒馆里几位最显眼的人物各自在做什么。给出 3~4 个建议行动。）", null);
+}
+
+/* =========================================================
+   渲染：游戏
+   ========================================================= */
+let flashScene = false;
+function scrollStory() { const s = $("story"); s.scrollTop = s.scrollHeight; }
+function renderPlay() {
+  const p = state.player, sc = SCENES[state.scene];
+  $("where").textContent = `${sc.title} · ${state.location}`;
+
+  // rail
+  const rail = $("rail"); rail.textContent = "";
+  const card = (id, name, sub, hp, hpMax, away) => {
+    const b = el("button", "pc" + (away ? " away" : "")); b.type = "button";
+    const im = el("img"); portrait(im, id, "neutral"); b.append(im);
+    const info = el("div"); info.append(el("div", "nm", name), el("div", "sub", sub));
+    const bar = el("div", "hpbar"); const i = el("i"); i.style.width = (100 * hp / hpMax) + "%"; bar.append(i); info.append(bar);
+    b.append(info);
+    b.onclick = () => openSheet(id);
+    rail.append(b);
+  };
+  card("player", p.name, `HP ${p.hp}/${p.hpMax} · AC ${p.ac}`, p.hp, p.hpMax);
+  const pt = party();
+  for (const id of pt) { const c = state.companions[id]; card(id, PEOPLE[id].name, `HP ${c.hp}/${c.hpMax} · ${relLabel(c.approval)} ${sgn(c.approval)}`, c.hp, c.hpMax); }
+  if (!pt.length) rail.append(el("div", "note", "还没有同伴。酒馆里的人，也许会成为你的伙伴。"));
+  rail.append(el("div", "note", `金币 ${p.gold} · 灵感 ${p.inspiration} · 龙化 ${p.draconic}`));
+
+  // stage
+  const st = $("stage"); st.textContent = "";
+  st.style.setProperty("--scene", sc.bg);
+  const nm = el("div", "scene-name"); nm.append(el("div", "t", sc.title), el("div", "l", state.location)); st.append(nm);
+  const spk = state.speakers.filter(id => PEOPLE[id]);
+  if (spk.length) {
+    const main = el("div", "speaker"); const im = el("img"); portrait(im, spk[0], state.expressions[spk[0]] || "neutral");
+    main.append(im, el("div", "plate", PEOPLE[spk[0]].name)); st.append(main);
+    if (spk.length > 1) { const o = el("div", "others"); for (const id of spk.slice(1)) { const i2 = el("img"); portrait(i2, id, state.expressions[id] || "neutral"); i2.title = PEOPLE[id].name; o.append(i2); } st.append(o); }
+  }
+  if (flashScene) { st.append(el("div", "mark-glow")); flashScene = false; }
+
+  // story
+  const story = $("story"); story.textContent = "";
+  for (const e of state.log) {
+    const n = el("div", "e " + e.k + (e.k === "roll" ? (e.ok ? " ok" : " bad") : "") + (e.cls ? " " + e.cls : "") + (e.live ? " live" : ""), e.t);
+    if (e.live) n.dataset.live = "1";
+    story.append(n);
+  }
+  requestAnimationFrame(scrollStory);
+
+  // options
+  const opts = $("opts"); opts.textContent = "";
+  if (state.ended) {
+    const b = el("button", "opt"); b.type = "button"; b.append(el("span", "k", "★"), el("span", "tx", "序幕完。查看你的旅程总结"));
+    b.onclick = openEnd; opts.append(b);
+  } else if (state.pendingCheck && !busy) {
+    const b = el("button", "opt"); b.type = "button";
+    b.append(el("span", "k", "20"), el("span", "tx", "掷骰：" + bonusFor(state.pendingCheck.who, state.pendingCheck.skill).label + "检定"), el("span", "ck", "DC " + state.pendingCheck.dc));
+    b.onclick = openDice; opts.append(b);
+  } else {
+    state.suggestions.forEach((s, i) => {
+      const b = el("button", "opt"); b.type = "button"; b.disabled = busy;
+      b.append(el("span", "k", String(i + 1) + "."), el("span", "tx", s.text));
+      if (s.check) b.append(el("span", "ck", "【" + s.check + "】"));
+      b.onclick = () => gm(s.text, s.text);
+      opts.append(b);
+    });
+  }
+  const blocked = busy || !!state.pendingCheck || state.ended;
+  $("freeForm").hidden = state.ended;
+  $("freeBtn").disabled = blocked; $("freeText").disabled = busy;
+  $("stopBtn").hidden = !busy;
+  $("retryBtn").hidden = busy || !lastAction || state.ended;
+  $("statusText").textContent = busy ? "说书人正在讲述……" : state.pendingCheck ? "需要掷骰" : `第 ${state.turns} 轮 · ${pt.length + 1} 人队伍`;
+}
+
+function render() {
+  const play = state && state.phase === "play";
+  $("createView").hidden = play; $("playView").hidden = !play;
+  $("menu").hidden = !play; $("mLoad").hidden = play || !hasSaves();
+  if (play) renderPlay(); else { $("where").textContent = "创建角色"; renderCreate(); }
+}
+function hasSaves() { return !!(readSave(AUTO) || [1, 2, 3].some(n => readSave(SLOT(n)))); }
+
+/* =========================================================
+   弹窗
+   ========================================================= */
+function modal(title, build) {
+  const m = $("modal"); m.textContent = ""; m.hidden = false;
+  const s = el("div", "sheet"); s.setAttribute("role", "dialog"); s.setAttribute("aria-modal", "true");
+  const h = el("div", "head"); h.append(el("h3", null, title), el("span", "sp"));
+  const x = el("button", "btn small", "关闭"); x.type = "button"; x.onclick = closeModal; h.append(x);
+  s.append(h); build(s); m.append(s); x.focus();
+}
+function closeModal() { $("modal").hidden = true; if (state?.pendingCheck && !busy && rolled) finishRoll(); }
+$("modal").addEventListener("click", e => { if (e.target === $("modal") && !state?.pendingCheck) closeModal(); });
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && !$("modal").hidden && !state?.pendingCheck) closeModal();
+  if ($("modal").hidden && state?.phase === "play" && !busy && document.activeElement !== $("freeText")) {
+    const n = Number(e.key); if (n >= 1 && n <= state.suggestions.length && !state.pendingCheck) gm(state.suggestions[n - 1].text, state.suggestions[n - 1].text);
+  }
+});
+
+function openSheet(focus) {
+  let cur = focus || "player";
+  modal("角色", s => {
+    const tabs = el("div", "tabs"); const body = el("div");
+    const ids = ["player", ...Object.keys(COMPANIONS).filter(id => state.companions[id].recruited || state.companions[id].approval !== 0 || present().includes(id))];
+    const draw = () => {
+      tabs.textContent = "";
+      for (const id of ids) { const b = el("button", "btn small", id === "player" ? state.player.name : PEOPLE[id].name); b.type = "button"; b.setAttribute("aria-selected", String(id === cur)); b.onclick = () => { cur = id; draw(); }; tabs.append(b); }
+      body.textContent = "";
+      const cs = el("div", "cs"); const im = el("img"); portrait(im, cur, "neutral"); cs.append(im);
+      const info = el("div", "step");
+      const isP = cur === "player";
+      const ab = isP ? state.player.abilities : COMPANIONS[cur].ab;
+      if (isP) {
+        const p = state.player;
+        info.append(el("div", "label", `${p.gender} · ${RACES[p.race].name}${CLASSES[p.cls].name} · ${BACKGROUNDS[p.bg].name} · ${p.level} 级`));
+        info.append(el("div", null, p.appearance));
+        for (const [k, v] of [["生命", `${p.hp} / ${p.hpMax}`], ["AC", p.ac], ["金币", p.gold], ["灵感", `${p.inspiration} / 4`], ["龙化值", `${p.draconic} / 100`]]) { const r = el("div", "kv"); r.append(el("span", null, k), el("b", null, String(v))); info.append(r); }
+        info.append(el("div", "label", "种族特性：" + RACES[p.race].trait));
+        info.append(el("div", "label", "灵感条件：" + BACKGROUNDS[p.bg].insp));
+      } else {
+        const c = COMPANIONS[cur], sc = state.companions[cur];
+        info.append(el("div", "label", `${c.race}${c.cls} · ${sc.recruited ? "已加入" : sc.taken ? "被教团带走" : "未加入"}`));
+        info.append(el("div", null, c.personality));
+        for (const [k, v] of [["生命", `${sc.hp} / ${sc.hpMax}`], ["AC", c.ac]]) { const r = el("div", "kv"); r.append(el("span", null, k), el("b", null, String(v))); info.append(r); }
+        const ap = el("div", "appr");
+        ap.append(el("span", null, "赞同度"));
+        const bar = el("div", "apbar"); const i = el("i");
+        const v = sc.approval; i.style.left = v >= 0 ? "50%" : (50 + v / 2) + "%"; i.style.width = Math.abs(v) / 2 + "%"; i.style.background = v >= 0 ? "var(--moss)" : "var(--wine)";
+        bar.append(i); ap.append(bar, el("b", null, sgn(v)));
+        info.append(ap, el("div", "label", "关系：" + relLabel(v)));
+        info.append(el("div", "label", "喜欢：" + c.likes));
+        info.append(el("div", "label", "反感：" + c.dislikes));
+      }
+      cs.append(info); body.append(cs);
+      const abil = el("div", "abil");
+      for (const k of AB_KEYS) { const d = el("div"); d.append(el("div", "v", String(ab[k])), el("div", "s", AB[k] + " " + sgn(mod(ab[k])))); abil.append(d); }
+      body.append(abil);
+      const sk = el("div", "sk");
+      for (const k of Object.keys(SKILLS)) {
+        const b = bonusFor(cur, k); const prof = (isP ? state.player.profs : COMPANIONS[cur].prof).includes(k);
+        const r = el("span", prof ? "pr" : ""); r.append(el("span", null, SKILLS[k][0] + (prof ? " ●" : "")), el("span", null, sgn(b.total))); sk.append(r);
+      }
+      body.append(sk);
+      if (isP) { body.append(el("div", "label", "行囊")); const l = el("div", "skills-list"); for (const it of state.player.inventory) l.append(el("span", "tag", it)); body.append(l); }
+    };
+    s.append(tabs, body); draw();
+  });
+}
+function openJournal() {
+  modal("日志", s => {
+    for (const j of state.journal.slice().reverse()) { const d = el("div", "slot"); const t = el("div"); t.append(el("b", null, j.quest), el("div", "meta", j.note)); d.append(t); s.append(d); }
+    const f = Object.entries(state.flags);
+    if (f.length) { s.append(el("div", "label", "你做过的选择")); const l = el("div", "skills-list"); for (const [k, v] of f) l.append(el("span", "tag", k.replace("prologue.", "") + "：" + v)); s.append(l); }
+  });
+}
+function openSaves(loadOnly) {
+  modal(loadOnly ? "读取存档" : "存档", s => {
+    const draw = () => {
+      [...s.querySelectorAll(".slot,.note")].forEach(n => n.remove());
+      const keys = [[AUTO, "自动存档"], [SLOT(1), "存档 1"], [SLOT(2), "存档 2"], [SLOT(3), "存档 3"]];
+      for (const [key, label] of keys) {
+        const sv = readSave(key);
+        const row = el("div", "slot"); const t = el("div");
+        t.append(el("b", null, label));
+        t.append(el("div", "meta", sv ? `${sv.state.player.name} · ${SCENES[sv.state.scene]?.title || ""} · ${new Date(sv.t).toLocaleString("zh-CN")}` : "空"));
+        row.append(t);
+        const btns = el("div", "row");
+        if (!loadOnly && key !== AUTO) { const b = el("button", "btn small", "保存到这里"); b.type = "button"; b.disabled = busy; b.onclick = () => { save(key); toast("已保存"); draw(); }; btns.append(b); }
+        if (sv) { const b = el("button", "btn small", "读取"); b.type = "button"; b.disabled = busy; b.onclick = () => { state = sv.state; state.log = state.log.filter(e => e.t); lastAction = null; closeModal(); render(); toast("已读取：" + label); if (state.pendingCheck) openDice(); }; btns.append(b); }
+        row.append(btns); s.append(row);
+      }
+      s.append(el("div", "note label", "存档保存在这个浏览器里。换设备或清理浏览器数据后会丢失。"));
+    };
+    draw();
+  });
+}
+function openSettings() {
+  modal("设置", s => {
+    s.append(el("div", "label", "说书人模式"));
+    for (const [k, t, d] of [["default", "精细", "文笔和判断更好，每轮需要 5–30 秒"], ["quick", "快速", "几乎立刻回应，文笔稍简单"], ["complex", "深思", "最强的叙事与推理，回应最慢"]]) {
+      const b = el("button", "chip"); b.type = "button"; b.setAttribute("aria-pressed", String(pref.tier === k));
+      b.append(el("b", null, t), el("small", null, d));
+      b.onclick = () => { pref.tier = k; try { localStorage.setItem(PREF, JSON.stringify(pref)); } catch (e) {} closeModal(); openSettings(); };
+      s.append(b);
+    }
+    const nb = el("button", "btn", "放弃本局，重新创建角色"); nb.type = "button";
+    nb.onclick = () => {
+      if (!nb.dataset.armed) { nb.dataset.armed = "1"; nb.textContent = "再点一次确认（自动存档会被覆盖）"; return; }
+      if (ctl) ctl.abort();
+      state = null; draft = freshDraft(); closeModal(); render();
+    };
+    s.append(nb);
+  });
+}
+function openEnd() {
+  modal("序幕完", s => {
+    s.classList.add("endcard");
+    s.append(el("p", null, "晨光照进醉龙酒馆。你掌心的银色印记还在微微发烫。灰帆港的街道上，有人在找你们，也有人在等你们。"));
+    const list = el("div", "step"); list.style.width = "100%";
+    for (const id of Object.keys(COMPANIONS)) {
+      const c = state.companions[id];
+      const r = el("div", "kv"); r.append(el("span", null, PEOPLE[id].name + (c.recruited ? "（同行）" : c.taken ? "（被带走）" : "")), el("b", null, `${relLabel(c.approval)} ${sgn(c.approval)}`)); list.append(r);
+    }
+    const ht = el("div", "kv"); ht.append(el("span", null, "赫斯提雅的信任"), el("b", null, sgn(state.hestiaTrust))); list.append(ht);
+    s.append(list);
+    s.append(el("p", null, "第一幕《灰帆港》会在下一个版本开放。你的存档会保留，到时可以接着玩。"));
+  });
+}
+
+$("mSheet").onclick = () => openSheet("player");
+$("mJournal").onclick = openJournal;
+$("mSave").onclick = () => openSaves(false);
+$("mLoad").onclick = () => openSaves(true);
+$("mSettings").onclick = openSettings;
+$("stopBtn").onclick = () => ctl && ctl.abort();
+$("retryBtn").onclick = () => {
+  if (!lastAction) return;
+  const { action, shown } = lastAction;
+  if (shown) { const i = state.log.map(e => e.k === "you" && e.t === shown).lastIndexOf(true); if (i >= 0) state.log.splice(i, 1); }
+  gm(action, shown);
+};
+$("freeForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const t = $("freeText").value.trim();
+  if (!t || busy || state.pendingCheck) return;
+  $("freeText").value = "";
+  gm(t.slice(0, 500), t.slice(0, 500));
+});
+$("freeText").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("freeForm").requestSubmit(); } });
+
+/* =========================================================
+   启动
+   ========================================================= */
+function start(data) {
+  draft = freshDraft();
+  const auto = readSave(AUTO);
+  state = data && data.state ? data.state : auto ? auto.state : null;
+  if (data && data.draft) draft = data.draft;
+  if (state) { state.log.forEach(e => delete e.live); state.log = state.log.filter(e => e.t || e.k === "chapter"); }
+  render();
+  if (state?.pendingCheck) openDice();
+}
+window.claude?.hot?.snapshot?.(() => ({ state, draft }));
+window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+
+(async () => {
+  try { if (window.claude?.use) sample = await window.claude.use("sample"); } catch (e) { sample = null; }
+  sampleKnown = true;
+  if (!state || state.phase !== "play") renderSummary();
+})();
+</script>
