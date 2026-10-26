@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>醉龙酒馆：龙誓</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -436,8 +437,8 @@ function portrait(img, id, expr) {
   if (id === "player" && state?.player?.portraitData) { img.src = state.player.portraitData; return; }
   const cands = [];
   if (id !== "player") {
-    if (expr && expr !== "neutral") cands.push(`portraits/${id}_${expr}.png`);
-    cands.push(`portraits/${id}_neutral.png`);
+    if (expr && expr !== "neutral") cands.push(`portraits/${id}_${expr}.webp`);
+    cands.push(`portraits/${id}_neutral.webp`);
   }
   const list = cands.filter(u => !failed.has(u));
   const next = () => {

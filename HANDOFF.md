@@ -10,19 +10,15 @@
   - 仓库里的 `docs/剧本设定集.md` 是 2026-10-26 导出的副本，两边改动不会自动同步。
 - **代码**：`index.html` 单文件，原生 JS，无构建、无依赖。代码结构见 `README.md` 的“给后续开发者”一节。
 
-## 第一件事：放入立绘
+## 立绘（已接入）
 
-立绘在本地桌面的 `dragon-oath-portraits-v2` 文件夹（GPT 生成）。
+原图在本地桌面的 `dragon-oath-portraits-v2` 文件夹（GPT 生成，1024×1536 PNG，每张 2–3 MB）。仓库里放的是压缩版：
 
-1. 把图片复制到仓库的 `portraits/` 目录。
-2. 按 `角色id_表情.png` 重命名，例如 `selene_neutral.png`。
-   - 角色 id：`selene` `vex` `kassian` `borin` `lyra` `naia` `martha` `tom` `hooded` `cultist` `hestia`
-   - 表情：`neutral` `smile` `angry` `sad` `tender`
-   - 奈雅的两种形态：`naia_disguise.png`（伪装）、`naia_true.png`（真身）。游戏代码目前还没用到这两张，接入第一幕时要处理。
-   - 每个角色至少要有 `neutral`。缺图时游戏会显示占位剪影；缺某个表情时会退回 `neutral`。
-3. 如果单张超过 1 MB，建议压缩或转成 `.webp`（转格式的话要同步修改 `portrait()` 函数里的扩展名）。
-4. 检查：用浏览器直接打开 `index.html`，在设置里填 OpenAI 兼容 API，或者直接看角色卡和对话框里的立绘。
-5. 提交并推送。
+- `portraits/角色id_表情.webp`，768×1152，`cwebp -q 84 -resize 768 1152` 生成，每张约 100–190 KB。`portrait()` 只找 `.webp`。
+- 已有：`selene` `vex` `kassian` `borin` `lyra` 的 `neutral`，以及奈雅的 `naia_disguise.webp`（伪装）、`naia_true.webp`（真身）。
+- 还缺：`martha` `tom` `hooded` `cultist` `hestia` 的立绘，以及所有角色的 `smile` `angry` `sad` `tender` 差分。缺图显示占位剪影，缺表情退回 `neutral`。
+- 奈雅的两张形态图代码还没用到。序幕的“兜帽客”戴着兜帽，和伪装立绘（人类吟游诗人）不一样，所以没有套用；接入第一幕时要处理形态切换。
+- 补新图：同样转成 768×1152 的 webp，按 `角色id_表情.webp` 命名放进 `portraits/`。表情差分以该角色的 v2 图为唯一人物参考。
 
 ### 更新 claude.ai 上的游戏页面
 
@@ -30,7 +26,7 @@
 
 - `file_path`：`index.html`
 - `url`：`https://claude.ai/artifact/UvdmR6RYWyiHmS19LVgiKm`
-- `files`：每张图一项，例如 `{"portraits/selene_neutral.png": "portraits/selene_neutral.png"}`
+- `files`：每张图一项，例如 `{"portraits/selene_neutral.webp": "portraits/selene_neutral.webp"}`
 - 不要传 `capabilities`，保留现有的 `sample` 声明
 
 注意：Artifact 单次发布最多 255 个文件、总计 64 MB。
