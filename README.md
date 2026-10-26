@@ -9,7 +9,7 @@
 | 阶段 | 内容 | 状态 |
 | --- | --- | --- |
 | 第一阶段 | 角色创建、AI 说书人、d20 检定、存档、序幕《暴风之夜》 | ✅ 完成 |
-| 第二阶段 | 第一幕《灰帆港》、区域制回合战斗、营地夜谈、立绘对话框 | 进行中 |
+| 第二阶段 | 第一幕《灰帆港》、区域制回合战斗 ✅、营地夜谈、立绘对话框 | 进行中 |
 | 第三阶段 | 第二、三幕、恋爱线、龙化系统、七种结局 | 计划中 |
 
 ## 文件
@@ -44,9 +44,23 @@
 | `narrate()` | 说书人接口：换模型只改这里 |
 | `applyGM()` | 校验并执行 AI 的 JSON |
 | `openDice()` `finishRoll()` | d20 检定 |
+| `KITS` `FEATS` `ENEMIES` `ENCOUNTERS` | 战斗数据：职业武器与特技、敌人数值、遭遇（区域、敌人、事件） |
+| `startCombat()` `advanceCombat()` `endCombat()` | 区域制回合战斗：开战、回合循环、结算 |
+| `foeTurn()` `allyTurn()` | 敌人和同伴的自动行动 |
+| `applyCombatFx()` `combatBrief()` | 即兴行动效果的校验执行、给说书人的战况 |
+| `renderCombat()` | 战斗面板 |
 | `newGame()` `save()` | 存档结构（localStorage） |
 
 加新的一幕：在 `SCENES` 里追加场景、在 `FLAG_KEYS` 里登记新标记、在 `COMPANIONS` 里加新同伴，然后把上一幕最后一场的 `next` 指向新场景。
+
+加新的战斗：在 `ENCOUNTERS` 里写区域（`adj` 是相邻区域下标，`tags` 可用 `cover` 掩体、`high` 高处、`obscured` 遮蔽、`exit` 出口）、敌人和回合事件，新敌人加进 `ENEMIES`，再把遭遇 id 写进对应场景的 `encounters`。说书人只能开启当前场景登记过的遭遇。
+
+### 战斗怎么运作
+
+- 说书人在 JSON 里写 `"combat":"遭遇 id"` 开战。之后代码接管：先攻、移动、攻击、伤害、倒地与死亡豁免、借机攻击，以及敌人和同伴的行动。
+- 玩家每回合有动作、附赠动作、移动各一次，在区域图上点选。自由输入框变成“即兴行动”：说书人裁定，可以先要求检定，再用 `combat` 字段给出伤害、状态、点火或敌人投降，由 `applyCombatFx()` 校验（单次最多 4d12、目标必须在场）。
+- 轮到玩家前，说书人把这段时间的战况写成一段描写（设置里可改成“只在关键时刻”）。战斗结束时，代码把结果摘要发给说书人，由它接着讲故事、推进场景。
+- 遭遇的 `lethal: false` 表示不会死人：死亡豁免失败三次只会昏迷。
 
 角色 id：`selene` `vex` `kassian` `borin` `lyra` `naia` `martha` `tom` `hooded` `cultist` `hestia`  
 表情：`neutral` `smile` `angry` `sad` `tender`

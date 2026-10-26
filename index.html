@@ -1,4 +1,5 @@
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>醉龙酒馆：龙誓</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -221,6 +222,44 @@ h1, h2, h3 { text-wrap: balance; }
 .verdict { font-family: var(--f-display); font-size: 30px; line-height: 1; min-height: 1em; }
 .verdict.ok { color: var(--moss); } .verdict.bad { color: var(--wine); }
 
+/* combat: zone board replaces the choice list while a fight is on */
+.e.cb { align-self: stretch; max-width: none; font-size: 13px; line-height: 1.7; color: #cdbb9c; font-variant-numeric: tabular-nums; border-left: 2px solid var(--line); padding-left: 10px; }
+.e.cb.hit { border-left-color: #7d2a33; }
+.e.cb.crit { border-left-color: var(--ember); color: var(--ink); }
+.e.cb.up { border-left-color: var(--moss); }
+.e.cb.down { border-left-color: var(--wine); color: #e48b94; }
+.e.cb.round { border: 0; padding: 0; align-self: center; color: var(--brass); }
+.e.cb.event { border-left-color: var(--ember); color: var(--ember); }
+.combat { display: grid; gap: 10px; background: var(--oak-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+.cb-head { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.cb-head .t { font-family: var(--f-display); font-size: 22px; color: var(--brass); line-height: 1.2; }
+.init { display: flex; gap: 4px; flex-wrap: wrap; }
+.init span { font-size: 12px; border: 1px solid var(--line); border-radius: 99px; padding: 0 8px; background: var(--oak); }
+.init span.foe { color: #e48b94; }
+.init span.now { border-color: var(--brass); color: var(--brass); }
+.init span.gone { opacity: .35; text-decoration: line-through; }
+.zones { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.zone { background: var(--oak); border: 1px solid var(--line); border-radius: 8px; padding: 8px; display: grid; gap: 6px; align-content: start; min-height: 92px; }
+.zone.here { border-color: var(--brass); }
+.zone.fire { box-shadow: inset 0 0 22px rgba(228,138,63,.35); }
+.zone .zn { display: flex; justify-content: space-between; gap: 6px; align-items: baseline; font-weight: 600; font-size: 14px; }
+.zone .zt { font-size: 11px; color: var(--muted); font-weight: 400; }
+.unit { display: grid; gap: 2px; text-align: left; background: var(--oak-2); border: 1px solid var(--line); border-radius: 6px; padding: 3px 7px; font-size: 12.5px; width: 100%; color: var(--ink); }
+.unit.foe { border-color: rgba(179,67,79,.5); }
+.unit.wild { border-color: #6b6648; }
+.unit.now { box-shadow: inset 0 0 0 1px var(--brass); }
+.unit.down { opacity: .6; }
+.unit.tgt { border-color: var(--brass); background: #3a2a16; }
+.unit.tgt:hover { background: #4a3519; }
+.unit .ub { display: flex; justify-content: space-between; gap: 6px; font-variant-numeric: tabular-nums; }
+.unit .cd { font-size: 11px; color: var(--ember); }
+.unit.ally .hpbar i { background: linear-gradient(90deg, #4f6e3f, var(--moss)); }
+.cb-res { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12.5px; }
+.cb-res .on { color: var(--moss); }
+.cb-res .off { color: var(--muted); text-decoration: line-through; }
+.cb-acts { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.cb-acts .sp { flex: 1; }
+
 .endcard { text-align: center; justify-items: center; }
 .endcard p { max-width: 54ch; color: var(--muted); }
 
@@ -235,6 +274,7 @@ h1, h2, h3 { text-wrap: balance; }
   .stage .speaker img { height: 180px; }
   .stage .scene-name .t { font-size: 22px; }
   .stage .others { display: none; }
+  .zones { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .cs { grid-template-columns: 1fr; }
   .abil { grid-template-columns: repeat(3, 1fr); }
 }
@@ -336,7 +376,7 @@ const EXPRS = ["neutral", "smile", "angry", "sad", "tender"];
 
 const COMPANIONS = {
   selene: {
-    race: "月精灵", cls: "圣武士", lvl: 1,
+    race: "月精灵", cls: "圣武士", kit: "paladin", lvl: 1,
     ab: { str: 16, dex: 10, con: 14, int: 10, wis: 12, cha: 15 }, hp: 12, ac: 18, atk: "str",
     prof: ["athletics", "religion", "insight", "history"],
     personality: "克制、严肃、守信，干巴巴的冷幽默。晨星骑士团最后的骑士，一直在等银龙的召唤。",
@@ -346,7 +386,7 @@ const COMPANIONS = {
     join: "教团袭击时会主动挺身，战后若玩家没有做出伤害无辜之事，她主动请求同行。",
   },
   vex: {
-    race: "提夫林", cls: "盗贼", lvl: 1,
+    race: "提夫林", cls: "盗贼", kit: "rogue", lvl: 1,
     ab: { str: 8, dex: 17, con: 12, int: 13, wis: 10, cha: 15 }, hp: 9, ac: 14, atk: "dex",
     prof: ["stealth", "sleight", "deception", "acrobatics", "perception"],
     personality: "嘴贫、轻佻、永远先算自己的好处，对穷人出奇大方，从不承认自己是好人。",
@@ -356,7 +396,7 @@ const COMPANIONS = {
     join: "袭击后想开溜。玩家用说服或威吓（DC 13）可留住他；失败则他离开（写 prologue.vex_left）。",
   },
   kassian: {
-    race: "半兽人", cls: "牧师", lvl: 1,
+    race: "半兽人", cls: "牧师", kit: "cleric", lvl: 1,
     ab: { str: 15, dex: 10, con: 15, int: 9, wis: 16, cha: 12 }, hp: 10, ac: 16, atk: "str",
     prof: ["medicine", "religion", "insight", "athletics"],
     personality: "温和的巨人，话少，爱做点心，对动物和孩子极有耐心；真正动怒时很可怕。",
@@ -366,7 +406,7 @@ const COMPANIONS = {
     join: "若玩家在袭击中保护过小汤姆，或真诚请求，他会同行。",
   },
   borin: {
-    race: "山地矮人", cls: "战士", lvl: 1,
+    race: "山地矮人", cls: "战士", kit: "fighter", lvl: 1,
     ab: { str: 17, dex: 10, con: 16, int: 10, wis: 11, cha: 10 }, hp: 13, ac: 17, atk: "str",
     prof: ["athletics", "intimidation", "history", "survival"],
     personality: "嗓门大、豪爽、爱讲笑话，是气氛担当；用酒精压住悲伤，从不在人前哭。",
@@ -391,13 +431,13 @@ const SCENES = {
   },
   prologue_3: {
     title: "教团袭击", loc: "醉龙酒馆 · 大堂", bg: "linear-gradient(160deg,#7a2e17,#2a0f08 60%,#120706)",
-    anchor: "十分钟后，6 名灰烬教团狂信徒和 1 名烬火术士破门而入，要求“交出带印记的人”。区域：大堂、吧台、二楼回廊、地窖门。解决方式全部有效：①战斗：用 attack 检定（命中则敌人倒下或重伤）与技能检定叙述，同伴会协同行动；②谈判：威吓 DC 15 吓跑一半，欺瞒 DC 13 谎称持有者已从后门逃走；③环境：推倒炭盆、砍断吊灯、把酒桶滚下楼梯（GM 定 DC）；④黑暗选择：交出一个同伴——该同伴被带走（flags 写 prologue.betrayed_companion = 其 id），其余同伴赞同 −15~−20。第 3 轮左右地窖门被撞开，巨鼠涌出攻击最近的人（敌我不分）。可活捉一名狂信徒。本战不会致死：玩家 HP 归零会倒地，由同伴救起并付出代价。敌人被击退或驱散后，把 advance 设为 prologue_4。",
-    next: "prologue_4",
+    anchor: "十分钟后，6 名灰烬教团狂信徒和 1 名烬火术士破门而入，要求“交出带印记的人”。区域：大堂、吧台、二楼回廊、地窖门。解决方式全部有效：①战斗：双方真正动手时，在 JSON 写 combat 为 tavern_ambush，程序接管回合制战斗（在场同伴一起参战，第 3 回合巨鼠从地窖涌出，敌我不分；玩家可开“留活口”活捉狂信徒）；②谈判：威吓 DC 15 吓跑一半，欺瞒 DC 13 谎称持有者已从后门逃走；③环境：推倒炭盆、砍断吊灯、把酒桶滚下楼梯（GM 定 DC）；④黑暗选择：交出一个同伴——该同伴被带走（flags 写 prologue.betrayed_companion = 其 id），其余同伴赞同 −15~−20。没有开战时，也可以在第 3 轮左右让地窖门被撞开、巨鼠涌出制造混乱。本战不会致死：全队倒下时，由玛莎或援手救起并付出代价。收到【战斗结束】或敌人被驱散后，叙述残局并把 advance 设为 prologue_4。",
+    next: "prologue_4", encounters: ["tavern_ambush"],
   },
   prologue_4: {
     title: "余烬", loc: "醉龙酒馆 · 残局", bg: "linear-gradient(160deg,#4a2e1a,#1d130c 60%,#0f0a07)",
-    anchor: "战后。玛莎讲述“守誓人”的传说（只讲传说层面：千年前银龙赫斯提雅封印了黑龙烬王，她亡夫曾是守誓人；酒馆就是守誓人的老据点）。招募：用 recruit 字段加入同伴，条件见同伴资料。可选支线：下地窖处理“鼠王”（狗那么大的独眼巨鼠，尾巴缠铜链，会召唤鼠群；可用博林的铜哨或模仿教团哨音 魅力 DC 14 让它退兵，可用火墙 智力 DC 12 驱散；放过写 prologue.rat_king=spared）。当玩家决定休息/睡觉/长休时，把 advance 设为 prologue_5。",
-    next: "prologue_5",
+    anchor: "战后。玛莎讲述“守誓人”的传说（只讲传说层面：千年前银龙赫斯提雅封印了黑龙烬王，她亡夫曾是守誓人；酒馆就是守誓人的老据点）。招募：用 recruit 字段加入同伴，条件见同伴资料。可选支线：下地窖处理“鼠王”（狗那么大的独眼巨鼠，尾巴缠铜链，会召唤鼠群；可用博林的铜哨或模仿教团哨音 魅力 DC 14 让它退兵，可用火墙 智力 DC 12 驱散；放过写 prologue.rat_king=spared）。若和鼠王动手，在 JSON 写 combat 为 rat_king，由程序接管战斗，结束后按结果写 prologue.rat_king。当玩家决定休息/睡觉/长休时，把 advance 设为 prologue_5。",
+    next: "prologue_5", encounters: ["rat_king"],
   },
   prologue_5: {
     title: "第一个梦", loc: "梦境 · 银雾", bg: "linear-gradient(160deg,#8fa2b6,#2f3a47 55%,#11161c)",
@@ -412,6 +452,70 @@ const FLAG_KEYS = {
   "prologue.fight_style": ["fought", "talked", "tricked", "hid", "mixed"], "prologue.captured_cultist": "bool",
   "prologue.rat_king": ["killed", "spared", "driven"], "prologue.vex_left": "bool",
   "prologue.hestia_answer": ["trust", "question", "refuse"], "prologue.martha_legend": "bool",
+};
+
+/* 战斗数据。武器 d 是伤害骰面数，cantrip 戏法不加属性伤害；ab 决定命中和伤害用的属性。 */
+const W = (n, d, ab, o) => Object.assign({ n, d, ab }, o || {});
+const KITS = {
+  fighter: { weapons: [W("长剑", 8, "str")], feat: "second_wind" },
+  ranger: { weapons: [W("双短剑", 6, "dex"), W("长弓", 8, "dex", { ranged: true })], feat: "mark" },
+  rogue: { weapons: [W("匕首", 4, "dex"), W("短弓", 6, "dex", { ranged: true })], feat: "sneak" },
+  wizard: { weapons: [W("法杖", 6, "str"), W("火焰箭", 10, "int", { ranged: true, cantrip: true })], feat: "missile" },
+  warlock: { weapons: [W("匕首", 4, "dex"), W("魔能爆", 10, "cha", { ranged: true, cantrip: true })], feat: "hex" },
+  cleric: { weapons: [W("钉头锤", 6, "str"), W("圣火", 8, "wis", { ranged: true, cantrip: true })], feat: "heal", healAb: "wis", uses: 2 },
+  paladin: { weapons: [W("长剑", 8, "str")], feat: "smite" },
+  bard: { weapons: [W("细剑", 8, "dex"), W("恶言相加", 4, "cha", { ranged: true, cantrip: true, mock: true })], feat: "heal", healAb: "cha", uses: 1 },
+};
+// 职业特技的次数按“每场战斗”计，等有了短休/长休再改成按休息恢复
+const FEATS = {
+  second_wind: { name: "回气", uses: 1, desc: "附赠动作：恢复 1d10+等级 生命" },
+  mark: { name: "猎人印记", uses: 1, desc: "附赠动作：标记一个敌人，命中它时额外 1d6" },
+  hex: { name: "妖术", uses: 1, desc: "附赠动作：诅咒一个敌人，命中它时额外 1d6" },
+  sneak: { name: "偷袭", uses: 0, desc: "每回合一次：有优势，或有同伴与目标同区时，命中额外 1d6；附赠动作“灵巧移动”多走一步且不引发借机攻击" },
+  missile: { name: "魔法飞弹", uses: 2, desc: "动作：必中，3d4+3 力场伤害，可打任意区域" },
+  heal: { name: "治疗之语", uses: 2, desc: "附赠动作：远程治疗 1d4+调整值，能救醒倒地的同伴" },
+  smite: { name: "至圣斩", uses: 2, desc: "近战命中时额外 2d8 光耀伤害" },
+};
+// 数值取自设定集“普通敌人”表；atk：cnt d 面骰 + plus，命中加值 hit
+const ENEMIES = {
+  cultist: { name: "狂信徒", pid: "cultist", hp: 9, ac: 12, dex: 1, atk: { n: "弯刀", cnt: 1, d: 6, plus: 2, hit: 4 }, explode: true },
+  mage: { name: "烬火术士", pid: "cultist", hp: 18, ac: 12, dex: 1, atk: { n: "烬火箭", cnt: 2, d: 6, plus: 0, hit: 5, ranged: true }, ignite: true, unique: true },
+  rat: { name: "巨鼠", hp: 6, ac: 11, dex: 2, atk: { n: "撕咬", cnt: 1, d: 4, plus: 1, hit: 3 }, pack: true },
+  rat_king: { name: "鼠王", hp: 28, ac: 13, dex: 2, atk: { n: "撕咬", cnt: 1, d: 8, plus: 2, hit: 5 }, summon: true, unique: true },
+  thug: { name: "黑潮会打手", hp: 16, ac: 13, dex: 0, atk: { n: "棍棒", cnt: 1, d: 8, plus: 2, hit: 4 }, plead: true },
+  assassin: { name: "无面刺客", hp: 22, ac: 15, dex: 3, atk: { n: "匕首", cnt: 1, d: 4, plus: 4, hit: 6 }, sneak: 2 },
+};
+const ZONE_TAGS = { cover: "掩体", high: "高处", obscured: "遮蔽", exit: "出口" };
+// zones 的 adj 是相邻区域的下标；foes：[敌人, 数量, 起始区域]；events 在指定回合开始时触发
+const ENCOUNTERS = {
+  tavern_ambush: {
+    title: "教团袭击", lethal: false,
+    brief: "6 名狂信徒（濒死自爆）和 1 名烬火术士破门而入；第 3 回合地窖门被撞开，巨鼠涌出，敌我不分",
+    props: "大堂中央的炭盆、头顶的铁吊灯、二楼回廊的酒桶、吧台后的烈酒",
+    zones: [
+      { n: "大门", adj: [1] },
+      { n: "大堂", adj: [0, 2, 3, 4] },
+      { n: "吧台", tags: ["cover"], adj: [1, 4] },
+      { n: "二楼回廊", tags: ["high"], adj: [1] },
+      { n: "地窖门", adj: [1, 2] },
+    ],
+    start: 1, startAt: { vex: 2, kassian: 2 },
+    foes: [["cultist", 4, 0], ["mage", 1, 0], ["cultist", 2, 3]],
+    events: [{ round: 3, side: "wild", spawn: [["rat", 3, 4]], text: "地窖门被撞开，一群巨鼠涌了出来，见人就咬！" }],
+  },
+  rat_king: {
+    title: "鼠王", lethal: false,
+    brief: "地窖深处的独眼鼠王蹲在龙息酒桶堆上，每回合召唤 2 只巨鼠",
+    props: "成排易燃的龙息酒桶、挂腌肉的铁钩、积水的排水口",
+    zones: [
+      { n: "地窖楼梯", tags: ["exit"], adj: [1] },
+      { n: "酒窖", adj: [0, 2, 3] },
+      { n: "龙息酒桶堆", tags: ["obscured"], adj: [1] },
+      { n: "排水口", adj: [1] },
+    ],
+    start: 0,
+    foes: [["rat_king", 1, 2], ["rat", 2, 1], ["rat", 1, 3]],
+  },
 };
 
 /* =========================================================
@@ -465,7 +569,7 @@ const PREF = "dragon-oath-pref";
 let state = null;
 let draft = null;
 let sample = null, sampleKnown = false, busy = false, ctl = null, lastAction = null;
-let pref = { tier: "default", api: "claude", base: "https://api.openai.com/v1", model: "gpt-4o", key: "" };
+let pref = { tier: "default", api: "claude", base: "https://api.openai.com/v1", model: "gpt-4o", key: "", narr: "round" };
 try { pref = Object.assign(pref, JSON.parse(localStorage.getItem(PREF) || "{}")); } catch (e) {}
 
 function freshDraft() {
@@ -566,7 +670,8 @@ const SYSTEM = `你是奇幻跑团游戏《醉龙酒馆：龙誓》的游戏主�
 【规则】
 - 检定：d20 + 属性调整值 + 熟练加值 ≥ DC。DC：5 很简单，10 简单，15 中等，20 困难，25 极难。自然 20 必成，自然 1 必败。
 - 结果不确定且有风险时才要求检定。要求检定时，叙述只写到行动发起的一刻，结果留到下一轮。一次只要求一个检定。
-- 攻击用 skill "attack"，DC 写目标的 AC（狂信徒 12，烬火术士 12，巨鼠 11，鼠王 13）。
+- 正式战斗由程序接管：双方真正动手时，在 JSON 写 "combat":"遭遇 id"（只能用【当前场景】列出的可开战遭遇），叙述只写到拔刀的一刻，不要写战斗过程。战斗中程序负责掷骰、伤害和敌人行动，你只描写战况、裁定玩家的即兴行动。
+- 战斗之外的一次性攻击（偷袭熟睡的守卫等）用 skill "attack" 检定，DC 写目标的 AC。
 - 失败不能让剧情卡死，而是带来代价或另一条路。
 - 你不计算数值。所有数值变化通过 JSON 提出，由程序执行。
 - 赞同度：只有在场的同伴会变化。小事 ±1~3，重大选择 ±5~15，必须按同伴的喜恶判断。
@@ -580,6 +685,7 @@ const SYSTEM = `你是奇幻跑团游戏《醉龙酒馆：龙誓》的游戏主�
 - 技能键：athletics 运动、acrobatics 杂技、sleight 巧手、stealth 隐匿、arcana 奥秘、history 历史、investigation 调查、nature 自然、religion 宗教、animal 驯兽、insight 洞悉、medicine 医疗、perception 察觉、survival 求生、deception 欺瞒、intimidation 威吓、performance 表演、persuasion 说服；也可用属性 str dex con int wis cha、攻击 attack、豁免 save_con 等。
 - suggestions：3~4 条建议行动，风格各异（善良的、狡猾的、冒险的）；需要检定的写上技能中文名。
 - advance：只能填场景资料里写明的下一个场景 id。
+- combat：开战时写遭遇 id 字符串，例如 "combat":"tavern_ambush"。战斗中即兴行动的效果格式见【即兴行动规则】。
 - flags 只能用以下键：${Object.keys(FLAG_KEYS).join("、")}。`;
 
 function companionBrief(id) {
@@ -590,14 +696,16 @@ function companionBrief(id) {
   秘密：${c.secret}
   加入条件：${c.join}`;
 }
-function buildPrompt(action) {
+function buildPrompt(action, mode) {
   const p = state.player, sc = SCENES[state.scene];
   const profs = p.profs.map(k => SKILLS[k][0]).join("、");
   const recent = state.log.filter(e => e.k !== "chapter").slice(-24).map(e =>
-    ({ gm: "GM：", you: "玩家：", roll: "检定：", sys: "系统：" }[e.k] || "") + e.t.slice(0, 1200)).join("\n");
+    ({ gm: "GM：", you: "玩家：", roll: "检定：", sys: "系统：", cb: "战斗：" }[e.k] || "") + e.t.slice(0, 1200)).join("\n");
   const pres = present();
+  const encs = (sc.encounters || []).filter(id => !state.fought?.[id]);
   return SYSTEM +
     `\n\n【当前场景】${state.scene}「${sc.title}」，地点：${state.location}\n场景锚点（GM 可见）：${sc.anchor}\n下一个场景 id：${sc.next || "无（本场景结束时 scene_end 为 true）"}` +
+    (state.combat ? combatBrief(mode) : encs.length ? `\n可开战的遭遇：${encs.map(id => id + "（" + ENCOUNTERS[id].brief + "）").join("；")}` : "") +
     `\n\n【玩家角色】${p.name}，${p.gender}，${RACES[p.race].name}${CLASSES[p.cls].name}，背景：${BACKGROUNDS[p.bg].name}（灵感条件：${BACKGROUNDS[p.bg].insp}）。外貌：${p.appearance}` +
     `\n属性：${AB_KEYS.map(k => AB[k] + p.abilities[k] + "(" + sgn(mod(p.abilities[k])) + ")").join(" ")}；熟练技能：${profs}` +
     `\nHP ${p.hp}/${p.hpMax}，AC ${p.ac}，金币 ${p.gold}，灵感 ${p.inspiration}，龙化值 ${p.draconic}，物品：${p.inventory.join("、") || "无"}` +
@@ -672,11 +780,12 @@ async function apiNarrate(prompt, onText, signal) {
   return text;
 }
 
-async function gm(action, shown) {
+// mode：undefined 普通一轮；"narrate" 描写战况（失败不重试）；"improv" 战斗中的即兴行动
+async function gm(action, shown, mode) {
   if (busy || state.ended) return;
-  if (!narratorReady()) { push("sys", narratorLabel()); renderPlay(); return; }
-  lastAction = { action, shown };
-  const prompt = buildPrompt(action);
+  if (!narratorReady()) { if (mode !== "narrate") { push("sys", narratorLabel()); renderPlay(); } return; }
+  lastAction = mode === "narrate" ? null : { action, shown, mode };
+  const prompt = buildPrompt(action, mode);
   if (shown) push("you", shown);
   state.suggestions = [];
   const entry = push("gm", "", { live: true });
@@ -691,8 +800,8 @@ async function gm(action, shown) {
     let data = {};
     const a = tail.indexOf("{"), b = tail.lastIndexOf("}");
     if (a >= 0 && b > a) { try { data = JSON.parse(tail.slice(a, b + 1)); } catch (e) { console.warn("JSON 解析失败", e); } }
-    applyGM(data);
-    state.turns++;
+    applyGM(data, mode);
+    if (mode !== "narrate") state.turns++;
     lastAction = null;
   } catch (e) {
     delete entry.live;
@@ -704,12 +813,14 @@ async function gm(action, shown) {
   } finally {
     busy = false; ctl = null;
     save(); renderPlay();
+    if (state.pendingCombat && !state.combat) { const id = state.pendingCombat; state.pendingCombat = null; startCombat(id); }
+    else if (mode === "improv" && state.combat && !state.pendingCheck && !lastAction) { state.combat.improv = false; state.combat.res.action = false; afterAct(); }
     if (state.pendingCheck) openDice();
   }
 }
 
-function applyGM(d) {
-  const notes = [];
+function applyGM(d, mode) {
+  const notes = [], inCb = !!state.combat;
   if (d.location) state.location = str(d.location, 30);
   if (Array.isArray(d.speakers)) state.speakers = d.speakers.filter(id => PEOPLE[id]).slice(0, 3);
   state.expressions = {};
@@ -741,8 +852,8 @@ function applyGM(d) {
     notes.push([t + why, delta > 0 ? "up" : "down"]);
   }
 
-  // hp
-  for (const h of (Array.isArray(d.hp) ? d.hp : [])) {
+  // hp（战斗中生命值只归战斗系统管）
+  for (const h of (!inCb && Array.isArray(d.hp) ? d.hp : [])) {
     const delta = num(h.delta, 15); if (!delta) continue;
     if (h.id === "player") {
       const p = state.player; const before = p.hp;
@@ -773,7 +884,7 @@ function applyGM(d) {
   const ht = num(d.hestia_trust, 20);
   if (ht && state.scene === "prologue_5") state.hestiaTrust = clamp(state.hestiaTrust + ht, -100, 100);
   // recruit
-  for (const id of (Array.isArray(d.recruit) ? d.recruit : [])) {
+  for (const id of (!inCb && Array.isArray(d.recruit) ? d.recruit : [])) {
     const c = state.companions[id];
     if (!c || c.recruited || c.taken || !c.alive || !["prologue_3", "prologue_4"].includes(state.scene)) continue;
     if (id === "vex" && state.flags["prologue.vex_left"]) continue;
@@ -788,16 +899,27 @@ function applyGM(d) {
   }
   for (const [t, kind] of notes) push("sys", t, { cls: kind === "up" ? "appr-up" : kind === "down" ? "appr-down" : "" });
 
+  // combat
+  if (inCb) {
+    if (mode === "improv") applyCombatFx(d.combat);
+    state.suggestions = [];
+    if (mode !== "improv") return;
+  } else {
+    const cid = typeof d.combat === "string" ? d.combat : d.combat?.start;
+    if (cid && SCENES[state.scene].encounters?.includes(cid) && !state.fought?.[cid]) { state.pendingCombat = cid; return; }
+  }
+
   // check
   const ck = d.check;
   if (ck && typeof ck === "object" && validCheckKey(String(ck.skill || ""))) {
     const who = ck.who === "player" || !ck.who ? "player" : (party().includes(ck.who) || present().includes(ck.who) ? ck.who : "player");
     state.pendingCheck = { skill: String(ck.skill), dc: clamp(Math.round(Number(ck.dc) || 12), 5, 30), who, reason: str(ck.reason, 60), adv: !!ck.advantage, dis: !!ck.disadvantage };
     state.suggestions = [];
-  } else {
+  } else if (!inCb) {
     state.suggestions = (Array.isArray(d.suggestions) ? d.suggestions : []).slice(0, 4).map(s =>
       typeof s === "string" ? { text: str(s, 80) } : { text: str(s.text, 80), check: s.check ? str(s.check, 10) : "" }).filter(s => s.text);
   }
+  if (inCb) return;
 
   // scene flow
   const sc = SCENES[state.scene];
@@ -872,7 +994,477 @@ function finishRoll() {
   const res = x.d === 20 ? "大成功" : x.d === 1 ? "大失败" : x.ok ? "成功" : "失败";
   const who = c.who === "player" ? "" : whoName(c.who) + " · ";
   push("roll", `${who}${x.label}　d20(${x.d}) ${sgn(x.bonus)} = ${x.total} / DC ${c.dc}　${res}`, { ok: x.ok });
-  gm(`【检定结果】${whoName(c.who)}的${x.label}检定：d20 掷出 ${x.d}，加值 ${sgn(x.bonus)}，总计 ${x.total}，DC ${c.dc}，${res}。请叙述结果并继续。`, null);
+  gm(`【检定结果】${whoName(c.who)}的${x.label}检定：d20 掷出 ${x.d}，加值 ${sgn(x.bonus)}，总计 ${x.total}，DC ${c.dc}，${res}。请叙述结果并继续。`, null, state.combat?.improv ? "improv" : undefined);
+}
+
+/* =========================================================
+   战斗（区域制）
+   代码掷骰、算伤害、替敌人和同伴选行动；说书人只描写战况，并裁定玩家的即兴行动。
+   ========================================================= */
+let pick = null;           // 玩家正在选目标：{ kind, w, smite, label }
+let cbGen = 0, cbRun = -1; // 读档/新开局时 cbGen 自增，让旧的回合循环自行退出
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const ACTIVE = u => !u.dead && !u.out && !u.down;
+const cbList = () => Object.values(state.combat.units);
+const cbCur = () => state.combat.units[state.combat.order[state.combat.turn]];
+const hostile = (a, b) => a.side !== b.side;
+const weakest = list => list.reduce((a, b) => (b.hp < a.hp ? b : a));
+const lethal = () => !!ENCOUNTERS[state.combat.id].lethal;
+function roll(cnt, d) { let s = 0; for (let i = 0; i < cnt; i++) s += 1 + Math.floor(Math.random() * d); return s; }
+function parseDice(s) {
+  const m = /^(\d{1,2})d(4|6|8|10|12)(?:\+(\d{1,2}))?$/.exec(String(s || "").replace(/\s/g, ""));
+  return m ? { cnt: clamp(+m[1], 1, 4), d: +m[2], plus: Math.min(10, +(m[3] || 0)) } : null;
+}
+function d20x(adv, dis, lucky) {
+  const r = () => { const d = rollD20(); return d === 1 && lucky ? rollD20() : d; };
+  const a = r(); if (adv === dis) return [a, [a]];
+  const b = r(); return [adv ? Math.max(a, b) : Math.min(a, b), [a, b]];
+}
+function clog(t, cls) { push("cb", t, cls ? { cls } : null); state.combat?.feed.push(t); }
+
+function partyUnit(ref, zone) {
+  const isP = ref === "player";
+  const ab = isP ? state.player.abilities : COMPANIONS[ref].ab;
+  const kit = KITS[isP ? state.player.cls : COMPANIONS[ref].kit];
+  const s = isP ? state.player : state.companions[ref];
+  return {
+    id: ref, ref, side: "party", pid: ref, name: whoName(ref), zone, dexMod: mod(ab.dex),
+    hp: Math.max(1, s.hp), max: s.hpMax, ac: isP ? s.ac : COMPANIONS[ref].ac, level: isP ? s.level : COMPANIONS[ref].lvl,
+    weapons: kit.weapons.map(w => ({ n: w.n, cnt: 1, d: w.d, plus: w.cantrip ? 0 : mod(ab[w.ab]), hit: mod(ab[w.ab]) + 2, ranged: !!w.ranged, mock: !!w.mock })),
+    feat: kit.feat, uses: kit.uses ?? FEATS[kit.feat].uses, healMod: kit.healAb ? mod(ab[kit.healAb]) : 0,
+    cond: {}, saves: { s: 0, f: 0 },
+  };
+}
+function foeUnit(type, zone, side) {
+  const c = state.combat, e = ENEMIES[type];
+  c.count[type] = (c.count[type] || 0) + 1;
+  const n = c.count[type];
+  return {
+    id: type + n, type, side, pid: e.pid || null, name: e.name + (e.unique && n === 1 ? "" : String.fromCharCode(64 + n)), zone, dexMod: e.dex,
+    hp: e.hp, max: e.hp, ac: e.ac, weapons: [Object.assign({}, e.atk)], cond: {}, saves: { s: 0, f: 0 },
+  };
+}
+function sortOrder() { const c = state.combat; c.order = cbList().sort((a, b) => b.init - a.init || (a.side === "party" ? -1 : 1)).map(u => u.id); }
+
+function startCombat(id) {
+  const E = ENCOUNTERS[id]; if (!E || state.combat) return;
+  state.combat = { id, round: 1, turn: 0, started: false, units: {}, order: [], feed: [], res: null, spare: false, improv: false, count: {}, end: null,
+    zones: E.zones.map(z => ({ n: z.n, tags: z.tags || [], adj: z.adj, burning: 0 })) };
+  const c = state.combat;
+  for (const ref of ["player", ...present()]) c.units[ref] = partyUnit(ref, E.startAt?.[ref] ?? E.start);
+  for (const [type, n, zone] of E.foes) for (let i = 0; i < n; i++) { const u = foeUnit(type, zone, "enemy"); c.units[u.id] = u; }
+  for (const u of cbList()) u.init = rollD20() + u.dexMod;
+  sortOrder();
+  state.suggestions = []; state.pendingCheck = null; pick = null;
+  push("chapter", "战斗 · " + E.title);
+  clog("先攻：" + c.order.map(i => c.units[i].name + " " + c.units[i].init).join("　"));
+  save(); renderPlay(); advanceCombat();
+}
+
+// ---------- 伤害、治疗、倒地 ----------
+function hurt(u, n, o = {}) {
+  const c = state.combat;
+  if (u.dead || u.out) return "";
+  if (o.fire && u.ref === "player" && state.player.race === "tiefling") n = Math.floor(n / 2);
+  if (u.down) {
+    u.saves.f += o.crit ? 2 : 1;
+    if (u.saves.f >= 3) { if (lethal()) { u.dead = true; return `${u.name} 没能挺过来……`; } u.stable = true; return `${u.name} 昏死过去`; }
+    return `${u.name} 死亡豁免失败 ${u.saves.f}`;
+  }
+  u.hp -= n;
+  if (u.hp > 0) return "";
+  if (u.side === "party") {
+    if (u.ref === "player" && state.player.race === "half_orc" && !c.relentless) { c.relentless = true; u.hp = 1; return `${u.name} 凭半兽人的坚韧撑住了（生命 1）`; }
+    Object.assign(u, { hp: 0, down: true, stable: false, saves: { s: 0, f: 0 } }); u.cond.prone = true;
+    return `${u.name} 倒下了！`;
+  }
+  u.hp = 0;
+  if (o.spare) { u.out = "captured"; return `${u.name} 被打晕，活捉了`; }
+  u.dead = true;
+  let t = `${u.name} 倒下了`;
+  if (ENEMIES[u.type].explode) {
+    const n2 = roll(1, 6), hit = [];
+    for (const v of cbList()) if (v !== u && v.zone === u.zone && !v.dead && !v.out) { const r = hurt(v, n2, { fire: true }); hit.push(v.name + (r ? "（" + r + "）" : "")); }
+    t += `，体内的烬火炸开，${c.zones[u.zone].n}里的人受到 ${n2} 点火焰伤害` + (hit.length ? "：" + hit.join("、") : "");
+  }
+  return t;
+}
+function heal(u, n) {
+  if (u.dead || u.out) return "";
+  const was = u.down;
+  u.hp = Math.min(u.max, Math.max(0, u.hp) + n);
+  if (was) Object.assign(u, { down: false, stable: false, saves: { s: 0, f: 0 } });
+  return `${u.name} 恢复 ${n} 点生命（${u.hp}/${u.max}）${was ? "，恢复了意识" : ""}`;
+}
+function raise(by, t) { Object.assign(t, { down: false, stable: false, hp: 1, saves: { s: 0, f: 0 } }); delete t.cond.prone; clog(`${by.name} 把 ${t.name} 拉了起来（生命 1）`, "up"); }
+function deathSave(u) {
+  const d = rollD20();
+  if (d === 20) { Object.assign(u, { down: false, hp: 1, saves: { s: 0, f: 0 } }); clog(`${u.name} 死亡豁免掷出 20，咬牙撑了起来（生命 1）`, "up"); return; }
+  if (d >= 10) u.saves.s++; else u.saves.f += d === 1 ? 2 : 1;
+  let t = `${u.name} 死亡豁免 d20(${d})：成功 ${u.saves.s} · 失败 ${Math.min(3, u.saves.f)}`;
+  if (u.saves.s >= 3) { u.stable = true; t += "，伤势稳定了"; }
+  else if (u.saves.f >= 3) { if (lethal()) { u.dead = true; t += "，没能挺过来……"; } else { u.stable = true; t += "，昏死过去，但还有气息"; } }
+  clog(t, "down");
+}
+
+// ---------- 攻击 ----------
+function attackMods(a, t, w) {
+  const az = state.combat.zones[a.zone], tz = state.combat.zones[t.zone];
+  let adv = 0, dis = 0, ac = t.ac;
+  if (t.cond.prone) (w.ranged ? dis++ : adv++);
+  if (t.cond.restrained) adv++;
+  if (t.cond.dodge) dis++;
+  if (a.cond.prone || a.cond.frightened || a.cond.restrained || a.cond.mocked) dis++;
+  if (a.type && ENEMIES[a.type].pack && cbList().some(v => v !== a && v.type === a.type && ACTIVE(v) && v.zone === a.zone)) adv++;
+  if (w.ranged) {
+    if (cbList().some(v => hostile(v, a) && ACTIVE(v) && v.zone === a.zone)) dis++;
+    if (az.tags.includes("high") && !tz.tags.includes("high")) adv++;
+    if (tz.tags.includes("obscured")) dis++;
+    if (tz.tags.includes("cover") && a.zone !== t.zone) ac += 2;
+  }
+  return { adv: adv > 0 && !dis, dis: dis > 0 && !adv, ac };
+}
+function attack(a, t, w, o = {}) {
+  const m = attackMods(a, t, w);
+  const [d, rs] = d20x(m.adv, m.dis, a.ref === "player" && state.player.race === "halfling");
+  delete a.cond.mocked;
+  const total = d + w.hit, crit = d === 20, hit = crit || (d !== 1 && total >= m.ac);
+  const head = `${a.name} 用${w.n}攻击 ${t.name}：d20(${rs.join("/")})${sgn(w.hit)} = ${total} 对 AC ${m.ac}${m.adv ? "（优势）" : m.dis ? "（劣势）" : ""}，`;
+  if (!hit) { clog(head + (d === 1 ? "大失手" : "未命中")); return false; }
+  const k = crit ? 2 : 1, extra = [];
+  let n = roll(w.cnt * k, w.d) + w.plus;
+  const sneak = a.feat === "sneak" ? 1 : ENEMIES[a.type]?.sneak || 0;
+  if (sneak && !a.sneakUsed && (m.adv || cbList().some(v => v !== a && v.side === a.side && ACTIVE(v) && v.zone === t.zone))) { a.sneakUsed = true; n += roll(sneak * k, 6); extra.push("偷袭"); }
+  if (t.cond.marked === a.id) { n += roll(k, 6); extra.push(FEATS[a.feat]?.name || "印记"); }
+  if (o.smite && !w.ranged && a.uses > 0) { a.uses--; n += roll(2 * k, 8); extra.push("至圣斩"); }
+  if (w.mock) { t.cond.mocked = true; extra.push("对方下次攻击劣势"); }
+  n = Math.max(1, n);
+  const r = hurt(t, n, { crit, spare: o.spare && !w.ranged });
+  clog(head + (crit ? "暴击！" : "命中，") + `${n} 点伤害` + (extra.length ? "（" + extra.join("、") + "）" : "") + (r ? "。" + r : ""), crit ? "crit" : "hit");
+  return true;
+}
+function moveUnit(u, to, free) {
+  const c = state.combat;
+  if (!free) for (const v of cbList()) {
+    if (!ACTIVE(v) || v.reacted || !hostile(v, u) || v.zone !== u.zone) continue;
+    const w = v.weapons.find(x => !x.ranged); if (!w) continue;
+    v.reacted = true; clog(`${u.name} 离开${c.zones[u.zone].n}时，${v.name} 趁机出手`);
+    attack(v, u, w);
+    break;
+  }
+  if (ACTIVE(u)) { u.zone = to; clog(`${u.name} 移动到${c.zones[to].n}`); }
+}
+function stepToward(from, goals) {
+  const zs = state.combat.zones, prev = { [from]: -1 }, q = [from];
+  while (q.length) {
+    const z = q.shift();
+    if (z !== from && goals.includes(z)) { let x = z; while (prev[x] !== from) x = prev[x]; return x; }
+    for (const n of zs[z].adj) if (!(n in prev)) { prev[n] = z; q.push(n); }
+  }
+  return null;
+}
+
+// ---------- 自动行动：敌人和同伴 ----------
+function fightTurn(u, o = {}) {
+  const c = state.combat;
+  const foes = cbList().filter(v => hostile(u, v) && ACTIVE(v));
+  if (!foes.length) return;
+  const melee = u.weapons.find(w => !w.ranged), ranged = u.weapons.find(w => w.ranged);
+  // 同伴集火最弱的敌人；敌人随机挑目标，免得玩家总被围殴
+  const choose = list => (o.prefer && list.find(o.prefer)) || (u.side === "party" ? weakest(list) : list[Math.floor(Math.random() * list.length)]);
+  const here = foes.filter(v => v.zone === u.zone);
+  if (here.length && melee) return attack(u, choose(here), melee, o);
+  if (ranged) {
+    if (here.length && c.res.move > 0 && !u.cond.restrained) {
+      const safe = c.zones[u.zone].adj.find(z => !foes.some(v => v.zone === z));
+      if (safe != null) { c.res.move--; moveUnit(u, safe); if (!ACTIVE(u)) return; }
+    }
+    return attack(u, choose(foes), ranged, o);
+  }
+  if (c.res.move > 0 && !u.cond.restrained) {
+    const step = stepToward(u.zone, [...new Set(foes.map(v => v.zone))]);
+    if (step != null) { c.res.move--; moveUnit(u, step); if (!ACTIVE(u)) return; }
+    const now = foes.filter(v => v.zone === u.zone && ACTIVE(v));
+    if (now.length) attack(u, choose(now), melee, o);
+  }
+}
+function foeTurn(u) {
+  const c = state.combat, e = ENEMIES[u.type];
+  if (u.cond.prone) { delete u.cond.prone; c.res.move = 0; clog(`${u.name} 爬了起来`); }
+  if (e.summon) {
+    const n = Math.min(2, 6 - cbList().filter(v => v.type === "rat" && ACTIVE(v)).length);
+    if (n > 0) {
+      const ids = [];
+      for (let i = 0; i < n; i++) { const r = foeUnit("rat", u.zone, u.side); r.init = u.init; c.units[r.id] = r; ids.push(r.id); }
+      c.order.splice(c.turn + 1, 0, ...ids);
+      clog(`${u.name} 尖啸一声，${n} 只巨鼠从墙缝里钻了出来`, "event");
+    }
+  }
+  if (e.plead && u.hp <= u.max / 2 && !u.pleaded) { u.pleaded = true; if (Math.random() < .5) { u.out = "surrendered"; clog(`${u.name} 扔下武器，跪地求饶`); return; } }
+  if (e.ignite && c.round % 3 === 1) {
+    const score = zi => cbList().filter(v => v.zone === zi && ACTIVE(v)).reduce((s, v) => s + (hostile(u, v) ? 1 : -1), 0);
+    const best = c.zones.map((z, i) => i).filter(i => !c.zones[i].burning && score(i) > 0).sort((a, b) => score(b) - score(a))[0];
+    if (best != null) { c.zones[best].burning = 3; clog(`${u.name} 抬手一挥，${c.zones[best].n}燃起了烬火（3 回合内，在里面开始回合的人会被烧伤）`, "event"); return; }
+  }
+  fightTurn(u);
+}
+function allyTurn(u) {
+  const c = state.combat, mates = cbList().filter(v => v.side === "party" && !v.dead && !v.out);
+  if (u.cond.prone) { delete u.cond.prone; c.res.move = 0; clog(`${u.name} 爬了起来`); }
+  if (u.feat === "heal" && u.uses > 0) {
+    const t = mates.find(v => v.down) || mates.find(v => !v.down && v.hp <= v.max * .35);
+    if (t) { u.uses--; c.res.bonus = false; clog(`${u.name} 念出治疗之语：` + heal(t, Math.max(1, roll(1, 4) + u.healMod)), "up"); }
+  }
+  if (c.res.bonus && u.feat === "second_wind" && u.uses > 0 && u.hp <= u.max / 2) { u.uses--; c.res.bonus = false; clog(`${u.name} 使出回气：` + heal(u, roll(1, 10) + u.level), "up"); }
+  if (c.res.bonus) { const t = mates.find(v => v.down && v.zone === u.zone); if (t) { c.res.bonus = false; raise(u, t); } }
+  if (c.zones[u.zone].burning && c.res.move > 0) {
+    // 离开火场：近战型往有敌人的地方走，远程型往没敌人的地方走
+    const foeIn = z => cbList().some(v => hostile(u, v) && ACTIVE(v) && v.zone === z);
+    const ranged = u.weapons.some(w => w.ranged);
+    const opts = c.zones[u.zone].adj.filter(z => !c.zones[z].burning);
+    const to = opts.find(z => foeIn(z) !== ranged) ?? opts[0];
+    if (to != null) { c.res.move--; moveUnit(u, to); if (!ACTIVE(u)) return; }
+  }
+  const withMate = v => cbList().some(x => x !== u && x.side === "party" && ACTIVE(x) && x.zone === v.zone);
+  fightTurn(u, { smite: u.feat === "smite", prefer: u.feat === "sneak" ? withMate : null });
+}
+
+// ---------- 回合循环 ----------
+function beginTurn(u) {
+  const c = state.combat;
+  c.res = { action: true, bonus: true, move: 1, free: false };
+  u.reacted = false; u.sneakUsed = false; delete u.cond.dodge;
+  for (const k of ["frightened", "restrained"]) if (u.cond[k] && --u.cond[k] <= 0) delete u.cond[k];
+  const z = c.zones[u.zone];
+  if (z.burning && !u.down) { const n = roll(1, 4); const r = hurt(u, n, { fire: true }); clog(`${u.name} 在燃烧的${z.n}里被烧伤 ${n} 点` + (r ? "。" + r : ""), "hit"); }
+  else if (u.down && !u.stable && !u.dead) deathSave(u);
+}
+function nextTurn() {
+  const c = state.combat; c.started = false; c.turn++;
+  if (c.turn < c.order.length) return;
+  c.turn = 0; c.round++;
+  for (const z of c.zones) if (z.burning && --z.burning === 0) clog(`${z.n}的火熄灭了`);
+  clog(`第 ${c.round} 回合`, "round");
+  for (const ev of ENCOUNTERS[c.id].events || []) if (ev.round === c.round) {
+    for (const [type, n, zone] of ev.spawn) for (let i = 0; i < n; i++) { const u = foeUnit(type, zone, ev.side || "enemy"); u.init = rollD20() + u.dexMod; c.units[u.id] = u; }
+    clog(ev.text, "event");
+  }
+  sortOrder();
+}
+function combatResult() {
+  const c = state.combat, us = cbList();
+  if (c.end) return c.end;
+  if (!us.some(u => u.side === "party" && ACTIVE(u))) return "defeat";
+  if (!us.some(u => u.side !== "party" && ACTIVE(u))) return "victory";
+  return null;
+}
+async function advanceCombat() {
+  if (!state?.combat || cbRun === cbGen) return;
+  const gen = cbRun = cbGen;
+  try {
+    for (let guard = 0; guard < 400; guard++) {
+      const c = state?.combat; if (!c || gen !== cbGen) return;
+      const r = combatResult(); if (r) { endCombat(r); return; }
+      const u = cbCur();
+      if (u.dead || u.out) { nextTurn(); continue; }
+      if (!c.started) { c.started = true; beginTurn(u); if (combatResult()) continue; }
+      if (u.ref === "player" && ACTIVE(u)) {
+        if (c.feed.length && pref.narr !== "key" && narratorReady()) { renderPlay(); await narrateCombat(c.feed.splice(0)); continue; }
+        c.feed.length = 0;
+        cbRun = -1; save(); renderPlay();
+        return;
+      }
+      if (ACTIVE(u)) (u.side === "party" ? allyTurn : foeTurn)(u);
+      renderPlay();
+      await sleep(ACTIVE(u) || u.down ? 450 : 0);
+      if (gen === cbGen && state?.combat === c) nextTurn();
+    }
+  } finally { if (cbRun === gen) cbRun = -1; }
+}
+function narrateCombat(feed) {
+  return gm(`【战况】自你上次行动以来：\n${feed.join("\n")}\n请把以上战况写成 60–160 字的一段描写。结果已由程序决定：不要改动结果，不要新增伤害、检定或伤亡。同伴可以喊话。JSON 只写 speakers、expressions，必要时写 approval。`, null, "narrate");
+}
+function endCombat(r) {
+  const c = state.combat, us = cbList();
+  let playerDead = false;
+  for (const u of us.filter(u => u.side === "party")) {
+    const s = u.ref === "player" ? state.player : state.companions[u.ref];
+    if (u.dead) { if (u.ref === "player") playerDead = true; else { s.alive = false; s.hp = 0; } }
+    else s.hp = clamp(u.hp, 1, s.hpMax);
+  }
+  const foes = us.filter(u => u.side !== "party");
+  const tally = list => { const m = {}; for (const u of list) { const n = ENEMIES[u.type].name; m[n] = (m[n] || 0) + 1; } return Object.entries(m).map(([n, k]) => n + "×" + k).join("、"); };
+  const R = { victory: "胜利", defeat: "全队倒下", escaped: "撤离战场", talked: "敌人放弃了战斗" }[r];
+  const parts = [`结果：${R}，共 ${c.round} 回合。`];
+  for (const [label, f] of [["击倒", u => u.dead], ["活捉", u => u.out === "captured"], ["投降", u => u.out === "surrendered"], ["逃走", u => u.out === "fled"], ["仍在场", ACTIVE]]) {
+    const l = foes.filter(f); if (l.length) parts.push(`${label}：${tally(l)}。`);
+  }
+  parts.push("我方：" + us.filter(u => u.side === "party").map(u => `${u.name} ${u.dead ? "阵亡" : u.down ? "倒地" : u.hp + "/" + u.max}`).join("，") + "。");
+  const summary = parts.join("");
+  state.fought = state.fought || {};
+  if (r !== "escaped") state.fought[c.id] = r; // 撤离的遭遇之后还能再打
+  state.combat = null; pick = null;
+  push("sys", "战斗结束 · " + R, { cls: r === "defeat" ? "appr-down" : "appr-up" });
+  if (playerDead) { state.ended = true; state.gameOver = true; push("sys", "你倒在了这里。可以读取存档重来。", { cls: "appr-down" }); save(); renderPlay(); return; }
+  save(); renderPlay();
+  gm(`【战斗结束】${summary}\n请叙述战斗刚结束时的场面${r === "defeat" ? "（本战不会致死：按场景锚点让队伍被救起并付出代价）" : ""}，然后按场景锚点继续。`, null);
+}
+
+// ---------- 即兴行动的效果（说书人提出，代码校验后执行） ----------
+const COND = { prone: "倒地", dodge: "闪避", frightened: "恐惧", restrained: "被束缚", mocked: "受嘲讽" };
+function applyCombatFx(x) {
+  if (!x || typeof x !== "object") return;
+  const c = state.combat;
+  for (const h of (Array.isArray(x.damage) ? x.damage : []).slice(0, 3)) {
+    const u = c.units[h.target], dd = parseDice(h.dice); if (!u || !dd || u.dead || u.out) continue;
+    const n = roll(dd.cnt, dd.d) + dd.plus, r = hurt(u, n);
+    clog(`${str(h.reason, 20) || "即兴行动"}：${u.name} 受到 ${n} 点伤害` + (r ? "。" + r : ""), "hit");
+  }
+  for (const h of (Array.isArray(x.zone_damage) ? x.zone_damage : []).slice(0, 1)) {
+    const zi = c.zones.findIndex(z => z.n === h.zone), dd = parseDice(h.dice); if (zi < 0 || !dd) continue;
+    const n = roll(dd.cnt, dd.d) + dd.plus, hit = [];
+    for (const u of cbList()) if (u.zone === zi && !u.dead && !u.out) { const r = hurt(u, n); hit.push(u.name + (r ? "（" + r + "）" : "")); }
+    clog(`${str(h.reason, 20) || "即兴行动"}：${c.zones[zi].n}里的人受到 ${n} 点伤害` + (hit.length ? "：" + hit.join("、") : ""), "hit");
+  }
+  for (const h of (Array.isArray(x.status) ? x.status : []).slice(0, 4)) {
+    const u = c.units[h.target]; if (!u || u.dead || u.out) continue;
+    if (["fled", "surrendered"].includes(h.effect)) { if (u.side === "party") continue; u.out = h.effect; clog(`${u.name}${h.effect === "fled" ? "逃走了" : "投降了"}`); }
+    else if (h.effect === "prone") { u.cond.prone = true; clog(`${u.name} 被掀翻在地`); }
+    else if (["frightened", "restrained"].includes(h.effect)) { u.cond[h.effect] = 2; clog(`${u.name} ${COND[h.effect]}了`); }
+  }
+  if (x.burn) { const z = c.zones.find(z => z.n === x.burn); if (z) { z.burning = 3; clog(`${z.n}燃起了大火`, "event"); } }
+  if (x.end === "surrendered" || x.end === "fled") {
+    for (const u of cbList()) if (u.side !== "party" && ACTIVE(u)) u.out = x.end;
+    c.end = "talked"; clog(x.end === "fled" ? "剩下的敌人四散奔逃" : "剩下的敌人放下了武器");
+  }
+}
+function combatBrief(mode) {
+  const c = state.combat, E = ENCOUNTERS[c.id];
+  const side = u => u.side === "party" ? "我方" : u.side === "wild" ? "野兽，敌我不分" : "敌方";
+  const units = cbList().filter(u => !u.dead && !u.out).map(u => {
+    const cd = Object.keys(u.cond).filter(k => COND[k]).map(k => COND[k]);
+    return `${u.name}（id: ${u.id}，${side(u)}，HP ${u.hp}/${u.max}${u.down ? "，倒地" : ""}，AC ${u.ac}，在${c.zones[u.zone].n}${cd.length ? "，" + cd.join("、") : ""}）`;
+  });
+  const gone = cbList().filter(u => u.dead || u.out).length;
+  let t = `\n\n【战斗中】${E.title}，第 ${c.round} 回合。可利用的环境：${E.props}` +
+    `\n区域：${c.zones.map(z => z.n + (z.tags.length ? "[" + z.tags.map(k => ZONE_TAGS[k]).join("、") + "]" : "") + (z.burning ? "[燃烧]" : "") + "（相邻：" + z.adj.map(i => c.zones[i].n).join("、") + "）").join("；")}` +
+    `\n单位：${units.join("；")}${gone ? `；另有 ${gone} 名已倒下或离场` : ""}`;
+  if (mode === "improv") t += `\n\n【即兴行动规则】玩家用掉本回合的动作，尝试下面写的行动。
+- 结果不确定就先要求检定（check），收到检定结果后再给效果；明显可行的直接给效果。敌人生命低于一半时，威吓和劝降的 DC 降低 5。
+- 效果写在 JSON 的 combat 字段：{"damage":[{"target":"单位 id","dice":"2d6","reason":"吊灯砸下"}],"zone_damage":[{"zone":"区域名","dice":"2d6","reason":"酒桶爆炸"}],"status":[{"target":"单位 id","effect":"prone"}],"burn":"区域名","end":null}
+- 伤害参考：小 1d6，中 2d6，大 3d6，最多 4d10。zone_damage 会伤到该区域里的所有人，包括我方。
+- effect 可选 prone（倒地）、frightened（恐惧）、restrained（束缚）、fled（逃跑）、surrendered（投降）。end 可选 "surrendered" 或 "fled"，表示剩下的敌人全部投降或逃走，只有谈判、威吓真正成功时才用。
+- 不要写 hp、advance、scene_end、suggestions。`;
+  return t;
+}
+
+// ---------- 玩家操作 ----------
+function myTurn() {
+  const c = state?.combat;
+  return !!c && c.started && cbRun !== cbGen && !busy && !state.pendingCheck && cbCur()?.ref === "player" && ACTIVE(cbCur());
+}
+function afterAct() {
+  save(); renderPlay();
+  const c = state.combat; if (!c) return;
+  if (combatResult()) return advanceCombat();
+  if (!ACTIVE(c.units.player)) { nextTurn(); advanceCombat(); }
+}
+function act(fn) { if (!myTurn()) return; pick = null; fn(state.combat, state.combat.units.player); afterAct(); }
+function setPick(p) { pick = p; renderPlay(); }
+function validTarget(p, u) {
+  const me = state.combat.units.player;
+  if (p.kind === "heal") return u.side === "party" && !u.dead && !u.out;
+  if (!hostile(me, u) || !ACTIVE(u)) return false;
+  return p.kind !== "attack" || me.weapons[p.w].ranged || u.zone === me.zone;
+}
+function doPick(u) {
+  const p = pick;
+  act((c, me) => {
+    if (p.kind === "attack") { c.res.action = false; attack(me, u, me.weapons[p.w], { smite: p.smite, spare: c.spare }); }
+    else if (p.kind === "missile") { c.res.action = false; me.uses--; const n = roll(3, 4) + 3, r = hurt(u, n); clog(`${me.name} 射出三枚魔法飞弹，${u.name} 受到 ${n} 点力场伤害` + (r ? "。" + r : ""), "hit"); }
+    else if (p.kind === "mark") { c.res.bonus = false; me.uses--; u.cond.marked = me.id; clog(`${me.name} 对 ${u.name} 施加了${FEATS[me.feat].name}`); }
+    else if (p.kind === "heal") { c.res.bonus = false; me.uses--; clog(`${me.name} 念出治疗之语：` + heal(u, Math.max(1, roll(1, 4) + me.healMod)), "up"); }
+  });
+}
+function playerEnd() { if (!myTurn()) return; pick = null; nextTurn(); advanceCombat(); }
+
+function unitChip(u) {
+  const cur = cbCur(), ok = pick && validTarget(pick, u);
+  const n = el(ok ? "button" : "div", "unit " + (u.side === "party" ? "ally" : u.side === "wild" ? "wild" : "foe") + (u === cur ? " now" : "") + (u.down ? " down" : "") + (ok ? " tgt" : ""));
+  if (ok) { n.type = "button"; n.onclick = () => doPick(u); }
+  n.title = `${u.name} · AC ${u.ac}`;
+  const top = el("div", "ub");
+  top.append(el("span", null, u.name), el("span", null, u.down ? (u.stable ? "昏迷" : `倒地 ${u.saves.s}✓${u.saves.f}✗`) : `${u.hp}/${u.max}`));
+  const bar = el("div", "hpbar"); const i = el("i"); i.style.width = 100 * Math.max(0, u.hp) / u.max + "%"; bar.append(i);
+  n.append(top, bar);
+  const cd = Object.keys(u.cond).filter(k => COND[k]).map(k => COND[k]);
+  if (u.cond.marked) cd.push("被标记");
+  if (cd.length) n.append(el("div", "cd", cd.join(" · ")));
+  return n;
+}
+function renderCombat(box) {
+  const c = state.combat, me = c.units.player, cur = cbCur(), turn = myTurn(), r = c.res || {};
+  const wrap = el("div", "combat");
+  const head = el("div", "cb-head");
+  head.append(el("span", "t", `第 ${c.round} 回合`), el("span", "label", turn ? "轮到你了" : busy ? "说书人正在描写战况……" : ACTIVE(me) ? `${cur.name} 行动中……` : "你倒下了，同伴还在战斗……"));
+  wrap.append(head);
+  const ini = el("div", "init");
+  c.order.forEach((id, i) => { const u = c.units[id]; ini.append(el("span", (i === c.turn ? "now " : "") + (u.side !== "party" ? "foe " : "") + (u.dead || u.out ? "gone" : ""), u.name)); });
+  wrap.append(ini);
+
+  const zs = el("div", "zones");
+  c.zones.forEach((z, zi) => {
+    const zb = el("div", "zone" + (me.zone === zi ? " here" : "") + (z.burning ? " fire" : ""));
+    const zn = el("div", "zn"); const tags = z.tags.map(t => ZONE_TAGS[t]); if (z.burning) tags.push(`燃烧 ${z.burning}`);
+    zn.append(el("span", null, z.n), el("span", "zt", tags.join(" · "))); zb.append(zn);
+    for (const u of cbList().filter(u => u.zone === zi && !u.dead && !u.out)) zb.append(unitChip(u));
+    const gone = cbList().filter(u => u.zone === zi && (u.dead || u.out)).length;
+    if (gone) zb.append(el("div", "zt", `倒下或离场 ${gone}`));
+    if (turn && !pick && r.move > 0 && !me.cond.prone && !me.cond.restrained && c.zones[me.zone].adj.includes(zi)) {
+      const b = el("button", "btn small", "移动到这里"); b.type = "button"; b.onclick = () => act((c, me) => { c.res.move--; moveUnit(me, zi, c.res.free); }); zb.append(b);
+    }
+    zs.append(zb);
+  });
+  wrap.append(zs);
+
+  if (turn) {
+    const res = el("div", "cb-res");
+    res.append(el("span", r.action ? "on" : "off", "动作"), el("span", r.bonus ? "on" : "off", "附赠动作"), el("span", r.move > 0 ? "on" : "off", "移动" + (r.move > 1 ? " ×" + r.move : "")));
+    if (FEATS[me.feat]?.uses) res.append(el("span", "label", `${FEATS[me.feat].name} 剩 ${me.uses}`));
+    wrap.append(res);
+  }
+  const acts = el("div", "cb-acts");
+  const add = (label, fn, cls, title) => { const b = el("button", "btn small" + (cls ? " " + cls : ""), label); b.type = "button"; b.onclick = fn; if (title) b.title = title; acts.append(b); return b; };
+  if (pick) {
+    acts.append(el("span", "label", `${pick.label}：点一个高亮的目标`));
+    add("取消", () => setPick(null));
+  } else if (turn) {
+    const feat = FEATS[me.feat];
+    if (r.action) {
+      me.weapons.forEach((w, i) => {
+        add(`${w.ranged ? "远程" : "近战"} · ${w.n}`, () => setPick({ kind: "attack", w: i, label: w.n }), null, `命中 ${sgn(w.hit)}，伤害 1d${w.d}${w.plus ? sgn(w.plus) : ""}`);
+        if (me.feat === "smite" && !w.ranged && me.uses > 0) add(`${w.n} + 至圣斩`, () => setPick({ kind: "attack", w: i, smite: true, label: "至圣斩" }), null, feat.desc);
+      });
+      if (me.feat === "missile" && me.uses > 0) add("魔法飞弹", () => setPick({ kind: "missile", label: "魔法飞弹" }), null, feat.desc);
+      add("冲刺", () => act((c, me) => { c.res.action = false; c.res.move++; clog(`${me.name} 冲刺`); }), null, "本回合多移动一次");
+      add("闪避", () => act((c, me) => { c.res.action = false; me.cond.dodge = true; clog(`${me.name} 摆出防守架势`); }), null, "直到你下回合开始，攻击你的人有劣势");
+      if (c.zones[me.zone].tags.includes("exit")) add("撤离战场", () => act((c, me) => { c.res.action = false; c.end = "escaped"; clog(`${me.name} 招呼众人撤离`); }));
+    }
+    if (r.bonus) {
+      if (me.feat === "second_wind" && me.uses > 0) add("回气", () => act((c, me) => { c.res.bonus = false; me.uses--; clog(`${me.name} 使出回气：` + heal(me, roll(1, 10) + me.level), "up"); }), null, feat.desc);
+      if ((me.feat === "mark" || me.feat === "hex") && me.uses > 0) add(feat.name, () => setPick({ kind: "mark", label: feat.name }), null, feat.desc);
+      if (me.feat === "heal" && me.uses > 0) add("治疗之语", () => setPick({ kind: "heal", label: "治疗之语" }), null, feat.desc);
+      if (me.feat === "sneak") add("灵巧移动", () => act((c, me) => { c.res.bonus = false; c.res.move++; c.res.free = true; clog(`${me.name} 身形一闪，准备脱离`); }), null, "多移动一次，本回合移动不引发借机攻击");
+      if (state.player.inventory.includes("治疗药水")) add("喝治疗药水", () => act((c, me) => { c.res.bonus = false; state.player.inventory.splice(state.player.inventory.indexOf("治疗药水"), 1); clog(`${me.name} 灌下治疗药水：` + heal(me, roll(2, 4) + 2), "up"); }), null, "恢复 2d4+2");
+      for (const t of cbList().filter(v => v.side === "party" && v.down && !v.dead && v.zone === me.zone)) add(`扶起${t.name}`, () => act((c, me) => { c.res.bonus = false; raise(me, t); }));
+    }
+    if (me.cond.prone && r.move > 0) add("起身", () => act((c, me) => { c.res.move--; delete me.cond.prone; clog(`${me.name} 站了起来`); }), null, "消耗本回合的移动");
+    acts.append(el("span", "sp"));
+    add(c.spare ? "留活口：开" : "留活口：关", () => { c.spare = !c.spare; renderPlay(); }, null, "开启后，你的近战把敌人打到 0 生命时会活捉而不是杀死");
+    add("结束回合", playerEnd, "gold");
+  }
+  wrap.append(acts);
+  box.append(wrap);
 }
 
 /* =========================================================
@@ -1020,20 +1612,26 @@ function renderPlay() {
     b.onclick = () => openSheet(id);
     rail.append(b);
   };
-  card("player", p.name, `HP ${p.hp}/${p.hpMax} · AC ${p.ac}`, p.hp, p.hpMax);
-  const pt = party();
-  for (const id of pt) { const c = state.companions[id]; card(id, PEOPLE[id].name, `HP ${c.hp}/${c.hpMax} · ${relLabel(c.approval)} ${sgn(c.approval)}`, c.hp, c.hpMax); }
-  if (!pt.length) rail.append(el("div", "note", "还没有同伴。酒馆里的人，也许会成为你的伙伴。"));
+  const cb = state.combat, pt = party();
+  if (cb) {
+    for (const u of cbList().filter(u => u.side === "party")) card(u.ref, u.name, u.dead ? "阵亡" : u.down ? "倒地" : `HP ${u.hp}/${u.max} · AC ${u.ac}`, Math.max(0, u.hp), u.max, u.dead || u.down);
+  } else {
+    card("player", p.name, `HP ${p.hp}/${p.hpMax} · AC ${p.ac}`, p.hp, p.hpMax);
+    for (const id of pt) { const c = state.companions[id]; card(id, PEOPLE[id].name, `HP ${c.hp}/${c.hpMax} · ${relLabel(c.approval)} ${sgn(c.approval)}`, c.hp, c.hpMax); }
+    if (!pt.length) rail.append(el("div", "note", "还没有同伴。酒馆里的人，也许会成为你的伙伴。"));
+  }
   rail.append(el("div", "note", `金币 ${p.gold} · 灵感 ${p.inspiration} · 龙化 ${p.draconic}`));
 
   // stage
   const st = $("stage"); st.textContent = "";
   st.style.setProperty("--scene", sc.bg);
-  const nm = el("div", "scene-name"); nm.append(el("div", "t", sc.title), el("div", "l", state.location)); st.append(nm);
-  const spk = state.speakers.filter(id => PEOPLE[id]);
+  const nm = el("div", "scene-name"); nm.append(el("div", "t", cb ? ENCOUNTERS[cb.id].title : sc.title), el("div", "l", cb ? `第 ${cb.round} 回合 · ${state.location}` : state.location)); st.append(nm);
+  // 战斗中舞台显示当前行动者；说书人描写时显示他点名的角色
+  const actor = cb && !busy ? cbCur() : null;
+  const spk = actor ? (actor.pid ? [actor.pid] : []) : state.speakers.filter(id => PEOPLE[id]);
   if (spk.length) {
-    const main = el("div", "speaker"); const im = el("img"); portrait(im, spk[0], state.expressions[spk[0]] || "neutral");
-    main.append(im, el("div", "plate", PEOPLE[spk[0]].name)); st.append(main);
+    const main = el("div", "speaker"); const im = el("img"); portrait(im, spk[0], actor ? "neutral" : state.expressions[spk[0]] || "neutral");
+    main.append(im, el("div", "plate", actor ? actor.name : PEOPLE[spk[0]].name)); st.append(main);
     if (spk.length > 1) { const o = el("div", "others"); for (const id of spk.slice(1)) { const i2 = el("img"); portrait(i2, id, state.expressions[id] || "neutral"); i2.title = PEOPLE[id].name; o.append(i2); } st.append(o); }
   }
   if (flashScene) { st.append(el("div", "mark-glow")); flashScene = false; }
@@ -1049,9 +1647,14 @@ function renderPlay() {
 
   // options
   const opts = $("opts"); opts.textContent = "";
-  if (state.ended) {
+  if (state.gameOver) {
+    const b = el("button", "opt"); b.type = "button"; b.append(el("span", "k", "✝"), el("span", "tx", "你的旅程在这里结束了。读取存档"));
+    b.onclick = () => openSaves(true); opts.append(b);
+  } else if (state.ended) {
     const b = el("button", "opt"); b.type = "button"; b.append(el("span", "k", "★"), el("span", "tx", "序幕完。查看你的旅程总结"));
     b.onclick = openEnd; opts.append(b);
+  } else if (cb) {
+    renderCombat(opts);
   } else if (state.pendingCheck && !busy) {
     const b = el("button", "opt"); b.type = "button";
     b.append(el("span", "k", "20"), el("span", "tx", "掷骰：" + bonusFor(state.pendingCheck.who, state.pendingCheck.skill).label + "检定"), el("span", "ck", "DC " + state.pendingCheck.dc));
@@ -1065,13 +1668,18 @@ function renderPlay() {
       opts.append(b);
     });
   }
-  const blocked = busy || !!state.pendingCheck || state.ended;
+  const blocked = busy || !!state.pendingCheck || state.ended || (cb && !(myTurn() && cb.res.action && !pick));
   $("freeForm").hidden = state.ended;
   $("freeBtn").disabled = blocked; $("freeText").disabled = busy;
+  $("freeBtn").textContent = cb ? "即兴" : "行动";
+  $("freeText").placeholder = cb ? "即兴行动（消耗动作）：推倒炭盆、砍断吊灯、威吓敌人投降……" : FREE_HINT;
   $("stopBtn").hidden = !busy;
   $("retryBtn").hidden = busy || !lastAction || state.ended;
-  $("statusText").textContent = busy ? "说书人正在讲述……" : state.pendingCheck ? "需要掷骰" : `第 ${state.turns} 轮 · ${pt.length + 1} 人队伍`;
+  $("statusText").textContent = busy ? (cb ? "说书人正在描写战况……" : "说书人正在讲述……") : state.pendingCheck ? "需要掷骰"
+    : cb ? (myTurn() ? "你的回合" : "其他人行动中") : `第 ${state.turns} 轮 · ${pt.length + 1} 人队伍`;
 }
+
+const FREE_HINT = $("freeText").placeholder;
 
 function render() {
   const play = state && state.phase === "play";
@@ -1169,7 +1777,7 @@ function openSaves(loadOnly) {
         row.append(t);
         const btns = el("div", "row");
         if (!loadOnly && key !== AUTO) { const b = el("button", "btn small", "保存到这里"); b.type = "button"; b.disabled = busy; b.onclick = () => { save(key); toast("已保存"); draw(); }; btns.append(b); }
-        if (sv) { const b = el("button", "btn small", "读取"); b.type = "button"; b.disabled = busy; b.onclick = () => { state = sv.state; state.log = state.log.filter(e => e.t); lastAction = null; closeModal(); render(); toast("已读取：" + label); if (state.pendingCheck) openDice(); }; btns.append(b); }
+        if (sv) { const b = el("button", "btn small", "读取"); b.type = "button"; b.disabled = busy; b.onclick = () => { state = sv.state; state.log = state.log.filter(e => e.t); lastAction = null; pick = null; cbGen++; closeModal(); render(); toast("已读取：" + label); if (state.pendingCheck) openDice(); else if (state.combat) advanceCombat(); }; btns.append(b); }
         row.append(btns); s.append(row);
       }
       s.append(el("div", "note label", "存档保存在这个浏览器里。换设备或清理浏览器数据后会丢失。"));
@@ -1206,11 +1814,18 @@ function openSettings() {
       b.onclick = () => { pref.tier = k; savePref(); closeModal(); openSettings(); };
       s.append(b);
     }
+    s.append(el("div", "label", "战斗描写"));
+    for (const [k, t, d] of [["round", "每回合描写", "轮到你之前，说书人把这一轮的战况写成一段文字"], ["key", "只在关键时刻", "只描写即兴行动和战斗结束，打得更快、更省额度"]]) {
+      const b = el("button", "chip"); b.type = "button"; b.setAttribute("aria-pressed", String(pref.narr === k));
+      b.append(el("b", null, t), el("small", null, d));
+      b.onclick = () => { pref.narr = k; savePref(); closeModal(); openSettings(); };
+      s.append(b);
+    }
     const nb = el("button", "btn", "放弃本局，重新创建角色"); nb.type = "button";
     nb.onclick = () => {
       if (!nb.dataset.armed) { nb.dataset.armed = "1"; nb.textContent = "再点一次确认（自动存档会被覆盖）"; return; }
       if (ctl) ctl.abort();
-      state = null; draft = freshDraft(); closeModal(); render();
+      state = null; pick = null; cbGen++; draft = freshDraft(); closeModal(); render();
     };
     s.append(nb);
   });
@@ -1238,16 +1853,21 @@ $("mSettings").onclick = openSettings;
 $("stopBtn").onclick = () => ctl && ctl.abort();
 $("retryBtn").onclick = () => {
   if (!lastAction) return;
-  const { action, shown } = lastAction;
+  const { action, shown, mode } = lastAction;
   if (shown) { const i = state.log.map(e => e.k === "you" && e.t === shown).lastIndexOf(true); if (i >= 0) state.log.splice(i, 1); }
-  gm(action, shown);
+  gm(action, shown, mode);
 };
 $("freeForm").addEventListener("submit", e => {
   e.preventDefault();
   const t = $("freeText").value.trim();
   if (!t || busy || state.pendingCheck) return;
+  if (state.combat) {
+    if (!myTurn() || !state.combat.res.action) return;
+    if (!narratorReady()) { toast("即兴行动需要说书人来裁定：在 claude.ai 中打开，或在设置里填写 API"); return; }
+    state.combat.improv = true;
+  }
   $("freeText").value = "";
-  gm(t.slice(0, 500), t.slice(0, 500));
+  gm(t.slice(0, 500), t.slice(0, 500), state.combat ? "improv" : undefined);
 });
 $("freeText").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("freeForm").requestSubmit(); } });
 
@@ -1262,6 +1882,7 @@ function start(data) {
   if (state) { state.log.forEach(e => delete e.live); state.log = state.log.filter(e => e.t || e.k === "chapter"); }
   render();
   if (state?.pendingCheck) openDice();
+  else if (state?.combat) advanceCombat();
 }
 window.claude?.hot?.snapshot?.(() => ({ state, draft }));
 window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
