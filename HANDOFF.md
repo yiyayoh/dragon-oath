@@ -63,7 +63,7 @@ GitHub Pages（`https://yiyayoh.github.io/dragon-oath/`）没有开启，用户�
 | `1962d5a` | 10-27 | Claude | 本机 ChatGPT 选项只在本地服务上显示 |
 | `593a7ee` | 10-27 | Claude | 存档：本机写硬盘并自动备份，支持导出导入 |
 | `cf67b1e` | 10-27 | Claude | claude.ai 上导出存档改走 `downloads` 能力 |
-| （本次） | 10-27 | Claude | 重写交接文档：入口、决定、开发记录、测试与发布方法；新增 `AGENTS.md` / `CLAUDE.md` 让接手的 AI 自动先读交接文档 |
+| `845c77f` | 10-27 | Claude | 重写交接文档：入口、决定、开发记录、测试与发布方法；新增 `AGENTS.md` / `CLAUDE.md` 让接手的 AI 自动先读交接文档 |
 
 **新增提交后，请在这张表末尾补一行。**
 
