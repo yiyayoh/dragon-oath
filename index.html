@@ -687,12 +687,20 @@ async function diskInit() {
   }
   if (!state || state.phase !== "play") $("mLoad").hidden = !hasSaves();
 }
-function exportSave() {
+async function exportSave() {
   if (!state || state.phase !== "play") return;
   const p = Object.assign({ format: SAVE_FORMAT, version: 1 }, snapshot());
+  const filename = `醉龙酒馆-${state.player.name}-${new Date(p.t).toLocaleString("zh-CN").replace(/[\/:\s]/g, "-")}.json`;
+  // claude.ai 里页面不能直接下载，要走 downloads 能力，由玩家确认保存
+  const dl = window.claude?.use ? await window.claude.use("downloads").catch(() => null) : null;
+  if (dl) {
+    try { await dl.save({ filename, data: JSON.stringify(p) }); toast("已导出存档文件"); }
+    catch (e) { if (e?.code !== "declined") toast(e?.code === "rate_limited" ? "上一个保存窗口还没处理，稍后再试" : "这里不能导出文件", "down"); }
+    return;
+  }
   const a = el("a");
   a.href = URL.createObjectURL(new Blob([JSON.stringify(p)], { type: "application/json" }));
-  a.download = `醉龙酒馆-${state.player.name}-${new Date(p.t).toLocaleString("zh-CN").replace(/[\/:\s]/g, "-")}.json`;
+  a.download = filename;
   document.body.append(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   toast("已导出存档文件");
