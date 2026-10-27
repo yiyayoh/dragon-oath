@@ -2234,7 +2234,7 @@ function startCombat(id) {
   sortOrder();
   state.suggestions = []; state.pendingCheck = null; pick = null;
   push("chapter", "战斗 · " + E.title);
-  clog("先攻：" + c.order.map(i => c.units[i].name + " " + c.units[i].init).join("　"));
+  clog("先攻：" + c.order.map(i => (c.units[i].guise ? "？？？" : c.units[i].name) + " " + c.units[i].init).join("　"));
   save(); renderPlay(); advanceCombat();
 }
 
@@ -2251,7 +2251,7 @@ function hurt(u, n, o = {}) {
   u.hp -= n;
   if (u.hp > 0) {
     const shift = u.type && ENEMIES[u.type].shift;
-    if (shift && n >= shift && !u.guise) { disguise(u); return `${u.name} 的脸像水一样流动起来，钻进了人群——现在她看起来和${u.guise}一模一样`; }
+    if (shift && n >= shift && !u.guise) { disguise(u); return `${u.name} 的脸像水一样流动起来，换了一张面孔钻进人群`; }
     return "";
   }
   if (u.side === "party") {
@@ -2549,9 +2549,9 @@ function combatBrief(mode) {
   const c = state.combat, E = ENCOUNTERS[c.id];
   const side = u => u.side === "party" ? "我方" : u.side === "wild" ? "野兽，敌我不分" : "敌方";
   const units = cbList().filter(u => !u.dead && !u.out).map(u => {
+    if (u.guise) return `伪装者（id: ${u.id}，敌方，混在人群里，尚未识破，无法攻击）`;
     const cd = Object.keys(u.cond).filter(k => COND[k]).map(k => COND[k]);
     if (u.type && ENEMIES[u.type].explode) cd.push("濒死自爆：同区 1d6，被自爆烧死不连锁");
-    if (u.guise) cd.push(`伪装成${u.guise}混在人群里，玩家还没找到她，不要点破她在哪`);
     return `${u.name}（id: ${u.id}，${side(u)}，HP ${u.hp}/${u.max}${u.down ? "，倒地" : ""}，AC ${u.ac}，在${c.zones[u.zone].n}${cd.length ? "，" + cd.join("、") : ""}）`;
   });
   const gone = cbList().filter(u => u.dead || u.out).length;
@@ -2636,7 +2636,7 @@ function renderCombat(box) {
   const c = state.combat, me = c.units.player, cur = cbCur(), turn = myTurn(), r = c.res || {};
   const wrap = el("div", "combat");
   const head = el("div", "cb-head");
-  head.append(el("span", "t", `第 ${c.round} 回合`), el("span", "label", turn ? "轮到你了" : busy ? "说书人正在描写战况……" : ACTIVE(me) ? `${cur.name} 行动中……` : "你倒下了，同伴还在战斗……"));
+  head.append(el("span", "t", `第 ${c.round} 回合`), el("span", "label", turn ? "轮到你了" : busy ? "说书人正在描写战况……" : ACTIVE(me) ? `${cur.guise ? "？？？" : cur.name} 行动中……` : "你倒下了，同伴还在战斗……"));
   wrap.append(head);
   const ini = el("div", "init");
   c.order.forEach((id, i) => { const u = c.units[id]; ini.append(el("span", (i === c.turn ? "now " : "") + (u.side !== "party" ? "foe " : "") + (u.dead || u.out ? "gone" : ""), u.guise ? "？？？" : u.name)); });
@@ -2657,7 +2657,7 @@ function renderCombat(box) {
     zs.append(zb);
   });
   wrap.append(zs);
-  for (const u of cbList().filter(u => u.guise && ACTIVE(u))) wrap.append(el("div", "note", `${u.name}伪装成了「${u.guise}」，混在人群里。看不见就打不到：用“识破伪装”（察觉 DC ${SPOT_DC}）把她找出来。`));
+  for (const u of cbList().filter(u => u.guise && ACTIVE(u))) wrap.append(el("div", "note", `敌人伪装后混在人群里，看不见就打不到：用“识破伪装”（察觉 DC ${SPOT_DC}）把她找出来。`));
 
   if (turn) {
     const res = el("div", "cb-res");

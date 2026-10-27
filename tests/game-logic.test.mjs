@@ -152,6 +152,24 @@ test('千面母开战时伪装、打不到；识破后现形，重伤会换脸',
   assert.deepEqual(result, { hidden: true, targetable: false, shown: true, reshift: true, smallHit: true });
 });
 
+test('未识破的伪装不会在先攻、换脸结果或说书人战况中透露面孔', () => {
+  const run = game();
+  const result = run(`(() => {
+    state=newGame(freshDraft());state.act=1;state.scene='act1_lighthouse';
+    state.companions.selene.recruited=true;state.split={scene:'act1_lighthouse',away:[],text:''};
+    startCombat('lighthouse');const fm=Object.values(state.combat.units).find(u=>u.type==='facemother');
+    const face=fm.guise, initiative=state.log.find(e=>e.t.startsWith('先攻：')).t, brief=combatBrief('narrate');
+    delete fm.guise;const shift=hurt(fm,20), newFace=fm.guise, hiddenBrief=combatBrief('narrate');
+    trySpot(state.combat.units.naia || {ref:'naia',name:'奈雅'});
+    return {face,initiative,brief,shift,newFace,hiddenBrief,revealed:!fm.guise};
+  })()`);
+  assert.doesNotMatch(result.initiative, /千面母/);
+  assert.doesNotMatch(result.brief, new RegExp('伪装成' + result.face));
+  assert.doesNotMatch(result.shift, new RegExp(result.newFace));
+  assert.doesNotMatch(result.hiddenBrief, new RegExp('伪装成' + result.newFace));
+  assert.equal(result.revealed, true);
+});
+
 test('航海图要先拿到守誓人的钥匙；旧存档的航海图拿法转成钥匙', () => {
   const run = game();
   const result = run(`(() => {
