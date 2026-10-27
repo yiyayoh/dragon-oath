@@ -493,7 +493,7 @@ const SCENES = {
     next: "act1_hub", recruit: ["naia"], meet: ["naia"], act: 1,
   },
   act1_hub: {
-    title: "灰帆港", loc: "灰帆港 · 醉龙酒馆", bg: "linear-gradient(160deg,#4f5a63,#1f252b 60%,#0e1114)", campFree: true, hub: true,
+    title: "灰帆港", loc: "灰帆港 · 醉龙酒馆", bg: "linear-gradient(160deg,#4f5a63,#1f252b 60%,#0e1114)", campFree: true, hub: true, jail: true,
     anchor: "醉龙酒馆是队伍的据点；在这里可以和玛莎、小汤姆、米拉说话，打听消息，商量下一步。本幕目标：拿到航海图和一艘船。港口各处可以按任意顺序去，玩家说要去哪里时，把 advance 设为对应的场景 id：黑潮码头 act1_docks（老鳗、维克斯的债、斗兽场）；旧学院废塔 act1_tower（第七道银光落在那里，有人看见教团在围塔）；沉船湾 act1_wreck（银龙的尸体搁浅在那里）；总督府 act1_manor（航海图锁在金库里；三天后的晚上有月光舞会，需要请柬）；下水道迷宫 act1_sewers（教团在港口底下的据点）。两条路线：为老鳗偷航海图换“黑鳗号”和维克斯债务减半；或者帮港卫军尉官萨丝搜集总督通教的证据，揭发后合法取回航海图、借到“海鸥号”。两条路互斥，也可以都不选，自己偷一艘船。航海图和船都到手后（act1.chart 和 act1.ship 都有值），教团会在当晚动手：把 advance 设为 act1_lighthouse。在酒馆里睡觉不消耗补给（写 camp: true）；每睡一晚就是一天，维克斯的债有期限。",
     next: ["act1_docks", "act1_tower", "act1_wreck", "act1_manor", "act1_sewers", "act1_lighthouse"], recruit: ["naia"], meet: ["naia"], act: 1,
     goals: [{ flag: "act1.chart", name: "航海图" }, { flag: "act1.ship", name: "船" }],
@@ -876,6 +876,8 @@ function tidyLog(s) {
     const hp = cd.hp + ((s.player.level || 1) - 1) * Math.max(1, Math.floor(CLASSES[cd.kit].hd / 2) + 1 + mod(cd.ab.con));
     s.companions[id] = { recruited: false, alive: true, taken: false, approval: 0, romance: "none", hp, hpMax: hp };
   }
+  const naia = s.companions.naia;
+  if (naia.fate === "imprisoned" && naia.left) { naia.jailed = true; naia.left = false; }
   s.act ||= 0;
   s.log.forEach(e => delete e.live); s.log = s.log.filter(e => e.t || e.k === "chapter");
   const byTitle = Object.fromEntries(Object.entries(SCENES).map(([id, sc]) => [sc.title, id]));
@@ -950,11 +952,12 @@ function present() {
   for (const id of Object.keys(COMPANIONS)) {
     const c = state.companions[id];
     if (out.includes(id) || !c.alive || !inAct(id) || c.left) continue;
+    if (c.jailed) { if (sc.jail) out.push(id); continue; }
     if (c.taken ? sc.rescue : sc.meet?.includes(id)) out.push(id);
   }
   return out;
 }
-function party() { return Object.keys(COMPANIONS).filter(id => state.companions[id]?.recruited && !state.companions[id].taken && state.companions[id].alive); }
+function party() { return Object.keys(COMPANIONS).filter(id => state.companions[id]?.recruited && !state.companions[id].taken && !state.companions[id].jailed && state.companions[id].alive); }
 
 /* 等级：里程碑制，不攒经验。同伴始终和玩家同级（state.player.level 就是全队等级）。 */
 const partyLevel = () => state?.player?.level || 1;
@@ -1109,7 +1112,7 @@ function companionBrief(id) {
   const c = COMPANIONS[id], s = state.companions[id], p = PEOPLE[id];
   const love = s.romance && s.romance !== "none" ? `，恋爱：${ROMANCE[s.romance].name}${s.secret ? "（秘密，其他恋人不知道）" : ""}` : "";
   const rule = ROMANCE_RULES[id], gate = [rule?.noLie && s.caughtLie ? "曾发现玩家撒谎，不会接受告白" : "", rule ? `接受多人恋爱需要赞同度 ≥ ${rule.poly}` : ""].filter(Boolean).join("；");
-  return `· ${p.name}（id: ${id}，${c.race}${c.cls}，${partyLevel()} 级）${s.recruited ? "【已加入队伍】" : "【尚未加入】"} 赞同度 ${s.approval}（${relLabel(s.approval)}）${love}，HP ${s.hp}/${s.hpMax}${gate ? "\n  感情底线：" + gate : ""}
+  return `· ${p.name}（id: ${id}，${c.race}${c.cls}，${partyLevel()} 级）${s.jailed ? "【被关押在酒馆地窖，不在队伍里，不参加战斗】" : s.recruited ? "【已加入队伍】" : "【尚未加入】"} 赞同度 ${s.approval}（${relLabel(s.approval)}）${love}，HP ${s.hp}/${s.hpMax}${gate ? "\n  感情底线：" + gate : ""}
   性格：${c.personality}
   赞同：${c.likes}；反感：${c.dislikes}
   秘密：${c.secret}
@@ -1588,9 +1591,9 @@ function applyGM(d, mode) {
   const nc = state.companions.naia, fate = state.flags["act1.naia_fate"];
   if (fate && nc.fate !== fate) {
     nc.fate = fate;
-    if (fate === "killed") { nc.alive = false; nc.recruited = false; notes.push(["奈雅死了", "down"]); }
-    else if (fate === "imprisoned") { nc.recruited = false; nc.left = true; notes.push(["奈雅被关押起来", "down"]); }
-    else if (fate === "recruited") { nc.left = false; if (!nc.recruited) { nc.recruited = true; notes.push(["奈雅留在了队伍里", "up"]); } }
+    if (fate === "killed") { nc.alive = false; nc.recruited = false; nc.jailed = false; notes.push(["奈雅死了", "down"]); }
+    else if (fate === "imprisoned") { nc.recruited = false; nc.left = false; nc.jailed = true; notes.push(["奈雅被关押起来", "down"]); }
+    else if (fate === "recruited") { nc.left = false; nc.jailed = false; if (!nc.recruited) { nc.recruited = true; notes.push(["奈雅留在了队伍里", "up"]); } }
   }
 
   // approval
@@ -1641,7 +1644,7 @@ function applyGM(d, mode) {
   const sc0 = SCENES[state.scene];
   for (const id of (!inCb && Array.isArray(d.recruit) ? d.recruit : [])) {
     const c = state.companions[id];
-    if (!c || c.recruited || !c.alive || c.left || !inAct(id)) continue;
+    if (!c || c.recruited || !c.alive || c.left || c.jailed || !inAct(id)) continue;
     if (c.taken ? !sc0.rescue : !sc0.recruit?.includes(id)) continue;
     if (id === "vex" && state.flags["prologue.vex_left"]) { if (!state.act) continue; state.flags["prologue.vex_left"] = false; }
     const back = c.taken;
@@ -1848,7 +1851,7 @@ function planNight() {
 // 恋爱、关系、补给等字段，营地内外都能用（只在描写战况时不处理）
 function applyBonds(d, notes) {
   for (const r of (Array.isArray(d.romance) ? d.romance : []).slice(0, 2)) {
-    const id = r?.id, c = state.companions[id]; if (!c || !ROMANCE[r.to]) continue;
+    const id = r?.id, c = state.companions[id]; if (!c || c.jailed || !ROMANCE[r.to]) continue;
     const from = c.romance || "none";
     if (r.to === "none") { if (from !== "none") { c.romance = "none"; c.secret = false; notes.push([`你和${PEOPLE[id].name}分开了`, "down"]); } continue; }
     if (ROMANCE[from].next !== r.to) continue; // 一次只能推进一格
@@ -2119,7 +2122,7 @@ function startCombat(id) {
   state.combat = { id, round: 1, turn: 0, started: false, units: {}, order: [], feed: [], res: null, spare: false, improv: false, count: {}, end: null,
     zones: E.zones.map(z => ({ n: z.n, tags: z.tags || [], adj: z.adj, burning: 0 })) };
   const c = state.combat;
-  for (const ref of ["player", ...present()]) c.units[ref] = partyUnit(ref, E.startAt?.[ref] ?? E.start);
+  for (const ref of ["player", ...present().filter(id => !state.companions[id].jailed)]) c.units[ref] = partyUnit(ref, E.startAt?.[ref] ?? E.start);
   for (const [type, n, zone] of E.foes) for (let i = 0; i < n; i++) { const u = foeUnit(type, zone, "enemy"); c.units[u.id] = u; }
   for (const u of cbList()) u.init = rollD20() + u.dexMod;
   sortOrder();
