@@ -489,19 +489,19 @@ const SCENES = {
   /* 第一幕：灰帆港。开场 → 港口（枢纽）⇄ 五个地点，任意顺序；拿到航海图和船后去灯塔 → 黎明 */
   act1_1: {
     camp: false, title: "灰帆港的早晨", loc: "醉龙酒馆 · 清晨", bg: "linear-gradient(160deg,#6d6a5e,#2a2621 60%,#13110e)",
-    anchor: "暴风雨停了。清晨，醉龙酒馆一片狼藉，海湾里漂着银色的碎光，全港都在议论昨夜坠落的银光。玛莎把队伍叫到吧台：要去梦里说的誓约神殿，需要两样东西——①航海图：她亡夫（最后一位守誓人）留下的，十年前被总督艾德蒙·科尔以“违禁物”为名没收，锁在总督府；②一艘能进雾海的船：黑潮会的老鳗有船，港卫军也有船，两边都不会白给。若维克斯在场，黑潮会的打手会上门“提醒”他：欠老鳗的债限期三天，不然他妹妹莉丝会被卖到外海（维克斯会尽量遮掩；债务被提起时写 act1.debt_known=true）。另一件事：酒馆里来了一位流浪女诗人“米拉”（奈雅伪装，见同伴资料），她弹着鲁特琴讲昨夜坠龙的歌，主动凑过来搭话，想和这群“被银光选中的人”同行；可以用 recruit 让她加入，也可以拒绝。玩家了解情况、做好打算后（2~4 轮），把 advance 设为 act1_hub，并在 journal 写下“第一幕：灰帆港”的目标。",
+    anchor: "暴风雨停了。清晨，醉龙酒馆一片狼藉，海湾里漂着银色的碎光，全港都在议论昨夜坠落的银光。玛莎把队伍叫到吧台：要去梦里说的誓约神殿，需要两样东西——①航海图：她亡夫（最后一位守誓人）留下的，一直封在酒馆地窖“龙息”酒桶底下的暗格里，但暗格只有守誓人的钥匙能打开——那把钥匙十年前被总督艾德蒙·科尔以“违禁物”为名没收，锁在总督府金库；②一艘能进雾海的船：黑潮会的老鳗有船，港卫军也有船，两边都不会白给。若维克斯在场，黑潮会的打手会上门“提醒”他：欠老鳗的债限期三天，不然他妹妹莉丝会被卖到外海（维克斯会尽量遮掩；债务被提起时写 act1.debt_known=true）。另一件事：酒馆里来了一位流浪女诗人“米拉”（奈雅伪装，见同伴资料），她弹着鲁特琴讲昨夜坠龙的歌，主动凑过来搭话，想和这群“被银光选中的人”同行；可以用 recruit 让她加入，也可以拒绝。玩家了解情况、做好打算后（2~4 轮），把 advance 设为 act1_hub，并在 journal 写下“第一幕：灰帆港”的目标。",
     next: "act1_hub", recruit: ["naia"], meet: ["naia"], act: 1,
   },
   act1_hub: {
     title: "灰帆港", loc: "灰帆港 · 醉龙酒馆", bg: "linear-gradient(160deg,#4f5a63,#1f252b 60%,#0e1114)", campFree: true, hub: true, jail: true,
-    anchor: "醉龙酒馆是队伍的据点；在这里可以和玛莎、小汤姆、米拉说话，打听消息，商量下一步。本幕目标：拿到航海图和一艘船。港口各处可以按任意顺序去，玩家说要去哪里时，把 advance 设为对应的场景 id：黑潮码头 act1_docks（老鳗、维克斯的债、斗兽场）；旧学院废塔 act1_tower（第七道银光落在那里，有人看见教团在围塔）；沉船湾 act1_wreck（银龙的尸体搁浅在那里）；总督府 act1_manor（航海图锁在金库里；三天后的晚上有月光舞会，需要请柬）；下水道迷宫 act1_sewers（教团在港口底下的据点）。两条路线：为老鳗偷航海图换“黑鳗号”和维克斯债务减半；或者帮港卫军尉官萨丝搜集总督通教的证据，揭发后合法取回航海图、借到“海鸥号”。两条路互斥，也可以都不选，自己偷一艘船。航海图和船都到手后（act1.chart 和 act1.ship 都有值），教团会在当晚动手：把 advance 设为 act1_lighthouse。在酒馆里睡觉不消耗补给（写 camp: true）；每睡一晚就是一天，维克斯的债有期限。",
+    anchor: "醉龙酒馆是队伍的据点；在这里可以和玛莎、小汤姆、米拉说话，打听消息，商量下一步。本幕目标：拿到航海图和一艘船。航海图封在酒馆地窖的“龙息”酒桶底下，要先从总督府金库拿回守誓人的钥匙（act1.key 有值）；拿到钥匙后回到酒馆，下地窖打开暗格取出航海图时写 act1.chart=opened（没有钥匙打不开，硬撬也不行）。港口各处可以按任意顺序去，玩家说要去哪里时，把 advance 设为对应的场景 id：黑潮码头 act1_docks（老鳗、维克斯的债、斗兽场）；旧学院废塔 act1_tower（第七道银光落在那里，有人看见教团在围塔）；沉船湾 act1_wreck（银龙的尸体搁浅在那里）；总督府 act1_manor（守誓人的钥匙锁在金库里；三天后的晚上有月光舞会，需要请柬）；下水道迷宫 act1_sewers（教团在港口底下的据点）。两条路线：潜进金库时顺手替老鳗偷出总督的走私账本，换“黑鳗号”和维克斯债务减半；或者帮港卫军尉官萨丝搜集总督通教的证据，揭发后合法取回钥匙、借到“海鸥号”。两条路互斥，也可以都不选，自己偷一艘船。航海图和船都到手后（act1.chart 和 act1.ship 都有值），教团会在当晚动手：把 advance 设为 act1_lighthouse。在酒馆里睡觉不消耗补给（写 camp: true）；每睡一晚就是一天，维克斯的债有期限。",
     next: ["act1_docks", "act1_tower", "act1_wreck", "act1_manor", "act1_sewers", "act1_lighthouse"], recruit: ["naia"], meet: ["naia"], act: 1,
-    goals: [{ flag: "act1.chart", name: "航海图" }, { flag: "act1.ship", name: "船" }],
+    goals: [{ flag: "act1.key", name: "守誓人的钥匙" }, { flag: "act1.chart", name: "航海图" }, { flag: "act1.ship", name: "船" }],
     gate: { act1_lighthouse: () => !!(state.flags["act1.chart"] && state.flags["act1.ship"]) },
   },
   act1_docks: {
     title: "黑潮码头", loc: "灰帆港 · 黑潮码头", bg: "linear-gradient(160deg,#3c4a44,#18201c 60%,#0b0f0d)", loc1: true,
-    anchor: "鱼腥、焦油和赌徒的吆喝。黑潮会控制着这里：仓库、私船、地下斗兽场。老鳗·莫格（笑眉笑眼、毒如蛇蝎的胖老头）在一艘改成赌场的旧船“金鳗”上见客，只认利益。他可以：拿维克斯的债要挟（妹妹莉丝扣在他手里，三天期限；债务被提起时写 act1.debt_known=true）；开价——替他从总督府金库偷出航海图（他也想要），他就借出“黑鳗号”并把维克斯的债减半（写 act1.eel=deal）。玩家也可以与黑潮会为敌（写 act1.eel=enemy），强行救莉丝（写 act1.lise=saved）。斗兽场：卡西安会认出这个地方（他是十年前的头牌“碎潮”），会有人认出他。若维克斯在序幕里离开了队伍，他就在码头躲债，可以用 recruit 劝他回来。真正打起来时在 JSON 写 combat 为 docks_brawl。离开码头时把 advance 设为 act1_hub。",
+    anchor: "鱼腥、焦油和赌徒的吆喝。黑潮会控制着这里：仓库、私船、地下斗兽场。老鳗·莫格（笑眉笑眼、毒如蛇蝎的胖老头）在一艘改成赌场的旧船“金鳗”上见客，只认利益。他可以：拿维克斯的债要挟（妹妹莉丝扣在他手里，三天期限；债务被提起时写 act1.debt_known=true）；开价——替他从总督府金库偷出总督的走私账本（总督拿它要挟黑潮会多年），他就借出“黑鳗号”并把维克斯的债减半（写 act1.eel=deal）。玩家也可以与黑潮会为敌（写 act1.eel=enemy），强行救莉丝（写 act1.lise=saved）。斗兽场：卡西安会认出这个地方（他是十年前的头牌“碎潮”），会有人认出他。若维克斯在序幕里离开了队伍，他就在码头躲债，可以用 recruit 劝他回来。真正打起来时在 JSON 写 combat 为 docks_brawl。离开码头时把 advance 设为 act1_hub。",
     next: ["act1_hub"], encounters: ["docks_brawl"], recruit: ["vex"], meet: ["vex"], act: 1,
   },
   act1_tower: {
@@ -516,7 +516,7 @@ const SCENES = {
   },
   act1_manor: {
     title: "总督府", loc: "灰帆港 · 总督府", bg: "linear-gradient(160deg,#3f4a6e,#191d2c 60%,#0b0d14)", loc1: true, camp: false,
-    anchor: "总督艾德蒙·科尔（风度翩翩、满口法度的半精灵）的府邸。航海图锁在地下金库。白天可以以访客身份试探总督、打听金库；港卫军尉官萨丝·铁锤（正直的青铜龙裔）对印记持有者充满怀疑，但她也在暗中查总督——可以和她合作搜集“总督秘密接受教团资助”的证据（写 act1.sath_trust=true；揭发后合法取回航海图、借到“海鸥号”）。重头戏是月光舞会：需要请柬（伪造、购买、或让米拉变形，写 act1.invite）。舞会上可以和同伴跳舞（适合推进恋爱）、和总督交锋、在一旁发现一位举止古怪的贵妇人（其实是千面母伪装，察觉 DC 17，写 act1.facemother_seen=true；不要直接点破身份）。偷航海图：隐匿 DC 14 + 巧手 DC 15（金库），成功写 act1.chart=stolen；揭发总督写 act1.chart=legal、act1.governor=exposed；勒索总督写 act1.chart=blackmail、act1.governor=blackmailed。失败触发守卫：动手时在 JSON 写 combat 为 manor_guards，或者逃跑。若和萨丝合作揭发，船写 act1.ship=seagull；若替老鳗偷图并交给他，船写 act1.ship=black_eel。离开时把 advance 设为 act1_hub。",
+    anchor: "总督艾德蒙·科尔（风度翩翩、满口法度的半精灵）的府邸。守誓人的钥匙（一枚刻着龙鳞纹的银钥匙）锁在地下金库，十年前从玛莎的亡夫那里没收来的；同一个金库里还有总督的走私账本（老鳗想要）。白天可以以访客身份试探总督、打听金库；港卫军尉官萨丝·铁锤（正直的青铜龙裔）对印记持有者充满怀疑，但她也在暗中查总督——可以和她合作搜集“总督秘密接受教团资助”的证据（写 act1.sath_trust=true；揭发后合法取回钥匙、借到“海鸥号”）。重头戏是月光舞会：需要请柬（伪造、购买、或让米拉变形，写 act1.invite）。舞会上可以和同伴跳舞（适合推进恋爱）、和总督交锋、在一旁发现一位举止古怪的贵妇人（其实是千面母伪装，察觉 DC 17，写 act1.facemother_seen=true；不要直接点破身份）。偷钥匙：隐匿 DC 14 + 巧手 DC 15（金库），成功写 act1.key=stolen；揭发总督写 act1.key=legal、act1.governor=exposed；勒索总督写 act1.key=blackmail、act1.governor=blackmailed。钥匙到手不等于航海图到手：航海图要回酒馆地窖才能取出，这里不要写 act1.chart。失败触发守卫：动手时在 JSON 写 combat 为 manor_guards，或者逃跑。若和萨丝合作揭发，船写 act1.ship=seagull；若替老鳗偷出账本并交给他，船写 act1.ship=black_eel。离开时把 advance 设为 act1_hub。",
     next: ["act1_hub"], encounters: ["manor_guards"], act: 1,
   },
   act1_sewers: {
@@ -526,7 +526,8 @@ const SCENES = {
   },
   act1_lighthouse: {
     title: "灯塔之夜", loc: "灰帆港 · 灯塔", bg: "linear-gradient(160deg,#6b3a2a,#26140f 60%,#0f0806)", level: 5, camp: false, act: 1,
-    anchor: "航海图和船都到手的当晚，灰烬教团动手了：酒馆被砸，玛莎被绑走（若 act1.hostage=tom，被绑的是小汤姆；确定人质时写 act1.hostage=martha 或 tom），留话“一个小时内，带着印记持有者到灯塔来交换”。同时米拉的身份暴露：她传给教团的情报让教团知道了你们的航线和船（若 act1.naia_seen 为 true，玩家早已知道，现在她可以选择当面坦白）。把 act1.naia_exposed 设为 true，她从此显出真身（灰白皮肤、水银色头发、没有瞳孔的乳白眼睛），名字是奈雅。玩家必须当场或事后决定怎么处置她：杀掉、关押、接纳（写 act1.naia_fate = killed|imprisoned|recruited；killed 时她死去，imprisoned 时她离队被关在酒馆地窖）。其他同伴会强烈表态：赛勒涅、博林主张严惩，卡西安主张宽恕。教团还在码头埋了炸药，目标是你们的船：队伍可以拆分，一部分人去码头拆炸药（用检定解决，结果写 act1.ship_intact），其余人去灯塔。灯塔分底层、旋梯、灯室三层；千面母（教团间谍头子、奈雅的养母，永远不用同一张脸）带着无面刺客混在一群“平民”里等着。动手时在 JSON 写 combat 为 lighthouse；若奈雅已被接纳且赞同度 ≥ 40，她可以和千面母对话让她动摇退场，用千面母的真名威胁也能让她投降。战后写 act1.martha_alive（人质是否活着），把 advance 设为 act1_dawn。",
+    split: { flag: "act1.ship_intact", place: "码头", job: "拆掉码头上的炸药" },
+    anchor: "航海图和船都到手的当晚，灰烬教团动手了：酒馆被砸，玛莎被绑走（若 act1.hostage=tom，被绑的是小汤姆；确定人质时写 act1.hostage=martha 或 tom），留话“一个小时内，带着印记持有者到灯塔来交换”。同时米拉的身份暴露：她传给教团的情报让教团知道了你们的航线和船（若 act1.naia_seen 为 true，玩家早已知道，现在她可以选择当面坦白）。把 act1.naia_exposed 设为 true，她从此显出真身（灰白皮肤、水银色头发、没有瞳孔的乳白眼睛），名字是奈雅。玩家必须当场或事后决定怎么处置她：杀掉、关押、接纳（写 act1.naia_fate = killed|imprisoned|recruited；killed 时她死去，imprisoned 时她离队被关在酒馆地窖）。其他同伴会强烈表态：赛勒涅、博林主张严惩，卡西安主张宽恕。教团还在码头埋了炸药，目标是你们的船：队伍可以拆分，一部分人去码头拆炸药，其余人去灯塔。谁去码头由玩家在界面上分派，码头的战斗和拆弹由程序结算并写 act1.ship_intact；你不要替玩家决定谁去哪里，也不要自己写 act1.ship_intact，可以在叙述里提醒玩家要分派。灯塔分底层、旋梯、灯室三层；千面母（教团间谍头子、奈雅的养母，永远不用同一张脸）带着无面刺客混在一群“平民”里等着，开战时她已经变成队伍里某个人的样子。动手时在 JSON 写 combat 为 lighthouse；若奈雅已被接纳且赞同度 ≥ 40，她可以和千面母对话让她动摇退场，用千面母的真名威胁也能让她投降。战后写 act1.martha_alive（人质是否活着），把 advance 设为 act1_dawn。",
     next: "act1_dawn", encounters: ["lighthouse"],
   },
   act1_dawn: {
@@ -538,7 +539,7 @@ const SCENES = {
 const ACT_NAMES = ["序幕 · 暴风之夜", "第一幕 · 灰帆港", "第二幕 · 龙骨群岛", "第三幕 · 烬冠"];
 const nextOf = sc => sc.next == null ? [] : [].concat(sc.next);
 const actGoals = () => Object.values(SCENES).find(sc => sc.act === state.act && sc.goals)?.goals || [];
-const GOAL_VALUES = { stolen: "偷来的", legal: "揭发总督后合法取回", blackmail: "勒索总督", eel: "从老鳗那里拿到", black_eel: "黑鳗号", seagull: "海鸥号" };
+const GOAL_VALUES = { opened: "从龙息酒桶底的暗格取出", stolen: "偷来的", legal: "揭发总督后合法取回", blackmail: "勒索总督", eel: "从老鳗那里拿到", black_eel: "黑鳗号", seagull: "海鸥号" };
 // 第一幕的地点，走完的越多等级越高
 const ACT1_LOCS = Object.keys(SCENES).filter(id => SCENES[id].loc1);
 
@@ -548,7 +549,8 @@ const FLAG_KEYS = {
   "prologue.rat_king": ["killed", "spared", "driven"], "prologue.vex_left": "bool",
   "prologue.hestia_answer": ["trust", "question", "refuse"], "prologue.martha_legend": "bool",
   // 第一幕
-  "act1.chart": ["stolen", "legal", "blackmail", "eel"], "act1.ship": ["black_eel", "seagull", "stolen"],
+  // act1.key：守誓人的钥匙怎么拿到的；act1.chart：用钥匙打开地窖暗格取出航海图（旧存档里 chart 记的是拿法）
+  "act1.key": ["stolen", "legal", "blackmail", "eel"], "act1.chart": ["opened", "stolen", "legal", "blackmail", "eel"], "act1.ship": ["black_eel", "seagull", "stolen"],
   "act1.eel": ["deal", "enemy", "ally"], "act1.vex_debt": ["paid", "halved", "defied"], "act1.lise": ["saved", "sold"], "act1.debt_known": "bool",
   "act1.lyra_notes": ["burned", "kept"], "act1.notes_copied": "bool", "act1.dragon_body": ["harvested", "funeral"],
   "act1.sath_trust": "bool", "act1.invite": ["forged", "bought", "naia"], "act1.governor": ["exposed", "blackmailed", "robbed", "ally"],
@@ -600,11 +602,12 @@ const ENEMIES = {
   rat_king: { name: "鼠王", hp: 28, ac: 13, dex: 2, atk: { n: "撕咬", cnt: 1, d: 8, plus: 2, hit: 5 }, summon: true, unique: true },
   thug: { name: "黑潮会打手", hp: 16, ac: 13, dex: 0, atk: { n: "棍棒", cnt: 1, d: 8, plus: 2, hit: 4 }, plead: true },
   assassin: { name: "无面刺客", hp: 22, ac: 15, dex: 3, atk: { n: "匕首", cnt: 1, d: 4, plus: 4, hit: 6 }, sneak: 2 },
-  drowned: { name: "溺死水手", hp: 30, ac: 12, dex: 0, atk: { n: "爪击", cnt: 2, d: 6, plus: 0, hit: 5 } },
-  guard: { name: "总督府卫兵", hp: 16, ac: 16, dex: 0, atk: { n: "长戟", cnt: 1, d: 8, plus: 2, hit: 4 }, plead: true },
+  drowned: { name: "溺死水手", hp: 22, ac: 11, dex: 0, atk: { n: "爪击", cnt: 1, d: 8, plus: 3, hit: 6 }, multi: 2 },
+  guard_captain: { name: "卫队长", hp: 32, ac: 17, dex: 1, atk: { n: "长剑", cnt: 1, d: 8, plus: 3, hit: 6 }, multi: 2, plead: true, unique: true },
+  guard: { name: "总督府卫兵", hp: 13, ac: 16, dex: 0, atk: { n: "长戟", cnt: 1, d: 8, plus: 2, hit: 4 }, plead: true },
   deacon: { name: "教团执事", pid: "cultist", hp: 24, ac: 13, dex: 1, atk: { n: "烬火杖", cnt: 2, d: 6, plus: 0, hit: 5, ranged: true }, ignite: true, plead: true, unique: true },
-  // 设定集里千面母还有“受到 15 点以上伤害换脸”的机制，还没做
-  facemother: { name: "千面母", pid: "facemother", hp: 70, ac: 15, dex: 4, atk: { n: "淬毒匕首", cnt: 2, d: 4, plus: 4, hit: 7 }, sneak: 3, unique: true },
+  // shift：开战时伪装成队伍里的某人；一次受到这么多伤害就换一张脸，重新混进人群
+  facemother: { name: "千面母", pid: "facemother", hp: 70, ac: 15, dex: 4, atk: { n: "淬毒匕首", cnt: 2, d: 4, plus: 4, hit: 7 }, sneak: 3, unique: true, shift: 15 },
 };
 const ZONE_TAGS = { cover: "掩体", high: "高处", obscured: "遮蔽", exit: "出口" };
 // zones 的 adj 是相邻区域的下标；foes：[敌人, 数量, 起始区域]；events 在指定回合开始时触发
@@ -640,7 +643,7 @@ const ENCOUNTERS = {
   },
   docks_brawl: {
     title: "码头斗殴", lethal: false,
-    brief: "黑潮会的 4 名打手围上来，血量低于一半时会求饶",
+    brief: "黑潮会的 4 名打手围上来，血量低于一半时会求饶；第 2 回合又有 2 名打手从货箱后面冲出来",
     props: "堆成山的货箱、头顶摇晃的吊货臂、湿滑的栈桥、成桶的鱼油",
     zones: [
       { n: "栈桥", adj: [1, 3] },
@@ -650,6 +653,7 @@ const ENCOUNTERS = {
     ],
     start: 0,
     foes: [["thug", 2, 0], ["thug", 2, 1]],
+    events: [{ round: 2, spawn: [["thug", 2, 1]], text: "货箱后面又冲出两个黑潮会打手，手里拎着鱼钩和铁链！" }],
   },
   tower_spies: {
     title: "围塔的探子", lethal: true,
@@ -666,7 +670,7 @@ const ENCOUNTERS = {
   },
   wreck_drowned: {
     title: "溺死者上岸", lethal: true,
-    brief: "被银光惊醒的 3 名溺死水手从水里爬上来",
+    brief: "被银光惊醒的 4 名溺死水手（每回合抓两下）从水里爬上来；第 2 回合潮水里又爬出 1 具，堵住回沙滩的路",
     props: "退潮的积水、锋利的礁石、龙尸巨大的骨刺、沉船的断桅",
     zones: [
       { n: "沙滩", tags: ["exit"], adj: [1, 2] },
@@ -675,11 +679,12 @@ const ENCOUNTERS = {
       { n: "沉船残骸", tags: ["obscured"], adj: [1, 2] },
     ],
     start: 0,
-    foes: [["drowned", 1, 2], ["drowned", 2, 3]],
+    foes: [["drowned", 2, 2], ["drowned", 2, 3]],
+    events: [{ round: 2, spawn: [["drowned", 1, 0]], text: "身后的潮水里又站起一具浮肿的尸体，挡住了回沙滩的路！" }],
   },
   manor_guards: {
     title: "金库警报", lethal: false,
-    brief: "总督府卫兵 4 人（血量低于一半时会求饶），会把人抓起来而不是杀掉",
+    brief: "卫队长（每回合砍两剑）和 4 名总督府卫兵（血量低于一半时会求饶），会把人抓起来而不是杀掉；第 2 回合舞厅那边赶来 1 名增援",
     props: "金库的铁门、走廊的挂毯和盔甲架、舞厅的水晶吊灯、花园的喷泉",
     zones: [
       { n: "金库", adj: [1] },
@@ -688,11 +693,12 @@ const ENCOUNTERS = {
       { n: "花园", tags: ["exit"], adj: [2] },
     ],
     start: 0,
-    foes: [["guard", 2, 1], ["guard", 2, 2]],
+    foes: [["guard", 2, 1], ["guard_captain", 1, 1], ["guard", 2, 2]],
+    events: [{ round: 2, spawn: [["guard", 1, 2]], text: "警钟大作，舞厅那边又冲来一名卫兵！" }],
   },
   sewers_cult: {
     title: "地下祭室", lethal: true,
-    brief: "教团执事（可以放火、会求饶）带着 3 名狂信徒和 1 名无面刺客",
+    brief: "教团执事（可以放火、会求饶）带着 3 名狂信徒和 1 名无面刺客；第 2 回合暗道里又钻出 2 名狂信徒",
     props: "齐腰深的污水、腐朽的窄桥、祭坛上的烬火盆、头顶的排水闸门",
     zones: [
       { n: "污水渠", adj: [1] },
@@ -702,10 +708,11 @@ const ENCOUNTERS = {
     ],
     start: 0,
     foes: [["cultist", 2, 1], ["deacon", 1, 2], ["cultist", 1, 2], ["assassin", 1, 3]],
+    events: [{ round: 2, spawn: [["cultist", 2, 3]], text: "暗道里传来脚步声，又有两名狂信徒举着烬火冲了出来！" }],
   },
   lighthouse: {
     title: "灯塔之夜", lethal: true,
-    brief: "千面母和 3 名无面刺客；第 4 回合她点燃灯室的导火线，没人扑灭的话第 8 回合灯塔爆炸",
+    brief: "千面母和 4 名无面刺客。千面母开战时伪装成队伍里的某人，看不见、打不到，要用察觉（DC 15）识破；她偷袭一次后现形，一次受到 15 点以上伤害会换脸重新躲起来。第 4 回合她点燃灯室的导火线，没人扑灭的话第 8 回合灯塔爆炸",
     props: "盘旋而上的铁梯、灯室里巨大的透镜和灯油桶、底层被捆着的人质、窗外的悬崖和海",
     zones: [
       { n: "底层", adj: [1] },
@@ -713,7 +720,7 @@ const ENCOUNTERS = {
       { n: "灯室", tags: ["high"], adj: [1] },
     ],
     start: 0,
-    foes: [["assassin", 2, 0], ["assassin", 1, 1], ["facemother", 1, 2]],
+    foes: [["assassin", 2, 0], ["assassin", 2, 1], ["facemother", 1, 2]],
     events: [
       { round: 4, text: "千面母点燃了灯室里的导火线！火花顺着引线爬向油桶——再过四个回合，整座灯塔都会炸上天。（即兴行动可以扑灭）" },
       { round: 8, unless: "fuse", blast: { dice: [6, 6] }, text: "导火线烧到了尽头，灯塔在巨响中炸开，碎石和火焰席卷了每一层！" },
@@ -878,6 +885,7 @@ function tidyLog(s) {
   }
   const naia = s.companions.naia;
   if (naia.fate === "imprisoned" && naia.left) { naia.jailed = true; naia.left = false; }
+  const chart = s.flags?.["act1.chart"]; if (chart && chart !== "opened" && !s.flags["act1.key"]) s.flags["act1.key"] = chart; // 旧存档：航海图原本直接锁在总督府
   s.act ||= 0;
   s.log.forEach(e => delete e.live); s.log = s.log.filter(e => e.t || e.k === "chapter");
   const byTitle = Object.fromEntries(Object.entries(SCENES).map(([id, sc]) => [sc.title, id]));
@@ -955,7 +963,7 @@ function present() {
     if (c.jailed) { if (sc.jail) out.push(id); continue; }
     if (c.taken ? sc.rescue : sc.meet?.includes(id)) out.push(id);
   }
-  return out;
+  return out.filter(id => !awayIds().includes(id));
 }
 function party() { return Object.keys(COMPANIONS).filter(id => state.companions[id]?.recruited && !state.companions[id].taken && !state.companions[id].jailed && state.companions[id].alive); }
 
@@ -1120,16 +1128,80 @@ function companionBrief(id) {
 }
 // 这一幕会出场的 NPC：[id, 从第几幕起, 说明, 到第几幕为止]
 const NPC_NOTES = [
-  ["martha", 0, "独臂退休冒险者，嘴硬心软，酒馆老板娘。亡夫是最后一位守誓人。"],
+  ["martha", 0, "独臂退休冒险者，嘴硬心软，酒馆老板娘。亡夫是最后一位守誓人，航海图封在地窖“龙息”酒桶底下的暗格里，钥匙被总督没收（序幕里她不会主动说出来）。"],
   ["tom", 0, "胆小热心的半身人帮工，序幕里被老鼠咬伤了腿。"],
   ["hooded", 0, "窗边的兜帽客，其实是教团间谍形变者奈雅，GM 不要透露。", 0],
   ["eel", 1, "老鳗·莫格，黑潮会首领，控制港口地下世界的胖老头，笑眉笑眼、毒如蛇蝎，只认利益；脖子上盘着鳗鱼刺青，满手金戒指。和维克斯、卡西安的过去都有关。"],
-  ["governor", 1, "艾德蒙·科尔，灰帆港总督，风度翩翩、满口法度的半精灵。十年前没收了玛莎亡夫的航海图。他秘密接受教团资助，但并不信仰教团，只是想借教团打压黑潮会（GM 不要透露，要靠证据揭开）。"],
+  ["governor", 1, "艾德蒙·科尔，灰帆港总督，风度翩翩、满口法度的半精灵。十年前没收了玛莎亡夫的守誓人钥匙（打开地窖里航海图暗格的唯一钥匙），锁在金库。他秘密接受教团资助，但并不信仰教团，只是想借教团打压黑潮会（GM 不要透露，要靠证据揭开）。"],
   ["sath", 1, "萨丝·铁锤，港卫军尉官，正直的青铜龙裔。对印记持有者充满怀疑，可以用行动赢得她的信任；她在暗中调查总督。"],
   ["facemother", 1, "千面母，灰烬教团的间谍头子、奈雅的养母，从不以同一张脸出现两次。第一幕里可以让她伪装成路人、贵妇、小贩和玩家说上几句话埋下伏笔（GM 不要透露身份），灯塔之夜主导伏击。"],
 ];
 const npcLines = () => NPC_NOTES.filter(([, from, , to]) => from <= state.act && (to == null || state.act <= to))
   .map(([id, , t]) => `${PEOPLE[id].name}（${id}）：${t}`).join("\n");
+// 分头行动（灯塔之夜）：玩家把同伴分成两组，另一组的结果由代码结算，这一场里他们不在场
+const splitDone = () => state.split?.scene === state.scene;
+const splitPending = () => !!SCENES[state.scene].split && !splitDone();
+const awayIds = () => splitDone() ? state.split.away : [];
+function splitLine(sc) {
+  if (!sc.split) return "";
+  if (splitDone()) return `
+分头行动：${state.split.away.length ? state.split.away.map(id => PEOPLE[id].name).join("、") + "去了" + sc.split.place : "没有人去" + sc.split.place}（${state.split.text}）；其余人在这边。${sc.split.place}的结果已由程序决定，照着写，不要改。`;
+  return `
+分头行动：还没分组。玩家会在界面上分派谁去${sc.split.place}（${sc.split.job}），那边的结果由程序结算；你不要替玩家分组，也不要写 ${sc.split.flag}。`;
+}
+// 码头组：先打发看守炸药的狂信徒（人越少伤得越重，不会死），再由组里最擅长的人拆炸药（DC 15，两人以上有优势）
+function resolveSplit(away) {
+  const sc = SCENES[state.scene], place = sc.split.place, lines = [];
+  if (!away.length) {
+    state.flags[sc.split.flag] = false;
+    lines.push(`没有人去${place}。午夜时分，${place}方向传来一声巨响——船被炸了。`);
+  } else {
+    const dice = [0, 4, 3][away.length] || 2, hurtBy = [];
+    for (const id of away) { const c = state.companions[id], n = roll(dice, 6); c.hp = Math.max(1, c.hp - n); hurtBy.push(`${PEOPLE[id].name} −${n}（${c.hp}/${c.hpMax}）`); }
+    lines.push(`${place} · 看守炸药的狂信徒扑了上来（${dice}d6）：${hurtBy.join("、")}`);
+    const pb = profBonus(partyLevel());
+    const best = away.map(id => ({ id, b: Math.max(mod(abOf(id).int), mod(abOf(id).dex)) + pb })).sort((a, b) => b.b - a.b)[0];
+    const [d, rs] = d20x(away.length >= 2, false), total = d + best.b, ok = d === 20 || (d !== 1 && total >= 15);
+    lines.push(`${place} · ${PEOPLE[best.id].name}拆炸药：d20(${rs.join("/")})${sgn(best.b)} = ${total} 对 DC 15${away.length >= 2 ? "（有人帮忙，优势）" : ""}，${ok ? "成功，船保住了" : "失败，炸药炸了，船受了重创"}`);
+    if (!ok) {
+      const burnt = away.map(id => { const c = state.companions[id], n = roll(1, 6); c.hp = Math.max(1, c.hp - n); return `${PEOPLE[id].name} −${n}`; });
+      lines.push(`${place} · 爆炸的气浪掀翻了所有人：${burnt.join("、")}`);
+    }
+    state.flags[sc.split.flag] = ok;
+  }
+  for (const t of lines) push("sys", t, { cls: state.flags[sc.split.flag] ? "appr-up" : "appr-down" });
+  return state.flags[sc.split.flag] ? "船保住了" : "船被炸伤了";
+}
+function doSplit(away) {
+  if (!splitPending()) return;
+  away = away.filter(id => party().includes(id));
+  state.split = { scene: state.scene, away, text: "" };
+  state.split.text = resolveSplit(away);
+  const sc = SCENES[state.scene], names = away.map(id => PEOPLE[id].name).join("、");
+  closeModal(); save(); renderPlay();
+  if (state.pendingCombat) { const id = state.pendingCombat; state.pendingCombat = null; startCombat(id); return; }
+  if (state.pendingAdvance) { const id = state.pendingAdvance; state.pendingAdvance = null; if (canGo(sc, id)) goScene(id); save(); renderPlay(); return; }
+  gm(`（玩家把队伍分成两组：${names ? names + "去" + sc.split.place : "没有人去" + sc.split.place}，其余人跟着玩家。${sc.split.place}那边的结果程序已经结算：${state.split.text}。请简短叙述两组分头出发，然后继续玩家这边。）`,
+    names ? `分头行动：${names}去${sc.split.place}，其余人跟我走。` : `所有人跟我走，不去${sc.split.place}了。`);
+}
+function openSplit() {
+  const sc = SCENES[state.scene]; if (!splitPending()) return;
+  const away = new Set();
+  modal("分头行动", s => {
+    s.append(el("p", null, `谁去${sc.split.place}（${sc.split.job}）？其余人跟你走。`));
+    s.append(el("div", "meta", `去${sc.split.place}的人越少越危险：一人重伤，两人吃力，三人比较稳。留在你身边的人越少，这边的战斗越难打。没人去的话，船会被炸。`));
+    const list = el("div", "chips");
+    for (const id of party()) {
+      const c = state.companions[id], b = el("button", "chip"); b.type = "button";
+      const draw = () => { b.textContent = ""; b.setAttribute("aria-pressed", String(away.has(id))); b.append(el("b", null, PEOPLE[id].name), el("small", null, `${away.has(id) ? "去" + sc.split.place : "跟着你"} · HP ${c.hp}/${c.hpMax}`)); };
+      b.onclick = () => { away.has(id) ? away.delete(id) : away.add(id); draw(); };
+      draw(); list.append(b);
+    }
+    s.append(list);
+    const go = el("button", "btn gold", "就这么分"); go.type = "button"; go.onclick = () => doSplit([...away]);
+    s.append(go);
+  });
+}
 function nextLine(sc) {
   const ids = nextOf(sc);
   if (!ids.length) {
@@ -1163,7 +1235,7 @@ function buildPrompt(action, mode) {
   const pres = present();
   const encs = (sc.encounters || []).filter(id => !state.fought?.[id]);
   return SYSTEM + rulesBlock() +
-    `\n\n【当前场景】${state.scene}「${sc.title}」，地点：${state.location}\n场景锚点（GM 可见）：${sc.anchor}\n${nextLine(sc)}` +
+    `\n\n【当前场景】${state.scene}「${sc.title}」，地点：${state.location}\n场景锚点（GM 可见）：${sc.anchor}\n${nextLine(sc)}${splitLine(sc)}` +
     (state.combat ? combatBrief(mode) : state.camp ? campBrief() : encs.length ? `\n可开战的遭遇：${encs.map(id => id + "（" + ENCOUNTERS[id].brief + "）").join("；")}` : "") +
     `\n\n【玩家角色】${p.name}，${p.gender}，${p.level} 级${RACES[p.race].name}${CLASSES[p.cls].name}，背景：${BACKGROUNDS[p.bg].name}（灵感条件：${BACKGROUNDS[p.bg].insp}）。外貌：${p.appearance}` +
     `\n属性：${AB_KEYS.map(k => AB[k] + p.abilities[k] + "(" + sgn(mod(p.abilities[k])) + ")").join(" ")}；熟练技能：${profs}` +
@@ -1560,11 +1632,12 @@ async function gm(action, shown, mode) {
   } finally {
     busy = false; ctl = null;
     save(); renderPlay();
-    if (state.pendingCombat && !state.combat) { const id = state.pendingCombat; state.pendingCombat = null; startCombat(id); }
+    if ((state.pendingCombat || state.pendingAdvance) && !state.combat && splitPending()) openSplit();
+    else if (state.pendingCombat && !state.combat) { const id = state.pendingCombat; state.pendingCombat = null; startCombat(id); }
     else if (state.pendingCamp) { state.pendingCamp = false; enterCamp(); }
     else if (mode === "improv" && state.combat && !state.pendingCheck && !lastAction) { state.combat.improv = false; state.combat.res.action = false; afterAct(); }
     if (state.pendingCheck) openDice();
-    else if (state.levelNote && !state.combat) openLevelUp();
+    else if (state.levelNote && !state.combat && !state.pendingCombat && !state.pendingAdvance) openLevelUp();
     if (!state.combat && !lastAction) maybeSummarize(); // 后台整理记忆，不挡玩家
   }
 }
@@ -1579,6 +1652,8 @@ function applyGM(d, mode) {
   // flags
   if (d.flags && typeof d.flags === "object") for (const [k, v] of Object.entries(d.flags)) {
     const rule = FLAG_KEYS[k]; if (!rule) { console.warn("未定义的标记被丢弃", k); continue; }
+    if (SCENES[state.scene].split?.flag === k) continue; // 分头行动那一边的结果只由代码结算
+    if (k === "act1.chart" && !state.flags["act1.key"] && !d.flags["act1.key"]) continue; // 没有守誓人的钥匙打不开地窖暗格
     if (rule === "bool") state.flags[k] = !!v;
     else if (rule === "id") { if (v === false || COMPANIONS[v]) state.flags[k] = v; }
     else if (Array.isArray(rule) && rule.includes(v)) state.flags[k] = v;
@@ -1697,7 +1772,8 @@ function applyGM(d, mode) {
 
   // scene flow
   const sc = SCENES[state.scene];
-  if (d.advance && canGo(sc, d.advance)) goScene(d.advance, !!d.location);
+  if (d.advance && canGo(sc, d.advance) && splitPending()) { state.pendingAdvance = d.advance; state.suggestions = []; }
+  else if (d.advance && canGo(sc, d.advance)) goScene(d.advance, !!d.location);
   else if (d.scene_end === true && sc.endAct != null) {
     const need = sc.endNeeds;
     const turns = state.log.filter(e => e.k === "you" && chKey(e) === curKey()).length;
@@ -1726,7 +1802,7 @@ function nextAct() {
   state.ended = false; state.act = SCENES[sc.after].act || state.act + 1;
   if (state.act === 1) {
     state.act1Day = state.day;
-    state.journal.push({ quest: "第一幕：灰帆港", note: "去誓约神殿需要航海图和船。" });
+    state.journal.push({ quest: "第一幕：灰帆港", note: "去誓约神殿需要航海图和船。航海图封在酒馆地窖，要先从总督府金库拿回守誓人的钥匙。" });
   }
   push("chapter", ACT_NAMES[state.act]);
   goScene(sc.after);
@@ -2081,6 +2157,30 @@ const cbList = () => Object.values(state.combat.units);
 const cbCur = () => state.combat.units[state.combat.order[state.combat.turn]];
 const hostile = (a, b) => a.side !== b.side;
 const weakest = list => list.reduce((a, b) => (b.hp < a.hp ? b : a));
+// 看得见的敌人：伪装中的千面母（guise）打不到，也不会被同伴选作目标
+const seen = u => ACTIVE(u) && !u.guise;
+const SPOT_DC = 15;
+function disguise(u) {
+  const c = state.combat, faces = cbList().filter(v => v.side === "party" && !v.dead);
+  u.guise = faces.length ? faces[Math.floor(Math.random() * faces.length)].name : "平民";
+  delete u.cond.exposed; if (u.cond.marked) delete u.cond.marked;
+  const zs = c.zones.map((z, i) => i).filter(i => i !== u.zone);
+  if (zs.length) u.zone = zs[Math.floor(Math.random() * zs.length)];
+}
+function reveal(u, by) {
+  delete u.guise; u.cond.exposed = true;
+  clog(`${by}：顶着那张脸的人是${u.name}！在她下次行动前，攻击她有优势`, "event");
+}
+// 识破：察觉检定；奈雅认得养母，自动识破
+function trySpot(who) {
+  const c = state.combat, hid = cbList().filter(v => v.guise && ACTIVE(v));
+  if (!hid.length) return false;
+  if (who.ref === "naia") { reveal(hid[0], `${who.name}一眼认出了养母的小动作`); return true; }
+  const b = bonusFor(who.ref, "perception").total, d = rollD20(), ok = d === 20 || (d !== 1 && d + b >= SPOT_DC);
+  clog(`${who.name} 在人群里找伪装者：察觉 d20(${d})${sgn(b)} = ${d + b} 对 DC ${SPOT_DC}，${ok ? "找到了" : "没看出破绽"}`);
+  if (ok) reveal(hid[0], who.name + "识破了伪装");
+  return ok;
+}
 const lethal = () => !!ENCOUNTERS[state.combat.id].lethal;
 function roll(cnt, d) { let s = 0; for (let i = 0; i < cnt; i++) s += 1 + Math.floor(Math.random() * d); return s; }
 function parseDice(s) {
@@ -2129,6 +2229,7 @@ function startCombat(id) {
   const c = state.combat;
   for (const ref of ["player", ...present().filter(id => !state.companions[id].jailed)]) c.units[ref] = partyUnit(ref, E.startAt?.[ref] ?? E.start);
   for (const [type, n, zone] of E.foes) for (let i = 0; i < n; i++) { const u = foeUnit(type, zone, "enemy"); c.units[u.id] = u; }
+  for (const u of cbList()) if (u.type && ENEMIES[u.type].shift) disguise(u);
   for (const u of cbList()) u.init = rollD20() + u.dexMod;
   sortOrder();
   state.suggestions = []; state.pendingCheck = null; pick = null;
@@ -2148,7 +2249,11 @@ function hurt(u, n, o = {}) {
     return `${u.name} 死亡豁免失败 ${u.saves.f}`;
   }
   u.hp -= n;
-  if (u.hp > 0) return "";
+  if (u.hp > 0) {
+    const shift = u.type && ENEMIES[u.type].shift;
+    if (shift && n >= shift && !u.guise) { disguise(u); return `${u.name} 的脸像水一样流动起来，钻进了人群——现在她看起来和${u.guise}一模一样`; }
+    return "";
+  }
   if (u.side === "party") {
     if (u.ref === "player" && state.player.race === "half_orc" && !c.relentless) { c.relentless = true; u.hp = 1; return `${u.name} 凭半兽人的坚韧撑住了（生命 1）`; }
     Object.assign(u, { hp: 0, down: true, stable: false, saves: { s: 0, f: 0 } }); u.cond.prone = true;
@@ -2191,10 +2296,11 @@ function attackMods(a, t, w) {
   if (t.cond.prone) (w.ranged ? dis++ : adv++);
   if (t.cond.restrained) adv++;
   if (t.cond.dodge) dis++;
+  if (t.cond.exposed || a.guise) adv++;
   if (a.cond.prone || a.cond.frightened || a.cond.restrained || a.cond.mocked) dis++;
   if (a.type && ENEMIES[a.type].pack && cbList().some(v => v !== a && v.type === a.type && ACTIVE(v) && v.zone === a.zone)) adv++;
   if (w.ranged) {
-    if (cbList().some(v => hostile(v, a) && ACTIVE(v) && v.zone === a.zone)) dis++;
+    if (cbList().some(v => hostile(v, a) && seen(v) && v.zone === a.zone)) dis++;
     if (az.tags.includes("high") && !tz.tags.includes("high")) adv++;
     if (tz.tags.includes("obscured")) dis++;
     if (tz.tags.includes("cover") && a.zone !== t.zone) ac += 2;
@@ -2223,7 +2329,7 @@ function attack(a, t, w, o = {}) {
 function moveUnit(u, to, free) {
   const c = state.combat;
   if (!free) for (const v of cbList()) {
-    if (!ACTIVE(v) || v.reacted || !hostile(v, u) || v.zone !== u.zone) continue;
+    if (!seen(v) || v.reacted || !hostile(v, u) || v.zone !== u.zone) continue;
     const w = v.weapons.find(x => !x.ranged); if (!w) continue;
     v.reacted = true; clog(`${u.name} 离开${c.zones[u.zone].n}时，${v.name} 趁机出手`);
     attack(v, u, w);
@@ -2244,7 +2350,7 @@ function stepToward(from, goals) {
 // ---------- 自动行动：敌人和同伴 ----------
 function fightTurn(u, o = {}) {
   const c = state.combat;
-  const foes = cbList().filter(v => hostile(u, v) && ACTIVE(v));
+  const foes = cbList().filter(v => hostile(u, v) && seen(v));
   if (!foes.length) return;
   const melee = u.weapons.find(w => !w.ranged), ranged = u.weapons.find(w => w.ranged);
   // 同伴集火最弱的敌人；敌人随机挑目标，免得玩家总被围殴
@@ -2261,12 +2367,21 @@ function fightTurn(u, o = {}) {
   if (c.res.move > 0 && !u.cond.restrained) {
     const step = stepToward(u.zone, [...new Set(foes.map(v => v.zone))]);
     if (step != null) { c.res.move--; moveUnit(u, step); if (!ACTIVE(u)) return; }
-    const now = foes.filter(v => v.zone === u.zone && ACTIVE(v));
+    const now = foes.filter(v => v.zone === u.zone && seen(v));
     if (now.length) attack(u, choose(now), melee, o);
   }
 }
 function foeTurn(u) {
   const c = state.combat, e = ENEMIES[u.type];
+  if (u.guise) {
+    const all = cbList().filter(v => v.side === "party" && ACTIVE(v)); if (!all.length) return;
+    const face = u.guise, ts = all.filter(v => v.name !== face).length ? all.filter(v => v.name !== face) : all; // 不会顶着谁的脸去捅谁
+    const t = ts[Math.floor(Math.random() * ts.length)];
+    u.zone = t.zone; clog(`顶着${face}面孔的人凑到了 ${t.name} 身边……`);
+    attack(u, t, u.weapons[0]);
+    delete u.guise; clog(`${u.name}撕下了${face}的脸，露出了真身`, "event");
+    return;
+  }
   if (u.cond.prone) { delete u.cond.prone; c.res.move = 0; clog(`${u.name} 爬了起来`); }
   if (e.summon) {
     const n = Math.min(2, 6 - cbList().filter(v => v.type === "rat" && ACTIVE(v)).length);
@@ -2284,6 +2399,7 @@ function foeTurn(u) {
     if (best != null) { c.zones[best].burning = 3; clog(`${u.name} 抬手一挥，${c.zones[best].n}燃起了烬火（3 回合内，在里面开始回合的人会被烧伤）`, "event"); return; }
   }
   fightTurn(u);
+  for (let i = 1; i < (e.multi || 1) && ACTIVE(u); i++) fightTurn(u); // multi：每回合攻击几次
 }
 function allyTurn(u) {
   const c = state.combat, mates = cbList().filter(v => v.side === "party" && !v.dead && !v.out);
@@ -2302,6 +2418,10 @@ function allyTurn(u) {
     const to = opts.find(z => foeIn(z) !== ranged) ?? opts[0];
     if (to != null) { c.res.move--; moveUnit(u, to); if (!ACTIVE(u)) return; }
   }
+  if (cbList().some(v => v.guise && ACTIVE(v))) {
+    if (u.ref === "naia") trySpot(u);
+    else if (!cbList().some(v => hostile(u, v) && seen(v))) { trySpot(u); return; } // 用掉动作找人
+  }
   const withMate = v => cbList().some(x => x !== u && x.side === "party" && ACTIVE(x) && x.zone === v.zone);
   const o = { smite: u.feat === "smite", spare: c.spare, prefer: u.feat === "sneak" ? withMate : null };
   fightTurn(u, o);
@@ -2313,7 +2433,7 @@ function allyTurn(u) {
 function beginTurn(u) {
   const c = state.combat;
   c.res = { action: true, bonus: true, move: 1, free: false, attackOnly: false }; // attackOnly：额外攻击的第二击还没用
-  u.reacted = false; u.sneakUsed = false; delete u.cond.dodge;
+  u.reacted = false; u.sneakUsed = false; delete u.cond.dodge; delete u.cond.exposed;
   for (const k of ["frightened", "restrained"]) if (u.cond[k] && --u.cond[k] <= 0) delete u.cond[k];
   const z = c.zones[u.zone];
   if (z.burning && !u.down) { const n = roll(1, 4); const r = hurt(u, n, { fire: true }); clog(`${u.name} 在燃烧的${z.n}里被烧伤 ${n} 点` + (r ? "。" + r : ""), "hit"); }
@@ -2396,7 +2516,7 @@ function endCombat(r) {
 }
 
 // ---------- 即兴行动的效果（说书人提出，代码校验后执行） ----------
-const COND = { prone: "倒地", dodge: "闪避", frightened: "恐惧", restrained: "被束缚", mocked: "受嘲讽" };
+const COND = { prone: "倒地", dodge: "闪避", frightened: "恐惧", restrained: "被束缚", mocked: "受嘲讽", exposed: "被识破" };
 function applyCombatFx(x) {
   if (!x || typeof x !== "object") return;
   const c = state.combat;
@@ -2431,6 +2551,7 @@ function combatBrief(mode) {
   const units = cbList().filter(u => !u.dead && !u.out).map(u => {
     const cd = Object.keys(u.cond).filter(k => COND[k]).map(k => COND[k]);
     if (u.type && ENEMIES[u.type].explode) cd.push("濒死自爆：同区 1d6，被自爆烧死不连锁");
+    if (u.guise) cd.push(`伪装成${u.guise}混在人群里，玩家还没找到她，不要点破她在哪`);
     return `${u.name}（id: ${u.id}，${side(u)}，HP ${u.hp}/${u.max}${u.down ? "，倒地" : ""}，AC ${u.ac}，在${c.zones[u.zone].n}${cd.length ? "，" + cd.join("、") : ""}）`;
   });
   const gone = cbList().filter(u => u.dead || u.out).length;
@@ -2465,7 +2586,7 @@ function validTarget(p, u) {
   const me = state.combat.units.player;
   if (p.kind === "heal") return u.side === "party" && !u.dead && !u.out;
   if (p.kind === "fireball") return false; // 火球选的是区域
-  if (!hostile(me, u) || !ACTIVE(u)) return false;
+  if (!hostile(me, u) || !seen(u)) return false;
   return p.kind !== "attack" || me.weapons[p.w].ranged || u.zone === me.zone;
 }
 function doPick(u) {
@@ -2518,7 +2639,7 @@ function renderCombat(box) {
   head.append(el("span", "t", `第 ${c.round} 回合`), el("span", "label", turn ? "轮到你了" : busy ? "说书人正在描写战况……" : ACTIVE(me) ? `${cur.name} 行动中……` : "你倒下了，同伴还在战斗……"));
   wrap.append(head);
   const ini = el("div", "init");
-  c.order.forEach((id, i) => { const u = c.units[id]; ini.append(el("span", (i === c.turn ? "now " : "") + (u.side !== "party" ? "foe " : "") + (u.dead || u.out ? "gone" : ""), u.name)); });
+  c.order.forEach((id, i) => { const u = c.units[id]; ini.append(el("span", (i === c.turn ? "now " : "") + (u.side !== "party" ? "foe " : "") + (u.dead || u.out ? "gone" : ""), u.guise ? "？？？" : u.name)); });
   wrap.append(ini);
 
   const zs = el("div", "zones");
@@ -2526,7 +2647,7 @@ function renderCombat(box) {
     const zb = el("div", "zone" + (me.zone === zi ? " here" : "") + (z.burning ? " fire" : ""));
     const zn = el("div", "zn"); const tags = z.tags.map(t => ZONE_TAGS[t]); if (z.burning) tags.push(`燃烧 ${z.burning}`);
     zn.append(el("span", null, z.n), el("span", "zt", tags.join(" · "))); zb.append(zn);
-    for (const u of cbList().filter(u => u.zone === zi && !u.dead && !u.out)) zb.append(unitChip(u));
+    for (const u of cbList().filter(u => u.zone === zi && !u.dead && !u.out && !u.guise)) zb.append(unitChip(u));
     const gone = cbList().filter(u => u.zone === zi && (u.dead || u.out)).length;
     if (gone) zb.append(el("div", "zt", `倒下或离场 ${gone}`));
     if (turn && !pick && r.move > 0 && !me.cond.prone && !me.cond.restrained && c.zones[me.zone].adj.includes(zi)) {
@@ -2536,6 +2657,7 @@ function renderCombat(box) {
     zs.append(zb);
   });
   wrap.append(zs);
+  for (const u of cbList().filter(u => u.guise && ACTIVE(u))) wrap.append(el("div", "note", `${u.name}伪装成了「${u.guise}」，混在人群里。看不见就打不到：用“识破伪装”（察觉 DC ${SPOT_DC}）把她找出来。`));
 
   if (turn) {
     const res = el("div", "cb-res");
@@ -2560,6 +2682,7 @@ function renderCombat(box) {
     if (r.action && !r.attackOnly) {
       if (me.feat === "missile" && me.uses > 0) add("魔法飞弹", () => setPick({ kind: "missile", label: "魔法飞弹" }), null, feat.desc);
       if (me.fireball) add("火球术", () => setPick({ kind: "fireball", label: "火球术" }), null, FIREBALL.desc);
+      if (cbList().some(v => v.guise && ACTIVE(v))) add("识破伪装", () => act((c, me) => { c.res.action = false; trySpot(me); }), null, `用掉动作在人群里找伪装的敌人：察觉 DC ${SPOT_DC}`);
       add("冲刺", () => act((c, me) => { c.res.action = false; c.res.move++; clog(`${me.name} 冲刺`); }), null, "本回合多移动一次");
       add("闪避", () => act((c, me) => { c.res.action = false; me.cond.dodge = true; clog(`${me.name} 摆出防守架势`); }), null, "直到你下回合开始，攻击你的人有劣势");
       if (c.zones[me.zone].tags.includes("exit")) add("撤离战场", () => act((c, me) => { c.res.action = false; c.end = "escaped"; clog(`${me.name} 招呼众人撤离`); }));
@@ -2824,6 +2947,10 @@ function renderPlay() {
   }
   const optBtn = (k, text, fn) => { const b = el("button", "opt"); b.type = "button"; b.append(el("span", "k", k), el("span", "tx", text)); b.onclick = fn; opts.append(b); };
   if (camp?.talk && !busy && !state.pendingCheck) optBtn("↩", "结束谈话，回到篝火边", () => { endTalk(); save(); renderPlay(); });
+  if (!camp && !cb && !busy && !state.ended && splitPending() && !state.pendingCheck) {
+    if (state.pendingCombat || state.pendingAdvance) opts.textContent = "";
+    optBtn("⚑", state.pendingCombat ? "开战前先分派队伍：谁去" + sc.split.place + "？" : state.pendingAdvance ? "离开前先分派队伍：谁去" + sc.split.place + "？" : `分派队伍：谁跟你走，谁去${sc.split.place}（${sc.split.job}）`, openSplit);
+  }
   if (!camp && !cb && !busy && canCamp()) optBtn("⛺", sc.campFree ? "在壁炉边歇下，度过这一夜" : `扎营休息（消耗 1 份补给，剩 ${state.supplies ?? 0}）`, enterCamp);
   if (state.pendingAsi && !cb && !busy) {
     const b = el("button", "opt"); b.type = "button";
@@ -2935,9 +3062,9 @@ function openJournal() {
         const value = state.flags[g.flag];
         s.append(el("div", "meta", `${g.name}：${value ? `已拿到（${GOAL_VALUES[value] || value}）` : "还没拿到"}`));
       }
-      if (goals.some(g => !state.flags[g.flag]) && state.log.slice(-40).some(e => (e.k === "you" || e.k === "gm") && /航海图|船/.test(e.t))) {
+      if (goals.some(g => !state.flags[g.flag]) && state.log.slice(-40).some(e => (e.k === "you" || e.k === "gm") && /钥匙|航海图|船/.test(e.t))) {
         const check = el("button", "btn small", "我已经拿到了，请说书人核对"); check.type = "button";
-        check.onclick = () => { closeModal(); gm("（玩家认为自己已经拿到了航海图或船。请对照最近剧情核对：如果剧情里确实已经到手，就在 flags 里补写 act1.chart / act1.ship；如果没有，用一句话说明还差什么。不要推进场景。）", null); };
+        check.onclick = () => { closeModal(); gm("（玩家认为自己已经拿到了钥匙、航海图或船。请对照最近剧情核对：如果剧情里确实已经到手，就在 flags 里补写 act1.key / act1.chart / act1.ship；如果没有，用一句话说明还差什么。不要推进场景。）", null); };
         s.append(check);
       }
     }

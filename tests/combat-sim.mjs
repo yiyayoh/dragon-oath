@@ -39,7 +39,7 @@ hurt = function(u, n, o) {
   if (u.type === 'cultist' && !wasDead && u.dead && state.combat.round === 1) simCultistFirst++;
   return result;
 };
-globalThis.simulate = function(id, level, scene) {
+globalThis.simulate = function(id, level, scene, away = []) {
   const d = freshDraft(); d.cls = 'paladin'; d.race = 'half_orc'; classPreset(d);
   state = newGame(d); state.act = id === 'tavern_ambush' ? 0 : 1; state.scene = scene;
   for (const id of ['selene', 'kassian', 'borin']) state.companions[id].recruited = true;
@@ -47,10 +47,11 @@ globalThis.simulate = function(id, level, scene) {
   if (id === 'tavern_ambush') state.companions.vex.taken = true; // 序幕在场者自动参战，控制为四人
   levelUp(level);
   if (state.pendingAsi) applyAsi({ str: 2 });
+  if (away.length) state.split = { scene, away, text: '' }; // 灯塔之夜分头行动：去码头的人不参战
   simDown = 0; simDownFirst = 0; simCultistFirst = 0;
   startCombat(id);
   const c = state.combat;
-  if (Object.values(c.units).filter(u => u.side === 'party').length !== 4) throw new Error(id + ': 队伍不是四人');
+  if (Object.values(c.units).filter(u => u.side === 'party').length !== 4 - away.length) throw new Error(id + ': 队伍人数不对');
   let result = null, steps = 0;
   while (!(result = combatResult()) && steps++ < 1500) {
     const u = cbCur();
@@ -76,12 +77,14 @@ const scenarios = [
   ['manor_guards', 3, 'act1_manor'], ['manor_guards', 4, 'act1_manor'],
   ['sewers_cult', 3, 'act1_sewers'], ['sewers_cult', 4, 'act1_sewers'],
   ['lighthouse', 5, 'act1_lighthouse'],
+  ['lighthouse', 5, 'act1_lighthouse', ['borin']],
+  ['lighthouse', 5, 'act1_lighthouse', ['borin', 'kassian']],
 ].filter(([id]) => !only || id === only);
 if (!scenarios.length) throw new Error('未知遭遇：' + only);
-const results = scenarios.map(([id, level, scene]) => {
-  const rows = Array.from({ length: runs }, () => context.simulate(id, level, scene));
+const results = scenarios.map(([id, level, scene, away = []]) => {
+  const rows = Array.from({ length: runs }, () => context.simulate(id, level, scene, away));
   const avg = key => rows.reduce((n, r) => n + (Number(r[key]) || 0), 0) / runs;
-  return { id, level, runs, winRate: avg('win'), avgRounds: avg('rounds'), avgDown: avg('down'), deathRate: avg('died'), playerDeathRate: avg('playerDied'), avgFirstCultists: avg('firstCultists'), avgFirstDown: avg('firstDown') };
+  return { id: id + (away.length ? `（${4 - away.length} 人）` : ''), level, runs, winRate: avg('win'), avgRounds: avg('rounds'), avgDown: avg('down'), deathRate: avg('died'), playerDeathRate: avg('playerDied'), avgFirstCultists: avg('firstCultists'), avgFirstDown: avg('firstDown') };
 });
 if (args.includes('--json')) console.log(JSON.stringify({ seed, results }, null, 2));
 else console.table(results.map(r => ({ 遭遇: r.id, 等级: r.level, 局数: r.runs, 胜率: (r.winRate * 100).toFixed(1) + '%', 平均回合: r.avgRounds.toFixed(2), 平均倒地: r.avgDown.toFixed(2), 阵亡比例: (r.deathRate * 100).toFixed(1) + '%', 首回合狂信徒死亡: r.avgFirstCultists.toFixed(2), 首回合倒地: r.avgFirstDown.toFixed(2) })));

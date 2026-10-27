@@ -108,3 +108,58 @@ test('清晨错误的 camp 标记不再自动扎营，玩家仍可主动扎营',
   })()`);
   assert.deepEqual(result, { afterMorning: { mode: 'morning', pending: false, camp: false }, manual: true });
 });
+
+test('灯塔分头行动：分组前不开战、不接受说书人写船的结果，去码头的人不参战', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};state=newGame(freshDraft());state.act=1;state.scene='act1_lighthouse';
+    for(const id of ['selene','kassian','borin']) state.companions[id].recruited=true;
+    applyGM({flags:{'act1.ship_intact':true},combat:'lighthouse'});
+    const before={ship:state.flags['act1.ship_intact']??null,pending:state.pendingCombat,split:splitPending()};
+    doSplit(['borin','kassian']);
+    const party=Object.values(state.combat.units).filter(u=>u.side==='party').map(u=>u.ref).sort();
+    return {before,party,present:present().sort(),ship:typeof state.flags['act1.ship_intact'],away:state.split.away,hp:state.companions.borin.hp<=state.companions.borin.hpMax};
+  })()`);
+  assert.deepEqual(result.before, { ship: null, pending: 'lighthouse', split: true });
+  assert.deepEqual(result.party, ['player', 'selene']);
+  assert.deepEqual(result.present, ['selene']);
+  assert.equal(result.ship, 'boolean');
+  assert.deepEqual(result.away, ['borin', 'kassian']);
+});
+
+test('没人去码头时船被炸；离开灯塔前必须先分组', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};state=newGame(freshDraft());state.act=1;state.scene='act1_lighthouse';state.companions.selene.recruited=true;
+    applyGM({advance:'act1_dawn'});const held={scene:state.scene,pending:state.pendingAdvance};
+    doSplit([]);return {held,scene:state.scene,ship:state.flags['act1.ship_intact']};
+  })()`);
+  assert.deepEqual(result, { held: { scene: 'act1_lighthouse', pending: 'act1_dawn' }, scene: 'act1_dawn', ship: false });
+});
+
+test('千面母开战时伪装、打不到；识破后现形，重伤会换脸', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};state=newGame(freshDraft());state.act=1;state.scene='act1_lighthouse';state.companions.selene.recruited=true;
+    state.split={scene:'act1_lighthouse',away:[],text:''};startCombat('lighthouse');
+    const fm=Object.values(state.combat.units).find(u=>u.type==='facemother');
+    const hidden=!!fm.guise, targetable=validTarget({kind:'attack',w:0},fm);
+    rollD20=()=>20;trySpot(state.combat.units.player);const shown=!fm.guise&&!!fm.cond.exposed;
+    hurt(fm,20);const reshift=!!fm.guise&&fm.hp===50;
+    hurt(fm,5);const smallHit=!!fm.guise;
+    return {hidden,targetable,shown,reshift,smallHit};
+  })()`);
+  assert.deepEqual(result, { hidden: true, targetable: false, shown: true, reshift: true, smallHit: true });
+});
+
+test('航海图要先拿到守誓人的钥匙；旧存档的航海图拿法转成钥匙', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};state=newGame(freshDraft());state.act=1;state.scene='act1_hub';
+    applyGM({flags:{'act1.chart':'opened'}});const noKey=state.flags['act1.chart']??null;
+    applyGM({flags:{'act1.key':'stolen'}});applyGM({flags:{'act1.chart':'opened'}});const opened=state.flags['act1.chart'];
+    const old=newGame(freshDraft());old.flags['act1.chart']='legal';tidyLog(old);
+    return {noKey,opened,oldKey:old.flags['act1.key'],oldChart:old.flags['act1.chart']};
+  })()`);
+  assert.deepEqual(result, { noKey: null, opened: 'opened', oldKey: 'legal', oldChart: 'legal' });
+});
