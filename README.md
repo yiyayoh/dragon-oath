@@ -50,6 +50,7 @@
 | `SCENES` `SCENE_ORDER` | 场景锚点：每场必然发生什么、何时推进到下一场 |
 | `FLAG_KEYS` | 允许写入的世界状态标记及取值 |
 | `SYSTEM` `buildPrompt()` | 说书人提示词与每轮上下文 |
+| `rulesBlock()` | 玩家在设置里写的“给说书人的额外要求”：通用要求存在浏览器（`pref.rules`），这一局的要求跟着存档（`state.rules`），排在系统规则之后，只管怎么讲故事，不能改规则、数值、输出格式和尺度 |
 | `narrate()` | 说书人接口：换模型只改这里 |
 | `applyGM()` | 校验并执行 AI 的 JSON |
 | `openDice()` `finishRoll()` | d20 检定 |

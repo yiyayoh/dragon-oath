@@ -592,7 +592,7 @@ const PREF = "dragon-oath-pref";
 let state = null;
 let draft = null;
 let sample = null, sampleKnown = false, busy = false, memWait = false, ctl = null, lastAction = null;
-let pref = { tier: "default", api: "claude", base: "https://api.openai.com/v1", model: "gpt-4o", key: "", narr: "round", gptModel: "", gptMemModel: "" };
+let pref = { tier: "default", api: "claude", base: "https://api.openai.com/v1", model: "gpt-4o", key: "", narr: "round", gptModel: "", gptMemModel: "", rules: "" };
 let prefSaved = false;
 try { const stored = localStorage.getItem(PREF); prefSaved = stored !== null; pref = Object.assign(pref, JSON.parse(stored || "{}")); } catch (e) {}
 let chatgpt = { known: false, checking: false, available: false, ready: false, authenticated: false, model: null, error: null };
@@ -893,6 +893,15 @@ const SYSTEM = `你是奇幻跑团游戏《醉龙酒馆：龙誓》的游戏主�
 - camp：玩家想扎营、休息、睡觉时写 true，程序会打开营地；不要自己写睡觉的过程。
 - flags 只能用以下键：${Object.keys(FLAG_KEYS).join("、")}。`;
 
+// 玩家自定义的说书要求：只管“怎么讲故事”，不能改上面的规则、数值、输出格式和尺度
+const RULES_MAX = 1500;
+const RULE_PRESETS = ["每轮控制在 150 字以内", "多写同伴之间的互动和斗嘴", "文风更黑暗、残酷一些", "多一点幽默和轻松", "描写更细腻，多写环境和感官细节", "少给建议选项，让我自己决定做什么", "NPC 说话更口语化"];
+function rulesBlock() {
+  const g = str(pref.rules, RULES_MAX).trim(), l = str(state?.rules, RULES_MAX).trim();
+  if (!g && !l) return "";
+  return `\n\n【玩家的额外要求】在不违反上面的叙述规则、【规则】、输出格式和内容尺度的前提下优先照做；和上面冲突时以上面为准。${l ? "这一局的要求比通用要求优先。" : ""}` +
+    (g ? `\n通用要求：${g}` : "") + (l ? `\n这一局的要求：${l}` : "");
+}
 function companionBrief(id) {
   const c = COMPANIONS[id], s = state.companions[id], p = PEOPLE[id];
   const love = s.romance && s.romance !== "none" ? `，恋爱：${ROMANCE[s.romance].name}${s.secret ? "（秘密，其他恋人不知道）" : ""}` : "";
@@ -910,7 +919,7 @@ function buildPrompt(action, mode) {
   const memLines = MEM_IDS.filter(id => m.people[id]?.length).map(id => `· ${PEOPLE[id].name}（${id}）：${m.people[id].join("；")}`).join("\n");
   const pres = present();
   const encs = (sc.encounters || []).filter(id => !state.fought?.[id]);
-  return SYSTEM +
+  return SYSTEM + rulesBlock() +
     `\n\n【当前场景】${state.scene}「${sc.title}」，地点：${state.location}\n场景锚点（GM 可见）：${sc.anchor}\n下一个场景 id：${sc.next || "无（本场景结束时 scene_end 为 true）"}` +
     (state.combat ? combatBrief(mode) : state.camp ? campBrief() : encs.length ? `\n可开战的遭遇：${encs.map(id => id + "（" + ENCOUNTERS[id].brief + "）").join("；")}` : "") +
     `\n\n【玩家角色】${p.name}，${p.gender}，${p.level} 级${RACES[p.race].name}${CLASSES[p.cls].name}，背景：${BACKGROUNDS[p.bg].name}（灵感条件：${BACKGROUNDS[p.bg].insp}）。外貌：${p.appearance}` +
@@ -2688,6 +2697,25 @@ function openSettings() {
       b.onclick = () => { pref.tier = k; savePref(); closeModal(); openSettings(); };
       s.append(b);
     }
+    s.append(el("div", "label", "给说书人的额外要求"));
+    s.append(el("div", "label", "用你自己的话写，比如篇幅、文风、想多看什么少看什么。说书人会在不违反游戏规则的前提下照做。改完点别处就会保存。"));
+    const ruleBox = (label, value, onSave, id) => {
+      const f = el("label", "field"); f.append(el("span", "label", label));
+      const t = el("textarea"); t.id = id; t.maxLength = RULES_MAX; t.value = value || ""; t.placeholder = "例如：每轮不超过 150 字；多写同伴之间的斗嘴；不要替我做决定。";
+      t.onchange = () => onSave(t.value.trim()); f.append(t); return [f, t];
+    };
+    const [gf, gt] = ruleBox("通用要求（所有存档）", pref.rules, v => { pref.rules = v; savePref(); toast("已保存通用要求"); }, "set-rules");
+    s.append(gf);
+    let lt = null;
+    if (state?.phase === "play") { const [lf, t] = ruleBox("只对这一局生效", state.rules, v => { state.rules = v; save(); toast("已保存这一局的要求"); }, "set-rules-game"); lt = t; s.append(lf); }
+    // 快捷选项：点一下把一句话加进输入框（有这一局的框就加到这一局），再自己改
+    const quick = el("div", "skills-list");
+    for (const q of RULE_PRESETS) {
+      const b = el("button", "btn small", q); b.type = "button";
+      b.onclick = () => { const t = lt || gt; if (t.value.includes(q)) return; t.value = (t.value.trim() ? t.value.trim() + "\n" : "") + q; t.onchange(); };
+      quick.append(b);
+    }
+    s.append(quick);
     s.append(el("div", "label", "战斗描写"));
     for (const [k, t, d] of [["round", "每回合描写", "轮到你之前，说书人把这一轮的战况写成一段文字"], ["key", "只在关键时刻", "只描写即兴行动和战斗结束，打得更快、更省额度"]]) {
       const b = el("button", "chip"); b.type = "button"; b.setAttribute("aria-pressed", String(pref.narr === k));
