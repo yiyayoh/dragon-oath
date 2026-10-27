@@ -7,6 +7,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { setImmediate as nextTurn } from 'node:timers/promises';
 import { createGameServer } from '../local-server.mjs';
+import { classify, selectModel } from '../local-codex.mjs';
 
 const fixture = await mkdtemp(path.join(os.tmpdir(), 'dragon-oath-http-test-'));
 await mkdir(path.join(fixture, 'portraits'));
@@ -111,6 +112,32 @@ test('status lists selectable models and narration passes the chosen model throu
   assert.equal(bad.status, 400);
 });
 
+test('unsupported models are classified and returned without silently selecting a default', async t => {
+  const catalog = { model: 'default-model', models: [{ model: 'default-model' }, { model: 'fast-model' }] };
+  assert.equal(selectModel(catalog, ''), 'default-model');
+  assert.equal(selectModel(catalog, 'fast-model'), 'fast-model');
+  assert.equal(classify({ code: 'model_not_found', message: 'Unknown model' }).code, 'model_unsupported');
+  assert.equal(classify(new Error('The model is not supported')).code, 'model_unsupported');
+  const server = await startServer(t, { narrate: async (prompt, { model, onModel }) => {
+    const chosen = selectModel(catalog, model); onModel(chosen); return 'ok';
+  } });
+  const send = model => request(server, { method: 'POST', pathname: '/__gpt/narrate', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: 'hi', model }) });
+  assert.deepEqual(events((await send('absent-model')).body), [{ type: 'error', code: 'model_unsupported' }]);
+  assert.deepEqual(events((await send('fast-model')).body), [{ type: 'done', text: 'ok', model: 'fast-model' }]);
+  assert.deepEqual(events((await send('')).body), [{ type: 'done', text: 'ok', model: 'default-model' }]);
+});
+
+test('memory mode reaches the narrator and rejects other modes', async t => {
+  let received;
+  const server = await startServer(t, { narrate: async (prompt, options) => { received = options.mode; return '纪要'; } });
+  const send = mode => request(server, { method: 'POST', pathname: '/__gpt/narrate', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: '写纪要', mode }) });
+  assert.deepEqual(events((await send('memory')).body), [{ type: 'done', text: '纪要' }]);
+  assert.equal(received, 'memory');
+  assert.equal((await send('other')).status, 400);
+  await post(server, 'normal');
+  assert.equal(received, undefined);
+});
+
 test('narration rejects invalid JSON media types, shapes and prompt lengths', async t => {
   let calls = 0;
   const server = await startServer(t, { narrate: async () => { calls++; return 'unexpected'; } });
@@ -152,7 +179,7 @@ test('SSE streams cumulative text followed by one complete result', async t => {
 });
 
 test('SSE errors use allowed codes without leaking upstream messages', async t => {
-  const allowed = ['chatgpt_auth', 'chatgpt_unavailable', 'rate_limited', 'network', 'refused', 'empty_completion', 'timeout'];
+  const allowed = ['chatgpt_auth', 'chatgpt_unavailable', 'rate_limited', 'network', 'refused', 'empty_completion', 'timeout', 'model_unsupported'];
   const server = await startServer(t, { narrate: async (prompt, { onText }) => { onText('partial story'); throw Object.assign(new Error('secret-token secret-account private-stack'), { code: prompt }); } });
   for (const code of [...allowed, 'secret-unexpected-code']) {
     const response = await post(server, code);

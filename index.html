@@ -1343,6 +1343,7 @@ const ERR = {
   no_narrator: "没有可用的说书人：双击“开始游玩.cmd”使用本机 ChatGPT，或在设置里选择 Claude / API。",
   chatgpt_auth: "请先在 Codex 中登录 ChatGPT，然后在游戏设置里点“重新检查”。",
   chatgpt_unavailable: "本机 ChatGPT 服务未就绪。请双击“开始游玩.cmd”，从打开的页面游玩，再在设置里点“重新检查”。",
+  model_unsupported: "这个模型在你的账号或当前 Codex 版本里用不了。请在设置里换一个说书人模型（整理记忆的模型也检查一下），再点“重试上一步”。",
   timeout: "说书人这次思考超时了，点“重试上一步”再试。",
   empty_completion: "说书人没有返回内容，点“重试上一步”再试。",
 };
@@ -1362,11 +1363,11 @@ const chTitle = k => { const [id, v] = k.split("#"); return (SCENES[id]?.title |
 const LOCAL_GPT = /^(127\.0\.0\.1|localhost|\[::1\])$/.test(location.hostname);
 const useApi = () => pref.api === "openai" && !!pref.key && !!pref.model;
 const narratorReady = () => pref.api === "chatgpt" ? chatgpt.ready : useApi() || !!sample;
-const CHATGPT_ERRORS = ["chatgpt_auth", "chatgpt_unavailable", "rate_limited", "network", "refused", "empty_completion", "timeout"];
+const CHATGPT_ERRORS = ["chatgpt_auth", "chatgpt_unavailable", "rate_limited", "network", "refused", "empty_completion", "timeout", "model_unsupported"];
 const gptModelName = id => id && (chatgpt.models || []).find(m => m.model === id)?.displayName || "";
 function chatgptLabel() {
   if (chatgpt.checking || !chatgpt.known) return "正在检查本机 ChatGPT……";
-  if (chatgpt.ready) return `说书人：ChatGPT（${gptModelName(pref.gptModel) || chatgpt.model || "默认模型"}），已连接。`;
+  if (chatgpt.ready) return `说书人：ChatGPT（${pref.gptModel ? gptModelName(pref.gptModel) || pref.gptModel : chatgpt.model || "默认模型"}），已连接。`;
   if (chatgpt.error === "chatgpt_auth" || (chatgpt.available && !chatgpt.authenticated)) return ERR.chatgpt_auth;
   return ERR[chatgpt.error] || ERR.chatgpt_unavailable;
 }
@@ -1409,7 +1410,7 @@ function narratorLabel() {
 }
 // opts.memory：后台整理记忆的调用，本机 ChatGPT 下可以用另一个更省额度的模型
 async function narrate(prompt, onText, signal, opts) {
-  if (pref.api === "chatgpt") return chatgptNarrate(prompt, onText, signal, (opts?.memory && pref.gptMemModel) || pref.gptModel);
+  if (pref.api === "chatgpt") return chatgptNarrate(prompt, onText, signal, (opts?.memory && pref.gptMemModel) || pref.gptModel, opts?.memory ? "memory" : undefined);
   if (useApi()) return apiNarrate(prompt, onText, signal);
   if (sample) {
     const { text } = await sample(prompt, { cache: false, signal, modelTier: pref.tier, onText: ({ text }) => onText(text) });
@@ -1417,11 +1418,11 @@ async function narrate(prompt, onText, signal, opts) {
   }
   throw { code: "no_narrator" };
 }
-async function chatgptNarrate(prompt, onText, signal, model) {
+async function chatgptNarrate(prompt, onText, signal, model, mode) {
   let reader, text = "", complete = false;
   try {
     const res = await fetch("/__gpt/narrate", {
-      method: "POST", mode: "same-origin", credentials: "omit", signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify(model ? { prompt, model } : { prompt }),
+      method: "POST", mode: "same-origin", credentials: "omit", signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt, ...(model ? { model } : {}), ...(mode ? { mode } : {}) }),
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
@@ -1441,7 +1442,7 @@ async function chatgptNarrate(prompt, onText, signal, model) {
       if (e.type === "text" || e.type === "done") {
         if (typeof e.text !== "string") throw { code: "network" };
         text = e.text; onText(text);
-        if (e.type === "done") complete = true;
+        if (e.type === "done") { if (typeof e.model === "string") chatgpt[mode === "memory" ? "lastMemoryModel" : "lastModel"] = e.model; complete = true; }
       }
     };
     const line = value => {

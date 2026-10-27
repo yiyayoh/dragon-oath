@@ -36,9 +36,10 @@ async function readBody(req, limit) {
 async function readPrompt(req) {
   const data = await readBody(req, 512 * 1024);
   if (typeof data.prompt !== 'string' || !data.prompt.trim() || data.prompt.length > 200000) throw { http: 400, code: 'invalid_request' };
-  // 可选：玩家在游戏设置里选的模型名；不在账号目录里的由 narrate 退回默认模型
-  if (data.model !== undefined && (typeof data.model !== 'string' || !/^[A-Za-z0-9._-]{1,64}$/.test(data.model))) throw { http: 400, code: 'invalid_request' };
-  return { prompt: data.prompt, model: data.model };
+  // 可选：玩家在游戏设置里选的模型名；不在账号目录里时返回明确错误
+  if (data.model !== undefined && (typeof data.model !== 'string' || (data.model !== '' && !/^[A-Za-z0-9._-]{1,64}$/.test(data.model)))) throw { http: 400, code: 'invalid_request' };
+  if (data.mode !== undefined && data.mode !== 'memory') throw { http: 400, code: 'invalid_request' };
+  return { prompt: data.prompt, model: data.model, mode: data.mode };
 }
 const modelList = list => Array.isArray(list) ? list.filter(m => m && typeof m.model === 'string').slice(0, 20).map(m => ({
   model: m.model.slice(0, 64), displayName: String(m.displayName || m.model).slice(0, 64), description: String(m.description || '').slice(0, 200), isDefault: !!m.isDefault,
@@ -124,15 +125,16 @@ export function createGameServer({ port = DEFAULT_PORT, getStatus = accountStatu
         let heartbeat;
         const event = data => { if (!res.destroyed && !res.writableEnded) res.write(`data: ${JSON.stringify(data)}\n\n`); };
         try {
-          const { prompt, model } = await readPrompt(req);
+          const { prompt, model, mode } = await readPrompt(req);
           if (controller.signal.aborted) return;
           res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', Connection: 'keep-alive' });
           res.flushHeaders();
           heartbeat = setInterval(() => { if (!res.destroyed) res.write(': waiting\n\n'); }, 12000);
-          const text = await narrate(prompt, { signal: controller.signal, onText: text => event({ type: 'text', text }), runtimeDir: path.join(root, '.dragon-oath-local', 'runtime'), model });
-          if (!controller.signal.aborted) event({ type: 'done', text });
+          let actualModel;
+          const text = await narrate(prompt, { signal: controller.signal, onText: text => event({ type: 'text', text }), onModel: chosen => { actualModel = chosen; }, runtimeDir: path.join(root, '.dragon-oath-local', 'runtime'), model, mode });
+          if (!controller.signal.aborted) event({ type: 'done', text, ...(actualModel ? { model: actualModel } : {}) });
         } catch (error) {
-          const allowed = new Set(['chatgpt_auth', 'chatgpt_unavailable', 'rate_limited', 'network', 'refused', 'empty_completion', 'timeout']);
+          const allowed = new Set(['chatgpt_auth', 'chatgpt_unavailable', 'rate_limited', 'network', 'refused', 'empty_completion', 'timeout', 'model_unsupported']);
           const code = allowed.has(error?.code) ? error.code : 'chatgpt_unavailable';
           if (!controller.signal.aborted) {
             if (res.headersSent) event({ type: 'error', code });

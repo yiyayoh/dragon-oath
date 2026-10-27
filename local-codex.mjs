@@ -56,9 +56,10 @@ export function findCodex() {
   throw new NarratorError('chatgpt_unavailable');
 }
 
-function classify(error) {
+export function classify(error) {
   if (error instanceof NarratorError) return error;
-  const message = String(error?.message || error || '');
+  const message = String(error?.message || error || '') + ' ' + String(error?.code || '');
+  if (/model_not_found|model is not supported|unsupported model|does not exist/i.test(message)) return new NarratorError('model_unsupported');
   if (/429|rate.?limit|quota|usage.?limit|usage_limit/i.test(message)) return new NarratorError('rate_limited');
   if (/401|unauthoriz|auth.?token|not.?logged|sign.?in|authentication/i.test(message)) return new NarratorError('chatgpt_auth');
   if (/refus|safety|policy/i.test(message)) return new NarratorError('refused');
@@ -164,19 +165,26 @@ export async function accountStatus() {
   finally { client?.close(); }
 }
 
-export async function narrateWithChatGPT(prompt, { signal, onText, onItem, runtimeDir, model } = {}) {
+export function selectModel(status, model) {
+  if (!model) return status.model;
+  if (!status.models.some(m => m.model === model)) throw new NarratorError('model_unsupported');
+  return model;
+}
+
+export async function narrateWithChatGPT(prompt, { signal, onText, onItem, onModel, runtimeDir, model, mode } = {}) {
   const client = new RpcClient(signal);
   const work = runtimeDir || path.join(os.tmpdir(), 'dragon-oath-narrator');
   let timer;
   try {
     const status = await client.initialize();
     await mkdir(work, { recursive: true });
-    // 玩家选的模型在账号目录里才用，否则退回账号默认模型
-    const chosen = status.models.some(m => m.model === model) ? model : status.model;
+    const chosen = selectModel(status, model);
     const started = await client.rpc('thread/start', {
       model: chosen, cwd: work, ephemeral: true, environments: [], dynamicTools: [],
       approvalPolicy: 'never', sandbox: 'read-only',
-      baseInstructions: 'You are the text-only game narrator for the fantasy RPG Drunken Dragon Tavern: Dragon Oath. Follow the supplied game rules and output contract. Return only in-world Simplified Chinese narrative, then a line containing @@@, then the game-state JSON object. Never inspect files, execute commands, use tools, or act as a coding assistant. Do not announce analysis or write a preamble.',
+      baseInstructions: mode === 'memory'
+        ? 'You are the text-only record keeper for the fantasy RPG Drunken Dragon Tavern: Dragon Oath. Follow the supplied output instructions exactly: output the requested summary text or JSON only, without @@@ or extra material. Never inspect files, execute commands, use tools, or act as a coding assistant. Do not announce analysis or write a preamble.'
+        : 'You are the text-only game narrator for the fantasy RPG Drunken Dragon Tavern: Dragon Oath. Follow the supplied game rules and output contract. Return only in-world Simplified Chinese narrative, then a line containing @@@, then the game-state JSON object. Never inspect files, execute commands, use tools, or act as a coding assistant. Do not announce analysis or write a preamble.',
       config: {
         ...client.mcpOverrides,
         'features.shell_tool': false, 'features.unified_exec': false, 'features.apps': false,
@@ -184,6 +192,7 @@ export async function narrateWithChatGPT(prompt, { signal, onText, onItem, runti
         'web_search': 'disabled', 'model_reasoning_effort': 'low', 'project_doc_max_bytes': 0,
       },
     });
+    onModel?.(started.model || chosen);
     let text = '';
     let settle;
     const completed = new Promise((resolve, reject) => { settle = { resolve, reject }; });
