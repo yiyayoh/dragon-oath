@@ -580,7 +580,7 @@ let chatgpt = { known: false, checking: false, available: false, ready: false, a
 
 function freshDraft() {
   return { name: "艾林", gender: "女", appearance: "黑色短发，左眼下有一颗泪痣，穿旧皮夹克，总是带着漫不经心的笑。", race: "half_elf", cls: "rogue", bg: "urchin",
-    base: { str: 10, dex: 15, con: 13, int: 12, wis: 10, cha: 14 }, portraitData: null };
+    base: { str: 8, dex: 15, con: 13, int: 12, wis: 10, cha: 14 }, portraitData: null }; // 正好 27 点
 }
 function finalAbilities(d) {
   const b = RACES[d.race].bonus, out = {};
@@ -660,9 +660,15 @@ function slotMeta(key) {
 }
 async function loadSave(key) { const m = slotMeta(key); return !m ? null : m.from === "disk" ? diskGet("slot/" + DISK_KEY(key)) : readSave(key); }
 const validState = s => !!s && typeof s === "object" && s.phase === "play" && !!s.player && Array.isArray(s.log) && !!SCENES[s.scene];
+// 读进来的存档统一整理：去掉没写完的条目；旧存档的条目没有场景标记，按记录里的章节标题补上
+function tidyLog(s) {
+  s.log.forEach(e => delete e.live); s.log = s.log.filter(e => e.t || e.k === "chapter");
+  const byTitle = Object.fromEntries(Object.entries(SCENES).map(([id, sc]) => [sc.title, id]));
+  let cur = Object.keys(SCENES)[0];
+  for (const e of s.log) { if (e.k === "chapter" && byTitle[e.t]) cur = byTitle[e.t]; if (!e.s) e.s = cur; }
+}
 function loadState(s) {
-  state = s;
-  state.log.forEach(e => delete e.live); state.log = state.log.filter(e => e.t || e.k === "chapter");
+  state = s; tidyLog(state);
   lastAction = null; pick = null; cbGen++;
   closeModal(); render();
   if (state.pendingCheck) openDice(); else if (state.combat) advanceCombat();
@@ -763,7 +769,7 @@ const SYSTEM = `你是奇幻跑团游戏《醉龙酒馆：龙誓》的游戏主�
 - 玩家的任何行动都可以尝试。永远不说“你不能”，只给出检定或后果。
 - 场景锚点是必然发生的事件，但到达方式由玩家决定。玩家偏离时用世界内的事件自然引导。
 - 不透露标注“GM 不要透露”的秘密，除非玩家通过剧情或检定发现。
-- 角色有记忆：【前情提要】是更早发生的事，【角色记得的事】是每个人亲身经历、对玩家的印象。让 NPC 和同伴记得玩家以前做过、说过、答应过的事，在合适的时候自然地提起、追问或翻旧账，态度要和这些记忆一致。
+- 角色有记忆：【往事】是已经结束的各章纪要，【前情提要】是之后更早发生的事，【角色记得的事】是每个人亲身经历、对玩家的印象，【想起的旧事】是玩家这次提到的事当初的原文。让 NPC 和同伴记得玩家以前做过、说过、答应过的事，在合适的时候自然地提起、追问或翻旧账，态度要和这些记忆一致。
 - 恋爱内容要大胆直白：可以具体描写亲吻、拥抱、抚摸、体温和心跳，以及情欲张力和调情台词。所有可恋爱角色都是成年人。不写露骨的性行为过程，到那一步时用一句暗示性的转场结束。
 
 【规则】
@@ -799,7 +805,7 @@ function companionBrief(id) {
 function buildPrompt(action, mode) {
   const p = state.player, sc = SCENES[state.scene];
   const profs = p.profs.map(k => SKILLS[k][0]).join("、");
-  const recent = recentLines(), m = memo();
+  const recent = recentLines(), m = memo(), chapters = chapterLines(), recall = mode === "narrate" ? "" : recallLines(action);
   const memLines = MEM_IDS.filter(id => m.people[id]?.length).map(id => `· ${PEOPLE[id].name}（${id}）：${m.people[id].join("；")}`).join("\n");
   const pres = present();
   const encs = (sc.encounters || []).filter(id => !state.fought?.[id]);
@@ -812,22 +818,28 @@ function buildPrompt(action, mode) {
     `\n\n【在场同伴】\n${pres.length ? pres.map(companionBrief).join("\n") : "（无，玩家独自一人）"}` +
     `\n\n【NPC】玛莎（martha）：独臂退休冒险者，嘴硬心软，酒馆老板娘。小汤姆（tom）：胆小热心的半身人帮工。兜帽客（hooded）：其实是教团间谍形变者奈雅，GM 不要透露。` +
     `\n\n【世界标记】${JSON.stringify(state.flags)}；赫斯提雅信任 ${state.hestiaTrust}` +
-    `\n\n【前情提要】${m.summary || "（还没有，更早的剧情都在下面的最近剧情里）"}` +
+    (chapters ? `\n\n【往事】（已经结束的各章纪要）\n${chapters}` : "") +
+    `\n\n【前情提要】${m.summary || (chapters ? "（往事之后的事都在下面的最近剧情里）" : "（还没有，更早的剧情都在下面的最近剧情里）")}` +
     (memLines ? `\n\n【角色记得的事】\n${memLines}` : "") +
+    (recall ? `\n\n【想起的旧事】（玩家这次提到的人或事，以前发生时的原文片段。用来回忆细节、让角色自然地想起当时，不要整段复述）\n${recall}` : "") +
     `\n\n【最近剧情】\n${recent || "（冒险刚开始）"}` +
     `\n\n【玩家本回合】${action}`;
 }
 function splitReply(t) { const i = t.indexOf("@@@"); return i < 0 ? [t.trim(), ""] : [t.slice(0, i).trim(), t.slice(i + 3)]; }
 
 /* =========================================================
-   记忆：三层
+   记忆
    1. 最近剧情：没写进提要的原文，按字数截取（战斗流水账不算，只在战斗中带上最近几条）
-   2. 前情提要：原文攒到一定量，后台让 AI 把较早的部分压缩进提要，被压缩的条目打上 m 标记
-   3. 角色记忆：每人几条关于玩家的事；说书人用 remember 字段当场记，写提要时再整理合并
+   2. 往事：每个场景结束后写一份章节纪要，写好就不再改，长期保留
+   3. 前情提要：原文攒到一定量，后台让 AI 把较早的部分压缩进提要（只管往事还没覆盖的部分），被压缩的条目打上 m 标记
+   4. 角色记忆：每人几条关于玩家的事；说书人用 remember 字段当场记，写提要时再整理合并
+   5. 想起的旧事：玩家提到的人和事，从已压缩的旧原文里按关键词找回几段（纯文本匹配，不调用模型）
    ========================================================= */
 // 单位是字。原文攒到 SUM_AT 就把较早的部分压进提要，只留最近 SUM_KEEP；RECENT_CHARS 是原文上限的保险
 const RECENT_CHARS = 12000, SUM_AT = 10000, SUM_KEEP = 5000, SUM_CHUNK = 12000, MEM_MAX = 10;
-const memo = () => (state.memory ||= { summary: "", people: {} });
+// 章节纪要最多读 CHAPTER_SRC 字原文；想起的旧事最多 RECALL_CHARS 字，相关度低于 RECALL_MIN 不算
+const CHAPTER_SRC = 24000, RECALL_CHARS = 2500, RECALL_MIN = 6;
+const memo = () => { const m = (state.memory ||= { summary: "", people: {} }); m.chapters ||= []; return m; };
 const LINE_TAG = { gm: "GM：", you: "玩家：", roll: "检定：", sys: "系统：", cb: "战斗：" };
 const entryLine = e => (LINE_TAG[e.k] || "") + e.t.slice(0, 1200);
 const storyPool = () => state.log.filter(e => e.t && !e.live && !e.m && e.k !== "chapter" && e.k !== "cb");
@@ -842,6 +854,35 @@ function recentLines() {
   if (state.combat) out.push("（本场战斗最近的战况）", ...state.log.filter(e => e.k === "cb").slice(-10).map(entryLine));
   return out.join("\n");
 }
+// 想起的旧事：把玩家这句话切成 2–4 字的片段，在已压缩的旧原文里找；越少见的片段权重越高，人名加倍
+function recallLines(action) {
+  if (!action || action.startsWith("【") || action.startsWith("（")) return "";
+  const pool = state.log.filter(e => e.m && e.t && e.k !== "chapter" && e.k !== "cb");
+  if (!pool.length) return "";
+  const names = new Set(MEM_IDS.map(id => PEOPLE[id].name));
+  const grams = new Set();
+  for (const part of action.split(/[\s\p{P}\p{S}\d]+/u)) for (let n = 2; n <= 4; n++) for (let i = 0; i + n <= part.length; i++) grams.add(part.slice(i, i + n));
+  const N = pool.length, maxDf = Math.max(3, Math.floor(N * 0.15)), weights = [];
+  for (const g of grams) {
+    let df = 0;
+    for (const e of pool) if (e.t.includes(g) && ++df > maxDf) break;
+    if (df && df <= maxDf) weights.push([g, Math.log(1 + N / df) * (g.length - 1) * (names.has(g) ? 2 : 1)]);
+  }
+  if (!weights.length) return "";
+  const top = pool.map((e, i) => [i, weights.reduce((s, [g, w]) => s + (e.t.includes(g) ? w : 0), 0)])
+    .filter(([, s]) => s >= RECALL_MIN).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  if (!top.length) return "";
+  const chosen = new Set();
+  for (const [i] of top) { chosen.add(i); if (i > 0 && pool[i - 1].k === "you") chosen.add(i - 1); } // 带上当时玩家说的话
+  const out = []; let n = 0;
+  for (const i of [...chosen].sort((a, b) => a - b)) {
+    const l = (SCENES[pool[i].s] ? `[${SCENES[pool[i].s].title}] ` : "") + (LINE_TAG[pool[i].k] || "") + pool[i].t.slice(0, 600);
+    if (n + l.length > RECALL_CHARS && out.length) break;
+    out.push(l); n += l.length;
+  }
+  return out.join("\n");
+}
+function chapterLines() { return memo().chapters.map(c => `· ${c.title}：${c.text}`).join("\n"); }
 function remember(id, note) {
   note = str(note, 50).trim();
   if (!MEM_IDS.includes(id) || !note) return false;
@@ -853,12 +894,16 @@ function remember(id, note) {
 function memoryPrompt(chunk) {
   const m = memo(), p = state.player;
   const old = MEM_IDS.filter(id => m.people[id]?.length).map(id => `${id}（${PEOPLE[id].name}）：${m.people[id].join("；")}`).join("\n");
+  const ch = chapterLines();
   return `你是跑团游戏《醉龙酒馆：龙誓》的记录员。玩家角色叫${p.name}（${p.gender}，${RACES[p.race].name}${CLASSES[p.cls].name}）。根据【旧的前情提要】和【新发生的剧情】，写出更新后的前情提要，并整理每个角色记得的事。
 
 要求：
-- summary：更新后的前情提要，600–900 字，按时间顺序，用“你”指玩家。必须保留：做过的重要选择、许下的承诺、撒过的谎、得到的线索和秘密、和每个人关系的变化、还没解决的事。战斗只写结果，不写过程；闲聊省略。旧提要里的要点不要丢。
+- summary：更新后的前情提要，最多 900 字，按时间顺序，用“你”指玩家。必须保留：做过的重要选择、许下的承诺、撒过的谎、得到的线索和秘密、和每个人关系的变化、还没解决的事。战斗只写结果，不写过程；闲聊省略。旧提要里的要点不要丢。【往事】里已经写进章节纪要的内容不用重复，从提要里删掉，只写往事之后或往事没写到的事。
 - people：角色记忆。键只能用这些 id：${MEM_IDS.map(id => id + "（" + PEOPLE[id].name + "）").join("、")}。每人最多 8 条，每条不超过 40 字，从这个角色的角度写他亲身经历或知道的、关于玩家的要紧事（例如“你在教团面前护住了小汤姆”“你答应帮他还清欠老鳗的债”），也可以写他对玩家的印象。把已有记忆和新剧情合并去重，过时的删掉，最重要的放前面。没有变化的角色可以省略。
 - 只输出一个 JSON 对象，不要任何其他文字：{"summary":"……","people":{"vex":["……","……"]}}
+
+【往事（已写好的章节纪要，不会再改）】
+${ch || "（还没有）"}
 
 【旧的前情提要】
 ${m.summary || "（无，这是第一次整理）"}
@@ -869,8 +914,49 @@ ${old || "（无）"}
 【新发生的剧情】
 ${chunk.map(entryLine).join("\n")}`;
 }
+// 后台记忆任务排成一队依次执行（本机 ChatGPT 一次只接一个请求）；memJob 是队尾，玩家行动前可以等它
 let memBusy = false, memJob = null;
-function maybeSummarize() { if (!memJob) memJob = summarize().finally(() => { memJob = null; }); return memJob; }
+function queueMem(fn) {
+  const run = (memJob || Promise.resolve()).then(fn).catch(e => console.warn("记忆整理失败，下一轮再试", e));
+  memJob = run;
+  run.then(() => { if (memJob === run) memJob = null; });
+  return run;
+}
+function maybeSummarize() { queueMem(writeChapter); return queueMem(summarize); }
+// 已经结束、还没写纪要的场景（按在记录里出现的顺序）；一次只写一章，旧存档会一轮补一章
+function pendingChapter() {
+  const done = new Set(memo().chapters.map(c => c.id)), order = [];
+  for (const e of state.log) if (e.s && !order.includes(e.s)) order.push(e.s);
+  return order.find(id => (id !== state.scene || state.ended) && !done.has(id)
+    && state.log.some(e => e.s === id && e.t && e.k !== "chapter" && e.k !== "cb"));
+}
+function chapterPrompt(id, text) {
+  const p = state.player;
+  return `你是跑团游戏《醉龙酒馆：龙誓》的记录员。玩家角色叫${p.name}（${p.gender}，${RACES[p.race].name}${CLASSES[p.cls].name}）。下面是已经结束的一章「${SCENES[id]?.title || id}」的完整记录。写一份 250–400 字的章节纪要：
+- 用“你”指玩家，按时间顺序。
+- 必须写进：发生了什么；你做的关键选择；你许下的承诺、撒过的谎；每个在场角色对你的态度怎么变了、为什么；得到的线索和物品；留下的悬念。
+- 人名、地名、物品名照原文写。战斗只写结果。
+- 只输出纪要正文，不要标题、不要 JSON。
+
+【本章记录】
+${text}`;
+}
+async function writeChapter() {
+  if (!state || state.combat || !narratorReady()) return;
+  const id = pendingChapter(); if (!id) return;
+  const entries = state.log.filter(e => e.s === id && e.t && e.k !== "chapter" && e.k !== "cb");
+  let text = entries.map(entryLine).join("\n");
+  if (text.length > CHAPTER_SRC) text = entries.map(e => (LINE_TAG[e.k] || "") + e.t.slice(0, 300)).join("\n"); // 太长就每条截短
+  if (text.length > CHAPTER_SRC) text = text.slice(0, CHAPTER_SRC / 2) + "\n……\n" + text.slice(-CHAPTER_SRC / 2);
+  const st = state;
+  const out = await narrate(chapterPrompt(id, text), () => {}, new AbortController().signal);
+  if (st !== state) return;
+  const body = str(splitReply(out)[0].replace(/^[#\s*「」【】]*纪要[:：]?/, "").trim(), 900);
+  const m = memo();
+  if (!body || m.chapters.some(c => c.id === id)) return;
+  m.chapters.push({ id, title: SCENES[id]?.title || id, text: body });
+  save();
+}
 async function summarize() {
   if (memBusy || !state || state.combat || !narratorReady()) return;
   const pool = storyPool();
@@ -888,7 +974,8 @@ async function summarize() {
     if (st !== state) return;
     const a = text.indexOf("{"), b = text.lastIndexOf("}");
     const d = JSON.parse(text.slice(a, b + 1));
-    if (typeof d.summary !== "string" || !d.summary.trim()) throw new Error("提要为空");
+    // 往事已经覆盖全部内容时，提要可以是空的
+    if (typeof d.summary !== "string" || (!d.summary.trim() && !memo().chapters.length)) throw new Error("提要为空");
     const m = memo(), old = JSON.parse(before);
     m.summary = str(d.summary.trim(), 1600);
     if (d.people && typeof d.people === "object") for (const [id, list] of Object.entries(d.people)) {
@@ -920,7 +1007,7 @@ const ERR = {
   empty_completion: "说书人没有返回内容，点“重试上一步”再试。",
 };
 
-function push(k, t, extra) { const e = Object.assign({ k, t }, extra || {}); state.log.push(e); return e; }
+function push(k, t, extra) { const e = Object.assign({ k, t, s: state.scene }, extra || {}); state.log.push(e); return e; } // s：发生在哪个场景，章节纪要按它分
 
 /* 说书人接口：本机 ChatGPT、claude.ai sample、OpenAI 兼容 API（密钥只存在本浏览器）。
    想接别的模型，只需改 narrate()：输入完整提示词，流式回调全文，返回最终文本。 */
@@ -1859,8 +1946,9 @@ function renderSummary() {
   it.append(el("div", null, c.items.join("、"))); box.append(it);
   const left = 27 - pointsUsed(d);
   if (left > 0) box.append(el("div", "warn", `还有 ${left} 点属性没有分配。`));
+  if (left < 0) box.append(el("div", "warn", `属性超出了 ${-left} 点，请先调低一些。`));
   const go = el("button", "btn gold", "推开酒馆的门"); go.type = "button"; go.id = "startBtn";
-  go.onclick = startGame;
+  go.disabled = left < 0; go.onclick = startGame;
   box.append(go);
   box.append(el("div", "label", narratorLabel()));
   const set = el("button", "btn small", "说书人设置"); set.type = "button"; set.onclick = openSettings; box.append(set);
@@ -1883,6 +1971,7 @@ function loadPortrait(file) {
 }
 function startGame() {
   const d = draft;
+  if (pointsUsed(d) > 27) return;
   d.name = (d.name || "").trim() || "无名旅人";
   state = newGame(d);
   push("chapter", "序幕 · 暴风之夜");
@@ -2065,8 +2154,12 @@ function memList(id) {
 function openJournal() {
   modal("日志", s => {
     const m = memo();
+    if (m.chapters.length) {
+      s.append(el("div", "label", "往事"));
+      for (const c of m.chapters) { const d = el("div", "slot"); const t = el("div"); t.append(el("b", null, c.title), el("p", "recap", c.text)); d.append(t); s.append(d); }
+    }
     s.append(el("div", "label", "前情提要"));
-    s.append(el("p", "recap", m.summary || "冒险才刚开始。剧情积累到一定长度后，说书人会在这里整理前情提要。"));
+    s.append(el("p", "recap", m.summary || (m.chapters.length ? "最近的事都还记得清清楚楚，暂时不需要提要。" : "冒险才刚开始。剧情积累到一定长度后，说书人会在这里整理前情提要。")));
     const who = MEM_IDS.filter(id => m.people[id]?.length);
     if (who.length) {
       s.append(el("div", "label", "他们记得的事"));
@@ -2233,7 +2326,7 @@ function start(data) {
   const auto = readSave(AUTO);
   state = data && data.state ? data.state : auto ? auto.state : null;
   if (data && data.draft) draft = data.draft;
-  if (state) { state.log.forEach(e => delete e.live); state.log = state.log.filter(e => e.t || e.k === "chapter"); }
+  if (state) tidyLog(state);
   render();
   if (state?.pendingCheck) openDice();
   else if (state?.combat) advanceCombat();
