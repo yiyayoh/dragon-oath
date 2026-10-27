@@ -1273,7 +1273,8 @@ let memBusy = false, memJob = null;
 function queueMem(fn) {
   const run = (memJob || Promise.resolve()).then(fn).catch(e => console.warn("记忆整理失败，下一轮再试", e));
   memJob = run;
-  run.then(() => { if (memJob === run) memJob = null; });
+  if (state?.phase === "play") renderNarratorStatus();
+  run.then(() => { if (memJob === run) { memJob = null; if (state?.phase === "play") renderNarratorStatus(); } });
   return run;
 }
 function maybeSummarize() { queueMem(writeChapter); return queueMem(summarize); }
@@ -2723,6 +2724,24 @@ function startGame() {
    ========================================================= */
 let flashScene = false;
 function scrollStory() { const s = $("story"); s.scrollTop = s.scrollHeight; }
+let statusKind = "", statusSince = 0, statusTimer = null;
+function renderNarratorStatus() {
+  const target = $("statusText");
+  if (!state || state.phase !== "play" || !target) { clearInterval(statusTimer); statusTimer = null; statusKind = ""; return; }
+  const kind = memWait ? "wait" : busy ? "story" : memJob ? "memory" : "";
+  if (kind !== statusKind) { statusKind = kind; statusSince = Date.now(); }
+  if (kind && !statusTimer) statusTimer = setInterval(renderNarratorStatus, 1000);
+  if (!kind && statusTimer) { clearInterval(statusTimer); statusTimer = null; }
+  const cb = state.combat;
+  let text = kind === "wait" ? "先整理完上一章的纪要，马上就好" : kind === "story" ? "说书人正在构思……" : kind === "memory" ? "正在整理记忆（后台）……" : state.pendingCheck ? "需要掷骰" : cb ? (myTurn() ? "你的回合" : "其他人行动中") : `第 ${state.turns} 轮 · ${party().length + 1} 人队伍`;
+  if (kind) text += ` · 已等 ${Math.floor((Date.now() - statusSince) / 1000)} 秒`;
+  if (pref.api === "chatgpt") {
+    const memory = kind === "wait" || kind === "memory";
+    const model = memory ? (pref.gptMemModel || pref.gptModel || chatgpt.model) : (kind === "story" ? pref.gptModel || chatgpt.model : chatgpt.lastModel || pref.gptModel || chatgpt.model);
+    if (model) text += ` · ${memory ? "整理模型" : "说书人"}：${gptModelName(model) || model}`;
+  }
+  target.textContent = text;
+}
 function renderPlay() {
   const p = state.player, sc = SCENES[state.scene];
   $("where").textContent = `${sc.title} · ${state.location}`;
@@ -2814,8 +2833,7 @@ function renderPlay() {
   $("freeText").placeholder = cb ? "即兴行动（消耗动作）：推倒炭盆、砍断吊灯、威吓敌人投降……" : FREE_HINT;
   $("stopBtn").hidden = !busy;
   $("retryBtn").hidden = busy || !lastAction || state.ended;
-  $("statusText").textContent = memWait ? "说书人正在整理前情提要，马上就好……" : busy ? (cb ? "说书人正在描写战况……" : "说书人正在讲述……") : state.pendingCheck ? "需要掷骰"
-    : cb ? (myTurn() ? "你的回合" : "其他人行动中") : `第 ${state.turns} 轮 · ${pt.length + 1} 人队伍`;
+  renderNarratorStatus();
 }
 
 const FREE_HINT = $("freeText").placeholder;
