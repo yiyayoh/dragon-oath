@@ -505,7 +505,7 @@ const SCENES = {
   },
   act1_tower: {
     title: "旧学院废塔", loc: "灰帆港 · 旧学院废塔", bg: "linear-gradient(160deg,#4d3f5c,#1d1724 60%,#0d0a11)", loc1: true,
-    anchor: "港口北边半塌的学院塔楼，暴风夜第七道银光落在这里。被学院除名的法师莉拉·星烬把自己反锁在塔顶研究掌心的印记，几名教团探子（3 名狂信徒、1 名烬火术士）正在撬塔门、往里放烟。莉拉在塔顶用火焰箭和刻薄话死守。帮她赶走探子：动手时在 JSON 写 combat 为 tower_spies（莉拉会一起参战），也可以智取、吓跑。之后莉拉会审视这群“也被烙上印记的人”，嘴硬地提出交换研究，条件见同伴资料，可以用 recruit 让她加入。发现：塔底地下室里她的研究笔记被人整本抄录过（写 act1.notes_copied=true），抄写的笔迹她觉得眼熟但想不起来。抉择：把笔记烧掉（莉拉赞同 −15，教团更难追踪印记，写 act1.lyra_notes=burned），或保留（写 act1.lyra_notes=kept）。离开时把 advance 设为 act1_hub。",
+    anchor: "港口北边半塌的学院塔楼，暴风夜第七道银光落在这里。被学院除名的法师莉拉·星烬把自己反锁在塔顶研究掌心的印记，几名教团探子（4 名狂信徒、1 名烬火术士）正在撬塔门、往里放烟。莉拉在塔顶用火焰箭和刻薄话死守。帮她赶走探子：动手时在 JSON 写 combat 为 tower_spies（莉拉会一起参战），也可以智取、吓跑。之后莉拉会审视这群“也被烙上印记的人”，嘴硬地提出交换研究，条件见同伴资料，可以用 recruit 让她加入。发现：塔底地下室里她的研究笔记被人整本抄录过（写 act1.notes_copied=true），抄写的笔迹她觉得眼熟但想不起来。抉择：把笔记烧掉（莉拉赞同 −15，教团更难追踪印记，写 act1.lyra_notes=burned），或保留（写 act1.lyra_notes=kept）。离开时把 advance 设为 act1_hub。",
     next: ["act1_hub"], encounters: ["tower_spies"], recruit: ["lyra"], meet: ["lyra"], act: 1,
   },
   act1_wreck: {
@@ -650,7 +650,7 @@ const ENCOUNTERS = {
   },
   tower_spies: {
     title: "围塔的探子", lethal: true,
-    brief: "3 名狂信徒（濒死自爆）和 1 名烬火术士在撬塔门、放烟；莉拉在塔顶",
+    brief: "4 名狂信徒（濒死自爆）和 1 名烬火术士在撬塔门、放烟；莉拉在塔顶",
     props: "满地散落的书和卷轴、摇摇欲坠的书架、塔里的浓烟、观星台的铜望远镜",
     zones: [
       { n: "塔门", tags: ["exit"], adj: [1] },
@@ -659,11 +659,11 @@ const ENCOUNTERS = {
       { n: "观星台", tags: ["high"], adj: [2] },
     ],
     start: 0, startAt: { lyra: 3 },
-    foes: [["cultist", 2, 1], ["cultist", 1, 2], ["mage", 1, 1]],
+    foes: [["cultist", 3, 1], ["cultist", 1, 2], ["mage", 1, 1]],
   },
   wreck_drowned: {
     title: "溺死者上岸", lethal: true,
-    brief: "被银光惊醒的 2 名溺死水手从水里爬上来",
+    brief: "被银光惊醒的 3 名溺死水手从水里爬上来",
     props: "退潮的积水、锋利的礁石、龙尸巨大的骨刺、沉船的断桅",
     zones: [
       { n: "沙滩", tags: ["exit"], adj: [1, 2] },
@@ -672,7 +672,7 @@ const ENCOUNTERS = {
       { n: "沉船残骸", tags: ["obscured"], adj: [1, 2] },
     ],
     start: 0,
-    foes: [["drowned", 1, 2], ["drowned", 1, 3]],
+    foes: [["drowned", 1, 2], ["drowned", 2, 3]],
   },
   manor_guards: {
     title: "金库警报", lethal: false,
