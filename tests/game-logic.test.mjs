@@ -181,3 +181,33 @@ test('航海图要先拿到守誓人的钥匙；旧存档的航海图拿法转�
   })()`);
   assert.deepEqual(result, { noKey: null, opened: 'opened', oldKey: 'legal', oldChart: 'legal' });
 });
+
+test('战斗提前打完时，还在烧的导火线由代码收尾', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};const fight=(round,end,dice)=>{
+      state=newGame(freshDraft());state.act=1;state.scene='act1_lighthouse';state.companions.selene.recruited=true;
+      state.split={scene:'act1_lighthouse',away:[],text:''};startCombat('lighthouse');const c=state.combat;
+      c.lit={fuse:4};c.round=round;if(dice)rollD20=()=>dice;
+      for(const u of Object.values(c.units))if(u.side!=='party')u.dead=true;
+      if(end)c.end=end;endCombat(end||'victory');return state.log.filter(e=>e.k==='sys').map(e=>e.t).join('|');
+    };
+    return {early:fight(5),late:fight(7,null,1),hp:state.player.hp,fled:fight(5,'escaped')};
+  })()`);
+  assert.match(result.early, /扑灭了/);
+  assert.match(result.late, /没来得及/); assert.ok(result.hp >= 1);
+  assert.match(result.fled, /你们离开后/);
+});
+
+test('维克斯的债有结果后可以在酒馆入队；打过的码头斗殴之后还能强夺黑鳗号', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};state=newGame(freshDraft());state.act=1;state.scene='act1_hub';
+    applyGM({recruit:['vex']});const before={present:present().includes('vex'),recruited:state.companions.vex.recruited};
+    state.flags['act1.lise']='saved';applyGM({recruit:['vex']});const after=state.companions.vex.recruited;
+    state.scene='act1_docks';state.fought={docks_brawl:'victory'};
+    applyGM({combat:'docks_brawl'});const again=state.pendingCombat||null;
+    applyGM({combat:'docks_ship'});return {before,after,again,ship:state.pendingCombat,prompt:buildPrompt('我要抢船').includes('已经打完的遭遇')};
+  })()`);
+  assert.deepEqual(result, { before: { present: false, recruited: false }, after: true, again: null, ship: 'docks_ship', prompt: true });
+});

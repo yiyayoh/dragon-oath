@@ -43,7 +43,7 @@ globalThis.simulate = function(id, level, scene, away = []) {
   const d = freshDraft(); d.cls = 'paladin'; d.race = 'half_orc'; classPreset(d);
   state = newGame(d); state.act = id === 'tavern_ambush' ? 0 : 1; state.scene = scene;
   for (const id of ['selene', 'kassian', 'borin']) state.companions[id].recruited = true;
-  if (id === 'tower_spies' || id === 'docks_brawl') state.companions.borin.recruited = false; // 场景里遇到莉拉或维克斯，仍为四人
+  if (id === 'tower_spies' || id.startsWith('docks')) state.companions.borin.recruited = false; // 场景里遇到莉拉或维克斯，仍为四人
   if (id === 'tavern_ambush') state.companions.vex.taken = true; // 序幕在场者自动参战，控制为四人
   levelUp(level);
   if (state.pendingAsi) applyAsi({ str: 2 });
@@ -71,7 +71,7 @@ globalThis.simulate = function(id, level, scene, away = []) {
 
 const scenarios = [
   ['tavern_ambush', 1, 'prologue_3'],
-  ['docks_brawl', 2, 'act1_docks'], ['docks_brawl', 3, 'act1_docks'],
+  ['docks_brawl', 2, 'act1_docks'], ['docks_brawl', 3, 'act1_docks'], ['docks_ship', 3, 'act1_docks'], ['docks_ship', 4, 'act1_docks'],
   ['tower_spies', 2, 'act1_tower'], ['tower_spies', 3, 'act1_tower'],
   ['wreck_drowned', 3, 'act1_wreck'],
   ['manor_guards', 3, 'act1_manor'], ['manor_guards', 4, 'act1_manor'],

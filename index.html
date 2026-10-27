@@ -495,14 +495,16 @@ const SCENES = {
   act1_hub: {
     title: "灰帆港", loc: "灰帆港 · 醉龙酒馆", bg: "linear-gradient(160deg,#4f5a63,#1f252b 60%,#0e1114)", campFree: true, hub: true, jail: true,
     anchor: "醉龙酒馆是队伍的据点；在这里可以和玛莎、小汤姆、米拉说话，打听消息，商量下一步。本幕目标：拿到航海图和一艘船。航海图封在酒馆地窖的“龙息”酒桶底下，要先从总督府金库拿回守誓人的钥匙（act1.key 有值）；拿到钥匙后回到酒馆，下地窖打开暗格取出航海图时写 act1.chart=opened（没有钥匙打不开，硬撬也不行）。港口各处可以按任意顺序去，玩家说要去哪里时，把 advance 设为对应的场景 id：黑潮码头 act1_docks（老鳗、维克斯的债、斗兽场）；旧学院废塔 act1_tower（第七道银光落在那里，有人看见教团在围塔）；沉船湾 act1_wreck（银龙的尸体搁浅在那里）；总督府 act1_manor（守誓人的钥匙锁在金库里；三天后的晚上有月光舞会，需要请柬）；下水道迷宫 act1_sewers（教团在港口底下的据点）。两条路线：潜进金库时顺手替老鳗偷出总督的走私账本，换“黑鳗号”和维克斯债务减半；或者帮港卫军尉官萨丝搜集总督通教的证据，揭发后合法取回钥匙、借到“海鸥号”。两条路互斥，也可以都不选，自己偷一艘船。航海图和船都到手后（act1.chart 和 act1.ship 都有值），教团会在当晚动手：把 advance 设为 act1_lighthouse。在酒馆里睡觉不消耗补给（写 camp: true）；每睡一晚就是一天，维克斯的债有期限。",
-    next: ["act1_docks", "act1_tower", "act1_wreck", "act1_manor", "act1_sewers", "act1_lighthouse"], recruit: ["naia"], meet: ["naia"], act: 1,
+    next: ["act1_docks", "act1_tower", "act1_wreck", "act1_manor", "act1_sewers", "act1_lighthouse"], recruit: ["naia", "vex"], meet: ["naia", "vex"], act: 1,
+    // 维克斯的债有了结果之后，他会来酒馆找队伍，可以在这里劝他入队
+    meetIf: { vex: () => !!(state.flags["act1.lise"] || state.flags["act1.vex_debt"]) },
     goals: [{ flag: "act1.key", name: "守誓人的钥匙" }, { flag: "act1.chart", name: "航海图" }, { flag: "act1.ship", name: "船" }],
     gate: { act1_lighthouse: () => !!(state.flags["act1.chart"] && state.flags["act1.ship"]) },
   },
   act1_docks: {
     title: "黑潮码头", loc: "灰帆港 · 黑潮码头", bg: "linear-gradient(160deg,#3c4a44,#18201c 60%,#0b0f0d)", loc1: true,
-    anchor: "鱼腥、焦油和赌徒的吆喝。黑潮会控制着这里：仓库、私船、地下斗兽场。老鳗·莫格（笑眉笑眼、毒如蛇蝎的胖老头）在一艘改成赌场的旧船“金鳗”上见客，只认利益。他可以：拿维克斯的债要挟（妹妹莉丝扣在他手里，三天期限；债务被提起时写 act1.debt_known=true）；开价——替他从总督府金库偷出总督的走私账本（总督拿它要挟黑潮会多年），他就借出“黑鳗号”并把维克斯的债减半（写 act1.eel=deal）。玩家也可以与黑潮会为敌（写 act1.eel=enemy），强行救莉丝（写 act1.lise=saved）。斗兽场：卡西安会认出这个地方（他是十年前的头牌“碎潮”），会有人认出他。若维克斯在序幕里离开了队伍，他就在码头躲债，可以用 recruit 劝他回来。真正打起来时在 JSON 写 combat 为 docks_brawl。离开码头时把 advance 设为 act1_hub。",
-    next: ["act1_hub"], encounters: ["docks_brawl"], recruit: ["vex"], meet: ["vex"], act: 1,
+    anchor: "鱼腥、焦油和赌徒的吆喝。黑潮会控制着这里：仓库、私船、地下斗兽场。老鳗·莫格（笑眉笑眼、毒如蛇蝎的胖老头）在一艘改成赌场的旧船“金鳗”上见客，只认利益。他可以：拿维克斯的债要挟（妹妹莉丝扣在他手里，三天期限；债务被提起时写 act1.debt_known=true）；开价——替他从总督府金库偷出总督的走私账本（总督拿它要挟黑潮会多年），他就借出“黑鳗号”并把维克斯的债减半（写 act1.eel=deal）。玩家也可以与黑潮会为敌（写 act1.eel=enemy），强行救莉丝（写 act1.lise=saved）。斗兽场：卡西安会认出这个地方（他是十年前的头牌“碎潮”），会有人认出他。若维克斯在序幕里离开了队伍，他就在码头躲债，可以用 recruit 劝他回来。真正打起来时在 JSON 写 combat 为 docks_brawl。码头斗殴打过之后，若玩家要强抢黑鳗号（或再跟黑潮会动手），写 combat 为 docks_ship；赢了写 act1.ship=stolen、act1.eel=enemy。离开码头时把 advance 设为 act1_hub。",
+    next: ["act1_hub"], encounters: ["docks_brawl", "docks_ship"], recruit: ["vex"], meet: ["vex"], act: 1,
   },
   act1_tower: {
     title: "旧学院废塔", loc: "灰帆港 · 旧学院废塔", bg: "linear-gradient(160deg,#4d3f5c,#1d1724 60%,#0d0a11)", loc1: true,
@@ -516,7 +518,7 @@ const SCENES = {
   },
   act1_manor: {
     title: "总督府", loc: "灰帆港 · 总督府", bg: "linear-gradient(160deg,#3f4a6e,#191d2c 60%,#0b0d14)", loc1: true, camp: false,
-    anchor: "总督艾德蒙·科尔（风度翩翩、满口法度的半精灵）的府邸。守誓人的钥匙（一枚刻着龙鳞纹的银钥匙）锁在地下金库，十年前从玛莎的亡夫那里没收来的；同一个金库里还有总督的走私账本（老鳗想要）。白天可以以访客身份试探总督、打听金库；港卫军尉官萨丝·铁锤（正直的青铜龙裔）对印记持有者充满怀疑，但她也在暗中查总督——可以和她合作搜集“总督秘密接受教团资助”的证据（写 act1.sath_trust=true；揭发后合法取回钥匙、借到“海鸥号”）。重头戏是月光舞会：需要请柬（伪造、购买、或让米拉变形，写 act1.invite）。舞会上可以和同伴跳舞（适合推进恋爱）、和总督交锋、在一旁发现一位举止古怪的贵妇人（其实是千面母伪装，察觉 DC 17，写 act1.facemother_seen=true；不要直接点破身份）。偷钥匙：隐匿 DC 14 + 巧手 DC 15（金库），成功写 act1.key=stolen；揭发总督写 act1.key=legal、act1.governor=exposed；勒索总督写 act1.key=blackmail、act1.governor=blackmailed。钥匙到手不等于航海图到手：航海图要回酒馆地窖才能取出，这里不要写 act1.chart。失败触发守卫：动手时在 JSON 写 combat 为 manor_guards，或者逃跑。若和萨丝合作揭发，船写 act1.ship=seagull；若替老鳗偷出账本并交给他，船写 act1.ship=black_eel。离开时把 advance 设为 act1_hub。",
+    anchor: "总督艾德蒙·科尔（风度翩翩、满口法度的半精灵）的府邸。守誓人的钥匙（一枚刻着龙鳞纹的银钥匙）锁在地下金库，十年前从玛莎的亡夫那里没收来的；同一个金库里还有总督的走私账本（老鳗想要）。白天可以以访客身份试探总督、打听金库；港卫军尉官萨丝·铁锤（正直的青铜龙裔）对印记持有者充满怀疑，但她也在暗中查总督——可以和她合作搜集“总督秘密接受教团资助”的证据（写 act1.sath_trust=true；揭发后合法取回钥匙、借到“海鸥号”）。重头戏是月光舞会：需要请柬（伪造、购买、或让米拉变形，写 act1.invite）。舞会上可以和同伴跳舞（适合推进恋爱）、和总督交锋、在一旁发现一位举止古怪的贵妇人（其实是千面母伪装，察觉 DC 17，写 act1.facemother_seen=true；不要直接点破身份）。偷钥匙：隐匿 DC 14 + 巧手 DC 15（金库），成功写 act1.key=stolen；揭发总督写 act1.key=legal、act1.governor=exposed；勒索总督写 act1.key=blackmail、act1.governor=blackmailed。钥匙到手不等于航海图到手：航海图要回酒馆地窖才能取出，这里不要写 act1.chart。失败触发守卫：动手时在 JSON 写 combat 为 manor_guards，或者逃跑。船在对方答应借出的那一刻就写标记，不用等到上船：萨丝批准借用海鸥号时写 act1.ship=seagull；替老鳗偷出账本并交给他、他答应借黑鳗号时写 act1.ship=black_eel。离开时把 advance 设为 act1_hub。",
     next: ["act1_hub"], encounters: ["manor_guards"], act: 1,
   },
   act1_sewers: {
@@ -604,6 +606,7 @@ const ENEMIES = {
   assassin: { name: "无面刺客", hp: 22, ac: 15, dex: 3, atk: { n: "匕首", cnt: 1, d: 4, plus: 4, hit: 6 }, sneak: 2 },
   drowned: { name: "溺死水手", hp: 22, ac: 11, dex: 0, atk: { n: "爪击", cnt: 1, d: 8, plus: 3, hit: 6 }, multi: 2 },
   guard_captain: { name: "卫队长", hp: 32, ac: 17, dex: 1, atk: { n: "长剑", cnt: 1, d: 8, plus: 3, hit: 6 }, multi: 2, plead: true, unique: true },
+  bosun: { name: "黑鳗号水手长", hp: 30, ac: 14, dex: 1, atk: { n: "船钩", cnt: 1, d: 8, plus: 3, hit: 5 }, multi: 2, plead: true, unique: true },
   guard: { name: "总督府卫兵", hp: 13, ac: 16, dex: 0, atk: { n: "长戟", cnt: 1, d: 8, plus: 2, hit: 4 }, plead: true },
   deacon: { name: "教团执事", pid: "cultist", hp: 24, ac: 13, dex: 1, atk: { n: "烬火杖", cnt: 2, d: 6, plus: 0, hit: 5, ranged: true }, ignite: true, plead: true, unique: true },
   // shift：开战时伪装成队伍里的某人；一次受到这么多伤害就换一张脸，重新混进人群
@@ -654,6 +657,20 @@ const ENCOUNTERS = {
     start: 0,
     foes: [["thug", 2, 0], ["thug", 2, 1]],
     events: [{ round: 2, spawn: [["thug", 2, 1]], text: "货箱后面又冲出两个黑潮会打手，手里拎着鱼钩和铁链！" }],
+  },
+  docks_ship: {
+    title: "强夺黑鳗号", lethal: false,
+    brief: "黑鳗号上的 3 名打手和 1 名水手长守着船，水手长每回合打两下；第 2 回合又有 2 名打手从栈桥赶来",
+    props: "收起的船帆、缆绳、堆在甲板上的鱼油桶、摇晃的跳板",
+    zones: [
+      { n: "栈桥", adj: [1] },
+      { n: "甲板", adj: [0, 2, 3] },
+      { n: "桅杆", tags: ["high"], adj: [1] },
+      { n: "船舱口", tags: ["cover"], adj: [1] },
+    ],
+    start: 0,
+    foes: [["thug", 2, 1], ["thug", 1, 3], ["bosun", 1, 1]],
+    events: [{ round: 2, spawn: [["thug", 2, 0]], text: "栈桥上脚步杂乱，两个黑潮会打手听到动静赶了过来！" }],
   },
   tower_spies: {
     title: "围塔的探子", lethal: true,
@@ -722,7 +739,7 @@ const ENCOUNTERS = {
     start: 0,
     foes: [["assassin", 2, 0], ["assassin", 2, 1], ["facemother", 1, 2]],
     events: [
-      { round: 4, text: "千面母点燃了灯室里的导火线！火花顺着引线爬向油桶——再过四个回合，整座灯塔都会炸上天。（即兴行动可以扑灭）" },
+      { round: 4, lights: "fuse", text: "千面母点燃了灯室里的导火线！火花顺着引线爬向油桶——再过四个回合，整座灯塔都会炸上天。（即兴行动可以扑灭）" },
       { round: 8, unless: "fuse", blast: { dice: [6, 6] }, text: "导火线烧到了尽头，灯塔在巨响中炸开，碎石和火焰席卷了每一层！" },
     ],
     stops: { fuse: "灯室的导火线" },
@@ -961,7 +978,7 @@ function present() {
     const c = state.companions[id];
     if (out.includes(id) || !c.alive || !inAct(id) || c.left) continue;
     if (c.jailed) { if (sc.jail) out.push(id); continue; }
-    if (c.taken ? sc.rescue : sc.meet?.includes(id)) out.push(id);
+    if (c.taken ? sc.rescue : sc.meet?.includes(id) && (!sc.meetIf?.[id] || sc.meetIf[id]())) out.push(id);
   }
   return out.filter(id => !awayIds().includes(id));
 }
@@ -1233,10 +1250,10 @@ function buildPrompt(action, mode) {
   const recent = recentLines(), m = memo(), chapters = chapterLines(), recall = mode === "narrate" ? "" : recallLines(action);
   const memLines = MEM_IDS.filter(id => m.people[id]?.length).map(id => `· ${PEOPLE[id].name}（${id}）：${m.people[id].join("；")}`).join("\n");
   const pres = present();
-  const encs = (sc.encounters || []).filter(id => !state.fought?.[id]);
+  const encs = (sc.encounters || []).filter(id => !state.fought?.[id]), done = (sc.encounters || []).filter(id => state.fought?.[id]);
   return SYSTEM + rulesBlock() +
     `\n\n【当前场景】${state.scene}「${sc.title}」，地点：${state.location}\n场景锚点（GM 可见）：${sc.anchor}\n${nextLine(sc)}${splitLine(sc)}` +
-    (state.combat ? combatBrief(mode) : state.camp ? campBrief() : encs.length ? `\n可开战的遭遇：${encs.map(id => id + "（" + ENCOUNTERS[id].brief + "）").join("；")}` : "") +
+    (state.combat ? combatBrief(mode) : state.camp ? campBrief() : encs.length || done.length ? (encs.length ? `\n可开战的遭遇：${encs.map(id => id + "（" + ENCOUNTERS[id].brief + "）").join("；")}` : "") + (done.length ? `\n这一场已经打完的遭遇（不能再写 combat）：${done.join("、")}。玩家再要动手，就用检定或叙述处理，不要写成一直对峙` : "") : "") +
     `\n\n【玩家角色】${p.name}，${p.gender}，${p.level} 级${RACES[p.race].name}${CLASSES[p.cls].name}，背景：${BACKGROUNDS[p.bg].name}（灵感条件：${BACKGROUNDS[p.bg].insp}）。外貌：${p.appearance}` +
     `\n属性：${AB_KEYS.map(k => AB[k] + p.abilities[k] + "(" + sgn(mod(p.abilities[k])) + ")").join(" ")}；熟练技能：${profs}` +
     `\nHP ${p.hp}/${p.hpMax}，AC ${p.ac}，金币 ${p.gold}，灵感 ${p.inspiration}，龙化值 ${p.draconic}，物品：${p.inventory.join("、") || "无"}` +
@@ -1721,7 +1738,7 @@ function applyGM(d, mode) {
   for (const id of (!inCb && Array.isArray(d.recruit) ? d.recruit : [])) {
     const c = state.companions[id];
     if (!c || c.recruited || !c.alive || c.left || c.jailed || !inAct(id)) continue;
-    if (c.taken ? !sc0.rescue : !sc0.recruit?.includes(id)) continue;
+    if (c.taken ? !sc0.rescue : !sc0.recruit?.includes(id) || sc0.meetIf?.[id] && !sc0.meetIf[id]()) continue;
     if (id === "vex" && state.flags["prologue.vex_left"]) { if (!state.act) continue; state.flags["prologue.vex_left"] = false; }
     const back = c.taken;
     if (back) { c.taken = false; c.rescued = true; }
@@ -1755,6 +1772,7 @@ function applyGM(d, mode) {
   } else {
     const cid = typeof d.combat === "string" ? d.combat : d.combat?.start;
     if (cid && SCENES[state.scene].encounters?.includes(cid) && !state.fought?.[cid]) { state.pendingCombat = cid; return; }
+    if (cid) console.warn("忽略说书人的开战请求（不是这一场的遭遇，或已经打过）：", cid);
     if (d.camp === true && mode !== "morning" && canCamp()) { state.pendingCamp = true; state.suggestions = []; return; } // 要扎营就先不推进场景；睡醒后不能自动再扎营
   }
 
@@ -2449,6 +2467,7 @@ function nextTurn() {
   for (const ev of ENCOUNTERS[c.id].events || []) if (ev.round === c.round && !(ev.unless && c.stopped?.[ev.unless])) {
     for (const [type, n, zone] of ev.spawn || []) for (let i = 0; i < n; i++) { const u = foeUnit(type, zone, ev.side || "enemy"); u.init = rollD20() + u.dexMod; c.units[u.id] = u; }
     clog(ev.text, "event");
+    if (ev.lights) c.lit = { ...(c.lit || {}), [ev.lights]: c.round };
     if (ev.blast) for (const u of cbList()) if (!u.dead && !u.out && (!ev.blast.zones || ev.blast.zones.includes(u.zone))) {
       const n = roll(...ev.blast.dice), r = hurt(u, n); clog(`${u.name} 受到 ${n} 点伤害` + (r ? "。" + r : ""), "hit");
     }
@@ -2485,11 +2504,32 @@ async function advanceCombat() {
     }
   } finally { if (cbRun === gen) cbRun = -1; }
 }
+// 打完时还在烧的机关（点燃了、没被阻止、还没炸）由代码收尾，不交给说书人临场裁定：
+// 还剩 2 回合以上就来得及扑灭；只剩 1 回合，手最快的人掷敏捷 DC 15，失败照样炸（生命不低于 1）；撤离或倒下，人走后它照样炸
+function leftover(c, r) {
+  const E = ENCOUNTERS[c.id], out = [];
+  for (const k of Object.keys(c.lit || {})) {
+    const boom = (E.events || []).find(ev => ev.unless === k && ev.round > c.round);
+    if (c.stopped?.[k] || !boom) continue;
+    const name = E.stops[k], left = boom.round - c.round;
+    if (r !== "victory" && r !== "talked") { out.push(`你们离开后：${boom.text}`); continue; }
+    if (left >= 2) { out.push(`战斗结束时${name}还要烧 ${left} 回合，你们抢在它烧完前把它扑灭了。`); continue; }
+    const us = cbList().filter(u => u.side === "party" && ACTIVE(u)), best = us.slice().sort((a, b) => b.dexMod - a.dexMod)[0];
+    const b = best.dexMod + profBonus(partyLevel()), [d, rs] = d20x(false, false), total = d + b, ok = d === 20 || (d !== 1 && total >= 15);
+    let t = `${name}只剩最后一截，${best.name}扑过去：d20(${rs.join("/")})${sgn(b)} = ${total} 对敏捷 DC 15，`;
+    if (ok) t += "扑灭了。";
+    else t += "没来得及。" + boom.text + us.map(u => { const n = roll(...boom.blast.dice); u.hp = Math.max(1, u.hp - n); return `${u.name} −${n}`; }).join("、") + "。";
+    out.push(t);
+  }
+  for (const t of out) clog(t, "event");
+  return out;
+}
 function narrateCombat(feed) {
   return gm(`【战况】自你上次行动以来：\n${feed.join("\n")}\n请把以上战况写成 60–160 字的一段描写。结果已由程序决定：不要改动结果，不要新增伤害、检定或伤亡。同伴可以喊话。JSON 只写 speakers、expressions，必要时写 approval。`, null, "narrate");
 }
 function endCombat(r) {
   const c = state.combat, us = cbList();
+  const fuse = leftover(c, r);
   let playerDead = false;
   for (const u of us.filter(u => u.side === "party")) {
     const s = u.ref === "player" ? state.player : state.companions[u.ref];
@@ -2504,6 +2544,7 @@ function endCombat(r) {
     const l = foes.filter(f); if (l.length) parts.push(`${label}：${tally(l)}。`);
   }
   parts.push("我方：" + us.filter(u => u.side === "party").map(u => `${u.name} ${u.dead ? "阵亡" : u.down ? "倒地" : u.hp + "/" + u.max}`).join("，") + "。");
+  if (fuse.length) parts.push(fuse.join(""));
   const summary = parts.join("");
   state.fought = state.fought || {};
   if (r !== "escaped") state.fought[c.id] = r; // 撤离的遭遇之后还能再打
