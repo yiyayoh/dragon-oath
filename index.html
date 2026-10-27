@@ -496,6 +496,7 @@ const SCENES = {
     title: "灰帆港", loc: "灰帆港 · 醉龙酒馆", bg: "linear-gradient(160deg,#4f5a63,#1f252b 60%,#0e1114)", campFree: true, hub: true,
     anchor: "醉龙酒馆是队伍的据点；在这里可以和玛莎、小汤姆、米拉说话，打听消息，商量下一步。本幕目标：拿到航海图和一艘船。港口各处可以按任意顺序去，玩家说要去哪里时，把 advance 设为对应的场景 id：黑潮码头 act1_docks（老鳗、维克斯的债、斗兽场）；旧学院废塔 act1_tower（第七道银光落在那里，有人看见教团在围塔）；沉船湾 act1_wreck（银龙的尸体搁浅在那里）；总督府 act1_manor（航海图锁在金库里；三天后的晚上有月光舞会，需要请柬）；下水道迷宫 act1_sewers（教团在港口底下的据点）。两条路线：为老鳗偷航海图换“黑鳗号”和维克斯债务减半；或者帮港卫军尉官萨丝搜集总督通教的证据，揭发后合法取回航海图、借到“海鸥号”。两条路互斥，也可以都不选，自己偷一艘船。航海图和船都到手后（act1.chart 和 act1.ship 都有值），教团会在当晚动手：把 advance 设为 act1_lighthouse。在酒馆里睡觉不消耗补给（写 camp: true）；每睡一晚就是一天，维克斯的债有期限。",
     next: ["act1_docks", "act1_tower", "act1_wreck", "act1_manor", "act1_sewers", "act1_lighthouse"], recruit: ["naia"], meet: ["naia"], act: 1,
+    goals: [{ flag: "act1.chart", name: "航海图" }, { flag: "act1.ship", name: "船" }],
     gate: { act1_lighthouse: () => !!(state.flags["act1.chart"] && state.flags["act1.ship"]) },
   },
   act1_docks: {
@@ -536,6 +537,8 @@ const SCENES = {
 };
 const ACT_NAMES = ["序幕 · 暴风之夜", "第一幕 · 灰帆港", "第二幕 · 龙骨群岛", "第三幕 · 烬冠"];
 const nextOf = sc => sc.next == null ? [] : [].concat(sc.next);
+const actGoals = () => Object.values(SCENES).find(sc => sc.act === state.act && sc.goals)?.goals || [];
+const GOAL_VALUES = { stolen: "偷来的", legal: "揭发总督后合法取回", blackmail: "勒索总督", eel: "从老鳗那里拿到", black_eel: "黑鳗号", seagull: "海鸥号" };
 // 第一幕的地点，走完的越多等级越高
 const ACT1_LOCS = Object.keys(SCENES).filter(id => SCENES[id].loc1);
 
@@ -2889,6 +2892,19 @@ function memList(id) {
 }
 function openJournal() {
   modal("日志", s => {
+    const goals = actGoals();
+    if (goals.length) {
+      s.append(el("div", "label", "本幕目标"));
+      for (const g of goals) {
+        const value = state.flags[g.flag];
+        s.append(el("div", "meta", `${g.name}：${value ? `已拿到（${GOAL_VALUES[value] || value}）` : "还没拿到"}`));
+      }
+      if (goals.some(g => !state.flags[g.flag]) && state.log.slice(-40).some(e => (e.k === "you" || e.k === "gm") && /航海图|船/.test(e.t))) {
+        const check = el("button", "btn small", "我已经拿到了，请说书人核对"); check.type = "button";
+        check.onclick = () => { closeModal(); gm("（玩家认为自己已经拿到了航海图或船。请对照最近剧情核对：如果剧情里确实已经到手，就在 flags 里补写 act1.chart / act1.ship；如果没有，用一句话说明还差什么。不要推进场景。）", null); };
+        s.append(check);
+      }
+    }
     const m = memo();
     if (m.chapters.length) {
       s.append(el("div", "label", "往事"));
