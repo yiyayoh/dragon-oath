@@ -256,6 +256,7 @@ h1, h2, h3 { text-wrap: balance; }
 .unit.tgt:hover { background: #4a3519; }
 .unit .ub { display: flex; justify-content: space-between; gap: 6px; font-variant-numeric: tabular-nums; }
 .unit .cd { font-size: 11px; color: var(--ember); }
+.zone .camp-face { width: 100%; height: 132px; object-fit: cover; object-position: 50% 15%; border-radius: 6px; }
 .unit.ally .hpbar i { background: linear-gradient(90deg, #4f6e3f, var(--moss)); }
 .cb-res { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12.5px; }
 .cb-res .on { color: var(--moss); }
@@ -424,29 +425,29 @@ const COMPANIONS = {
 /* 序幕场景锚点（GM 可见） */
 const SCENES = {
   prologue_1: {
-    title: "酒馆里的人", loc: "醉龙酒馆 · 大堂", bg: "linear-gradient(160deg,#5a3517,#24150b 60%,#120c08)",
+    camp: false, title: "酒馆里的人", loc: "醉龙酒馆 · 大堂", bg: "linear-gradient(160deg,#5a3517,#24150b 60%,#120c08)",
     anchor: "雨夜，下了三天。在场：老板娘玛莎在吧台擦杯子；博林在角落挑战全场掰手腕；卡西安在给被老鼠咬伤腿的小汤姆包扎；赛勒涅独自在壁炉边擦剑；维克斯四处兜售一颗“银宝石”；窗边坐着沉默的兜帽客（形变者奈雅伪装，被搭话会敷衍，随后溜走）。地板下偶尔传来抓挠声（地窖闹老鼠）。玩家可以自由与任何人互动，第一印象影响赞同度（±1~5）。必然事件：当玩家已与 2~3 人互动，或大约 5 轮之后，银龙坠落：此时把 advance 设为 prologue_2，并在叙述末尾写出天空中的银光。不要提前透露印记的事。",
     next: "prologue_2",
   },
   prologue_2: {
-    title: "坠龙", loc: "醉龙酒馆 · 大堂", bg: "linear-gradient(160deg,#55677a,#1d2530 60%,#0c0f14)", flash: true,
+    camp: false, title: "坠龙", loc: "醉龙酒馆 · 大堂", bg: "linear-gradient(160deg,#55677a,#1d2530 60%,#0c0f14)", flash: true,
     anchor: "一道银光划过天空坠入海湾，酒馆剧烈震动。银光穿墙而入，在六个人掌心烙下银色龙鳞印记：玩家、赛勒涅、维克斯、卡西安、博林、兜帽客；第七道光飞出窗外，落向北边的旧学院废塔。烙印时所有持有者同时看到一只巨大的银色眼睛，并短暂看到彼此的记忆碎片。剧痛。兜帽客趁乱消失。众人惊疑、议论、互相查看掌心。玩家反应 1~3 轮后，门外传来沉重的撞门声，把 advance 设为 prologue_3。",
     next: "prologue_3",
   },
   prologue_3: {
-    title: "教团袭击", loc: "醉龙酒馆 · 大堂", bg: "linear-gradient(160deg,#7a2e17,#2a0f08 60%,#120706)",
+    camp: false, title: "教团袭击", loc: "醉龙酒馆 · 大堂", bg: "linear-gradient(160deg,#7a2e17,#2a0f08 60%,#120706)",
     anchor: "十分钟后，6 名灰烬教团狂信徒和 1 名烬火术士破门而入，要求“交出带印记的人”。区域：大堂、吧台、二楼回廊、地窖门。解决方式全部有效：①战斗：双方真正动手时，在 JSON 写 combat 为 tavern_ambush，程序接管回合制战斗（在场同伴一起参战，第 3 回合巨鼠从地窖涌出，敌我不分；玩家可开“留活口”活捉狂信徒）；②谈判：威吓 DC 15 吓跑一半，欺瞒 DC 13 谎称持有者已从后门逃走；③环境：推倒炭盆、砍断吊灯、把酒桶滚下楼梯（GM 定 DC）；④黑暗选择：交出一个同伴——该同伴被带走（flags 写 prologue.betrayed_companion = 其 id），其余同伴赞同 −15~−20。没有开战时，也可以在第 3 轮左右让地窖门被撞开、巨鼠涌出制造混乱。本战不会致死：全队倒下时，由玛莎或援手救起并付出代价。收到【战斗结束】或敌人被驱散后，叙述残局并把 advance 设为 prologue_4。",
     next: "prologue_4", encounters: ["tavern_ambush"],
   },
   prologue_4: {
     title: "余烬", loc: "醉龙酒馆 · 残局", bg: "linear-gradient(160deg,#4a2e1a,#1d130c 60%,#0f0a07)",
-    anchor: "战后。玛莎讲述“守誓人”的传说（只讲传说层面：千年前银龙赫斯提雅封印了黑龙烬王，她亡夫曾是守誓人；酒馆就是守誓人的老据点）。招募：用 recruit 字段加入同伴，条件见同伴资料。可选支线：下地窖处理“鼠王”（狗那么大的独眼巨鼠，尾巴缠铜链，会召唤鼠群；可用博林的铜哨或模仿教团哨音 魅力 DC 14 让它退兵，可用火墙 智力 DC 12 驱散；放过写 prologue.rat_king=spared）。若和鼠王动手，在 JSON 写 combat 为 rat_king，由程序接管战斗，结束后按结果写 prologue.rat_king。当玩家决定休息/睡觉/长休时，把 advance 设为 prologue_5。",
-    next: "prologue_5", encounters: ["rat_king"],
+    anchor: "战后。玛莎讲述“守誓人”的传说（只讲传说层面：千年前银龙赫斯提雅封印了黑龙烬王，她亡夫曾是守誓人；酒馆就是守誓人的老据点）。招募：用 recruit 字段加入同伴，条件见同伴资料。可选支线：下地窖处理“鼠王”（狗那么大的独眼巨鼠，尾巴缠铜链，会召唤鼠群；可用博林的铜哨或模仿教团哨音 魅力 DC 14 让它退兵，可用火墙 智力 DC 12 驱散；放过写 prologue.rat_king=spared）。若和鼠王动手，在 JSON 写 combat 为 rat_king，由程序接管战斗，结束后按结果写 prologue.rat_king。当玩家决定休息/睡觉时，在 JSON 写 camp 为 true：大家在壁炉边度过这一夜（程序打开营地，玩家可以找同伴夜谈），睡下后程序会进入 prologue_5；不要自己写 advance。",
+    next: "prologue_5", encounters: ["rat_king"], campFree: true, campNext: "prologue_5",
   },
   prologue_5: {
     title: "第一个梦", loc: "梦境 · 银雾", bg: "linear-gradient(160deg,#8fa2b6,#2f3a47 55%,#11161c)",
     anchor: "玩家入睡。银色雾中，赫斯提雅入梦（银发老妇人，脸颊有淡淡龙鳞；也可显现为巨大的垂死银龙）。她温柔地说：“我选中了你们。去誓约神殿。”她回避“代价”的问题（洞悉 DC 16 可察觉她有所隐瞒，但看不出是什么）。根据玩家回应（信任/质问/拒绝）给 hestia_trust 变化（−20~+20），并写 flags prologue.hestia_answer = trust|question|refuse。对话 1~3 轮后，玩家醒来，晨光照进酒馆，把 scene_end 设为 true，序幕结束。玩家进入这一场时印记觉醒，全队已升到 2 级（程序处理），可以在梦里让玩家感到掌心的印记在发热、力量在苏醒。",
-    next: null, level: 2,
+    next: null, level: 2, camp: false,
   },
 };
 const SCENE_ORDER = ["prologue_1", "prologue_2", "prologue_3", "prologue_4", "prologue_5"];
@@ -620,6 +621,7 @@ function newGame(d) {
       draconic: 0, inspiration: 0, portraitData: d.portraitData },
     companions, flags: {}, hestiaTrust: 0, journal: [{ quest: "暴风之夜", note: "在醉龙酒馆躲雨。" }],
     log: [], suggestions: [], speakers: [], expressions: {}, pendingCheck: null, ended: false, turns: 0,
+    supplies: 2, rel: {}, campSeen: [], camp: null,
   };
 }
 
@@ -846,6 +848,10 @@ const SYSTEM = `你是奇幻跑团游戏《醉龙酒馆：龙誓》的游戏主�
 - 不透露标注“GM 不要透露”的秘密，除非玩家通过剧情或检定发现。
 - 角色有记忆：【往事】是已经结束的各章纪要，【前情提要】是之后更早发生的事，【角色记得的事】是每个人亲身经历、对玩家的印象，【想起的旧事】是玩家这次提到的事当初的原文。让 NPC 和同伴记得玩家以前做过、说过、答应过的事，在合适的时候自然地提起、追问或翻旧账，态度要和这些记忆一致。
 - 恋爱内容要大胆直白：可以具体描写亲吻、拥抱、抚摸、体温和心跳，以及情欲张力和调情台词。所有可恋爱角色都是成年人。不写露骨的性行为过程，到那一步时用一句暗示性的转场结束。
+- 恋爱随时可能发生，不只在营地：关系和气氛到了就可以推进；玩家也可以主动表白，赞同度不够时对方按性格婉拒、装傻或害羞地躲开。
+- 亲密程度跟着关系走：朋友是拍肩、并肩、打闹；暧昧是眼神停留、不经意的触碰、试探的调情；恋人可以亲吻、拥抱、更主动的身体接触，可以共度一夜（转场带过，第二天早上的画面可以亲昵）；誓约是最深的信任。气氛可以稍微超前或保守，但不要跳跃。每个同伴的亲密方式不同，按性格写。
+- 双方都可以拒绝：同伴按性格、心情和对玩家的感情决定接受还是推开；玩家拒绝时同伴停下，可以失落，但不纠缠。
+- 玩家可以同时和几个人交往；现任会在意，按性格决定是否接受；瞒着现任的恋情被发现会有后果。
 
 【规则】
 - 检定：d20 + 属性调整值 + 熟练加值 ≥ DC。DC：5 很简单，10 简单，15 中等，20 困难，25 极难。自然 20 必成，自然 1 必败。
@@ -858,7 +864,7 @@ const SYSTEM = `你是奇幻跑团游戏《醉龙酒馆：龙誓》的游戏主�
 - 当玩家的举动符合其背景的“灵感条件”时，可给 inspiration: 1。
 
 【输出格式】先写叙述正文（纯文本，可分段，不要标题、不要 Markdown）。然后单独一行写 @@@ 。然后写一个 JSON 对象（不要代码块），没有变化的字段可以省略：
-{"location":"简短地点","speakers":["borin"],"expressions":{"borin":"smile"},"check":null,"approval":[{"id":"selene","delta":3,"reason":"你保护了小汤姆"}],"flags":{},"hp":[{"id":"player","delta":-2}],"gold":0,"items_add":[],"items_remove":[],"draconic":0,"inspiration":0,"recruit":[],"hestia_trust":0,"journal":[{"quest":"任务名","note":"一句话进展"}],"remember":[{"id":"vex","note":"你答应帮他救回妹妹"}],"advance":null,"scene_end":false,"suggestions":[{"text":"建议行动","check":"说服"}]}
+{"location":"简短地点","speakers":["borin"],"expressions":{"borin":"smile"},"check":null,"approval":[{"id":"selene","delta":3,"reason":"你保护了小汤姆"}],"flags":{},"hp":[{"id":"player","delta":-2}],"gold":0,"items_add":[],"items_remove":[],"draconic":0,"inspiration":0,"recruit":[],"hestia_trust":0,"journal":[{"quest":"任务名","note":"一句话进展"}],"remember":[{"id":"vex","note":"你答应帮他救回妹妹"}],"romance":[],"relation":[],"advance":null,"scene_end":false,"suggestions":[{"text":"建议行动","check":"说服"}]}
 - speakers：本轮主要说话或被聚焦的角色 id（最多 3 个，第一个最重要）。可用 id：selene vex kassian borin martha tom hooded cultist hestia。
 - expressions：可选，表情取 neutral smile angry sad tender。
 - check：需要检定时写 {"skill":"技能键","dc":15,"who":"player","reason":"一句话难点","advantage":false,"disadvantage":false}，此时 suggestions 写 []。who 可以是 player 或已加入的同伴 id。
@@ -867,11 +873,19 @@ const SYSTEM = `你是奇幻跑团游戏《醉龙酒馆：龙誓》的游戏主�
 - advance：只能填场景资料里写明的下一个场景 id。
 - combat：开战时写遭遇 id 字符串，例如 "combat":"tavern_ambush"。战斗中即兴行动的效果格式见【即兴行动规则】。
 - remember：本轮发生了某个角色会长久记住的事时写，每轮最多 2 条，每条不超过 40 字，从该角色的角度写关于玩家的事实。只记真正要紧的：承诺、谎言、秘密、恩情、冒犯、救命、亲密时刻、重大分歧。闲聊不要记。id 可用：${MEM_IDS.join(" ")}。
+- romance：恋爱推进，[{"id":"selene","to":"hint"}]。阶段 none → hint（暧昧）→ together（恋人）→ vowed（誓约），一次只能推进一格；门槛是赞同度 40 / 60 / 80，誓约还要先通过个人任务的考验。气氛真的到了才写，不是每次都要推进。分手写 "to":"none"。
+- caught_lie：玩家被同伴发现撒谎时写，["selene"]。
+- consent：玩家已有恋人又和别人走近时，现任表态：[{"id":"现任","for":"新对象","ok":true}]，不接受写 false。
+- relation：同伴之间关系变化，[{"a":"selene","b":"vex","delta":3}]，每次最多 ±10。
+- supplies：营地补给变化（拿到干粮、被偷等），最多 ±3。
+- camp：玩家想扎营、休息、睡觉时写 true，程序会打开营地；不要自己写睡觉的过程。
 - flags 只能用以下键：${Object.keys(FLAG_KEYS).join("、")}。`;
 
 function companionBrief(id) {
   const c = COMPANIONS[id], s = state.companions[id], p = PEOPLE[id];
-  return `· ${p.name}（id: ${id}，${c.race}${c.cls}，${partyLevel()} 级）${s.recruited ? "【已加入队伍】" : "【尚未加入】"} 赞同度 ${s.approval}（${relLabel(s.approval)}），HP ${s.hp}/${s.hpMax}
+  const love = s.romance && s.romance !== "none" ? `，恋爱：${ROMANCE[s.romance].name}${s.secret ? "（秘密，其他恋人不知道）" : ""}` : "";
+  const rule = ROMANCE_RULES[id], gate = [rule?.noLie && s.caughtLie ? "曾发现玩家撒谎，不会接受告白" : "", rule ? `接受多人恋爱需要赞同度 ≥ ${rule.poly}` : ""].filter(Boolean).join("；");
+  return `· ${p.name}（id: ${id}，${c.race}${c.cls}，${partyLevel()} 级）${s.recruited ? "【已加入队伍】" : "【尚未加入】"} 赞同度 ${s.approval}（${relLabel(s.approval)}）${love}，HP ${s.hp}/${s.hpMax}${gate ? "\n  感情底线：" + gate : ""}
   性格：${c.personality}
   赞同：${c.likes}；反感：${c.dislikes}
   秘密：${c.secret}
@@ -886,13 +900,14 @@ function buildPrompt(action, mode) {
   const encs = (sc.encounters || []).filter(id => !state.fought?.[id]);
   return SYSTEM +
     `\n\n【当前场景】${state.scene}「${sc.title}」，地点：${state.location}\n场景锚点（GM 可见）：${sc.anchor}\n下一个场景 id：${sc.next || "无（本场景结束时 scene_end 为 true）"}` +
-    (state.combat ? combatBrief(mode) : encs.length ? `\n可开战的遭遇：${encs.map(id => id + "（" + ENCOUNTERS[id].brief + "）").join("；")}` : "") +
+    (state.combat ? combatBrief(mode) : state.camp ? campBrief() : encs.length ? `\n可开战的遭遇：${encs.map(id => id + "（" + ENCOUNTERS[id].brief + "）").join("；")}` : "") +
     `\n\n【玩家角色】${p.name}，${p.gender}，${p.level} 级${RACES[p.race].name}${CLASSES[p.cls].name}，背景：${BACKGROUNDS[p.bg].name}（灵感条件：${BACKGROUNDS[p.bg].insp}）。外貌：${p.appearance}` +
     `\n属性：${AB_KEYS.map(k => AB[k] + p.abilities[k] + "(" + sgn(mod(p.abilities[k])) + ")").join(" ")}；熟练技能：${profs}` +
     `\nHP ${p.hp}/${p.hpMax}，AC ${p.ac}，金币 ${p.gold}，灵感 ${p.inspiration}，龙化值 ${p.draconic}，物品：${p.inventory.join("、") || "无"}` +
     `\n\n【在场同伴】\n${pres.length ? pres.map(companionBrief).join("\n") : "（无，玩家独自一人）"}` +
     `\n\n【NPC】玛莎（martha）：独臂退休冒险者，嘴硬心软，酒馆老板娘。小汤姆（tom）：胆小热心的半身人帮工。兜帽客（hooded）：其实是教团间谍形变者奈雅，GM 不要透露。` +
-    `\n\n【世界标记】${JSON.stringify(state.flags)}；赫斯提雅信任 ${state.hestiaTrust}` +
+    `\n\n【世界标记】${JSON.stringify(state.flags)}；赫斯提雅信任 ${state.hestiaTrust}；第 ${state.day} 天，营地补给 ${state.supplies ?? 0}` +
+    (Object.entries(state.rel || {}).some(([, v]) => v) ? `\n【同伴之间】${Object.entries(state.rel).filter(([, v]) => v).map(([k, v]) => k.split("_").map(id => PEOPLE[id].name).join("×") + " " + sgn(v)).join("，")}` : "") +
     (chapters ? `\n\n【往事】（已经结束的各章纪要）\n${chapters}` : "") +
     `\n\n【前情提要】${m.summary || (chapters ? "（往事之后的事都在下面的最近剧情里）" : "（还没有，更早的剧情都在下面的最近剧情里）")}` +
     (memLines ? `\n\n【角色记得的事】\n${memLines}` : "") +
@@ -1269,6 +1284,7 @@ async function gm(action, shown, mode) {
     busy = false; ctl = null;
     save(); renderPlay();
     if (state.pendingCombat && !state.combat) { const id = state.pendingCombat; state.pendingCombat = null; startCombat(id); }
+    else if (state.pendingCamp) { state.pendingCamp = false; enterCamp(); }
     else if (mode === "improv" && state.combat && !state.pendingCheck && !lastAction) { state.combat.improv = false; state.combat.res.action = false; afterAct(); }
     if (state.pendingCheck) openDice();
     else if (state.levelNote && !state.combat) openLevelUp();
@@ -1352,6 +1368,8 @@ function applyGM(d, mode) {
   for (const r of (Array.isArray(d.remember) ? d.remember : []).slice(0, 2)) {
     if (r && remember(r.id, r.note)) { notes.push([`${PEOPLE[r.id].name} 会记住这件事`, ""]); toast(`${PEOPLE[r.id].name} 会记住这件事`); }
   }
+  // romance, relations, supplies
+  if (mode !== "narrate") applyBonds(d, notes);
   // journal
   for (const j of (Array.isArray(d.journal) ? d.journal : []).slice(0, 2)) {
     const q = str(j.quest, 20).trim(), n = str(j.note, 80).trim(); if (!q || !n) continue;
@@ -1365,9 +1383,14 @@ function applyGM(d, mode) {
     if (mode === "improv") applyCombatFx(d.combat);
     state.suggestions = [];
     if (mode !== "improv") return;
+  } else if (state.camp) {
+    // 营地：谈话结束就回到篝火边；不推进主线、不开战
+    if (d.talk_end === true && state.camp.talk) endTalk();
+    if (!state.camp.talk) { state.suggestions = []; return; }
   } else {
     const cid = typeof d.combat === "string" ? d.combat : d.combat?.start;
     if (cid && SCENES[state.scene].encounters?.includes(cid) && !state.fought?.[cid]) { state.pendingCombat = cid; return; }
+    if (d.camp === true && canCamp()) { state.pendingCamp = true; state.suggestions = []; return; } // 要扎营就先不推进场景
   }
 
   // check
@@ -1380,20 +1403,260 @@ function applyGM(d, mode) {
     state.suggestions = (Array.isArray(d.suggestions) ? d.suggestions : []).slice(0, 4).map(s =>
       typeof s === "string" ? { text: str(s, 80) } : { text: str(s.text, 80), check: s.check ? str(s.check, 10) : "" }).filter(s => s.text);
   }
-  if (inCb) return;
+  if (inCb || state.camp) return;
 
   // scene flow
   const sc = SCENES[state.scene];
-  if (d.advance && d.advance === sc.next) {
-    state.scene = d.advance;
-    const ns = SCENES[state.scene];
-    push("chapter", ns.title);
-    if (!d.location) state.location = ns.loc;
-    if (state.scene === "prologue_5") { const p = state.player; p.hp = p.hpMax; for (const c of Object.values(state.companions)) c.hp = c.hpMax; push("sys", "长休：全员生命恢复"); }
-    if (ns.level) levelUp(ns.level); // 里程碑升级写在场景数据里
-    flashScene = !!ns.flash;
-  }
+  if (d.advance && d.advance === sc.next) goScene(d.advance, !!d.location);
   if (d.scene_end === true && state.scene === "prologue_5") { state.ended = true; state.pendingCheck = null; state.suggestions = []; }
+}
+function goScene(id, keepLocation) {
+  state.scene = id;
+  const ns = SCENES[id];
+  push("chapter", ns.title);
+  if (!keepLocation) state.location = ns.loc;
+  if (id === "prologue_5") { const p = state.player; p.hp = p.hpMax; for (const c of Object.values(state.companions)) c.hp = c.hpMax; push("sys", "长休：全员生命恢复"); }
+  if (ns.level) levelUp(ns.level); // 里程碑升级写在场景数据里
+  flashScene = !!ns.flash;
+}
+
+/* =========================================================
+   营地与恋爱
+   营地：战斗之外可以扎营（消耗补给），篝火边找同伴夜谈、睡觉长休、和恋人共度一夜。
+   夜谈和恋爱的台词全交给说书人；代码只管：事件给的“处境”素材、恋爱阶段一次一格、赞同度门槛、角色底线、多人恋爱的同意与秘密。
+   ========================================================= */
+const ROMANCE = {
+  none: { name: "", next: "hint", need: 40 },
+  hint: { name: "暧昧", next: "together", need: 60 },
+  together: { name: "恋人", next: "vowed", need: 80 },
+  vowed: { name: "誓约" },
+};
+const ROMANCE_ORDER = ["none", "hint", "together", "vowed"];
+// 角色底线（设定集“赞同度、羁绊与恋爱”）：noLie 被发现撒谎就不接受告白；poly 接受多人恋爱需要的赞同度
+const ROMANCE_RULES = {
+  selene: { noLie: true, poly: 80 }, vex: { poly: 0 }, kassian: { poly: 60 }, borin: { poly: 60 },
+};
+const isLover = id => ["together", "vowed"].includes(state.companions[id]?.romance);
+const lovers = () => Object.keys(COMPANIONS).filter(id => isLover(id) && state.companions[id].alive && !state.companions[id].taken);
+const relKey = (a, b) => [a, b].sort().join("_");
+const relOf = (a, b) => state.rel?.[relKey(a, b)] || 0;
+// 在营地的人：序幕里酒馆的人都在，之后只有入队的同伴
+const campers = () => state.scene.startsWith("prologue") ? present() : party();
+function canCamp() {
+  const sc = SCENES[state.scene];
+  return state.phase === "play" && !state.combat && !state.camp && !state.ended && !state.pendingCheck && sc.camp !== false && (sc.campFree || (state.supplies ?? 0) > 0);
+}
+
+// 夜谈事件：只给“处境”和可以用的素材，说书人可以完全不用，玩家也可以把话题岔开。
+// kind 决定优先级：主线 > 恋爱 > 个人任务 > 友情；每晚最多一个，标“！”。banter 是同伴之间的群戏，不占名额。
+const CAMP_EVENTS = [
+  { id: "first_night", group: true, kind: "main", title: "壁炉边的第一夜", when: () => state.scene === "prologue_4",
+    seed: "袭击过后的深夜，酒馆一片狼藉，大家围着壁炉坐着，谁都睡不着。每个人掌心的印记还在隐隐发烫。有人想聊那只银色的眼睛和看到的记忆碎片，有人只想喝一杯，有人在包扎伤口。这是大家第一次以“同伴”的身份坐在一起。" },
+  { id: "selene_friend", who: "selene", kind: "friend", when: c => c.approval >= 20,
+    seed: "赛勒涅独自擦拭一枚磨旧的骑士徽章。素材：晨星骑士团一夜之间消亡、她等了百年的召唤终于来了；她不习惯被人关心，但会认真回答认真的问题。" },
+  { id: "selene_hint", who: "selene", kind: "romance", when: c => c.approval >= 40 && c.romance === "none",
+    seed: "夜深，赛勒涅睡不着，独自在院子里练剑。她开始在意你，但自己还没意识到，也不习惯被人靠近。素材：教你骑士礼；第一次在你面前笑出来；“誓言不是枷锁，是我选择站立的地方。”" },
+  { id: "selene_confess", who: "selene", kind: "romance", when: c => c.approval >= 60 && c.romance === "hint",
+    seed: "赛勒涅主动找你，表情比平时更紧张。她心里有一个问题：“你会对我说谎吗？”如果她曾发现你撒谎，她会难过地退回去。" },
+  { id: "selene_lovers", who: "selene", kind: "romance", when: c => c.romance === "together",
+    seed: "成为恋人后的某个夜晚。赛勒涅还在学着怎么做恋人：笨拙、认真，偶尔冒出一句让人意外的情话，说完自己先脸红。" },
+  { id: "vex_friend", who: "vex", kind: "friend", when: c => c.approval >= 20,
+    seed: "维克斯在火边数钱，数着数着望向港口发呆。素材：他有个妹妹；他嘴上说一切都是为了钱。" },
+  { id: "vex_hint", who: "vex", kind: "romance", when: c => c.approval >= 40 && c.romance === "none",
+    seed: "维克斯拉你爬上屋顶看港口的灯火。他平时的调情油滑熟练，今晚却有点认真，玩笑开到一半会停下来。" },
+  { id: "vex_confess", who: "vex", kind: "romance", when: c => c.approval >= 60 && c.romance === "hint",
+    seed: "维克斯少见地没有开玩笑。素材：他承认从来没有人等过他；他怕自己只是在演一出很像真心的戏。" },
+  { id: "vex_lovers", who: "vex", kind: "romance", when: c => c.romance === "together",
+    seed: "成为恋人后的某个夜晚。维克斯又恢复了油嘴滑舌，但会在你睡着后偷偷看你很久。" },
+  { id: "kassian_friend", who: "kassian", kind: "friend", when: c => c.approval >= 20,
+    seed: "卡西安在火边烤点心，给你留了一块。素材：他手掌上的老伤；他不愿谈过去，但会讲海洋女神的故事。" },
+  { id: "kassian_hint", who: "kassian", kind: "romance", when: c => c.approval >= 40 && c.romance === "none",
+    seed: "卡西安注意到你身上的伤，坚持替你包扎，手很轻。素材：他教你唱一首水手的潮歌；他会因为离你太近而手足无措。" },
+  { id: "kassian_confess", who: "kassian", kind: "romance", when: c => c.approval >= 60 && c.romance === "hint",
+    seed: "篝火将熄，卡西安终于开口讲起那场打死好友的比赛。素材：他想知道你还愿不愿意靠近一双杀过人的手。" },
+  { id: "kassian_lovers", who: "kassian", kind: "romance", when: c => c.romance === "together",
+    seed: "成为恋人后的某个夜晚。卡西安守着篝火让你先睡，怕自己的力气弄疼你，所有的亲近都小心翼翼。" },
+  { id: "borin_friend", who: "borin", kind: "friend", when: c => c.approval >= 20,
+    seed: "博林举着酒杯讲铁炉堡的笑话，讲着讲着停住了。素材：他提到哥哥达林，然后用一个更大声的笑话盖过去。" },
+  { id: "borin_hint", who: "borin", kind: "romance", when: c => c.approval >= 40 && c.romance === "none",
+    seed: "博林喝多了，拉你到屋顶看星星。平时的笑话今晚讲不下去，醉意让他比清醒时胆大。" },
+  { id: "borin_confess", who: "borin", kind: "romance", when: c => c.approval >= 60 && c.romance === "hint",
+    seed: "博林没有喝酒，这本身就很反常。素材：他第一次在人前哭，说起哥哥，也说起你。" },
+  { id: "borin_lovers", who: "borin", kind: "romance", when: c => c.romance === "together",
+    seed: "成为恋人后的某个夜晚。博林笨拙又真诚：喝醉时胆子大，清醒时反而脸红；他在考虑要不要为你少喝一点。" },
+  { id: "selene_vex_badge", pair: ["selene", "vex"], kind: "banter", title: "被偷走的徽章",
+    seed: "维克斯偷走了赛勒涅的骑士徽章开玩笑，赛勒涅冷着脸讨要，两人吵到要你评理。你站在谁那边，会同时影响两个人。" },
+  { id: "borin_kassian_drink", pair: ["borin", "kassian"], kind: "banter", title: "拼酒大赛",
+    seed: "博林非要和卡西安拼酒，卡西安推辞不过。你可以加入（体质检定）、当裁判，或者劝架。" },
+];
+const KIND_ORDER = { main: 0, romance: 1, quest: 2, friend: 3 };
+// 多人恋爱：玩家已有恋人，又和别人走到暧昧以上时，现任会想找你谈（还没表态过才会出现）
+function loverTalks() {
+  const out = [];
+  for (const l of lovers()) for (const x of Object.keys(COMPANIONS)) {
+    const cx = state.companions[x];
+    if (x === l || ROMANCE_ORDER.indexOf(cx.romance) < 1 || state.companions[l].consent?.[x] !== undefined) continue;
+    out.push({ id: `talk_${l}_${x}`, who: l, kind: "romance", when: () => true,
+      seed: `${PEOPLE[l].name}察觉到你和${PEOPLE[x].name}走得很近，想和你好好谈谈。按${PEOPLE[l].name}的性格决定是否接受开放关系，结果写进 consent（for: "${x}"）。` });
+  }
+  return out;
+}
+function eventFor(id) { return CAMP_EVENTS.find(e => e.id === id) || loverTalks().find(e => e.id === id) || null; }
+// 每晚的事件安排：重要事件只挑一个；群戏可以有好几个
+function planNight() {
+  const seen = new Set(state.campSeen || []), here = campers();
+  const ok = e => !seen.has(e.id) && (e.group ? e.when() : e.pair ? e.pair.every(id => here.includes(id)) : here.includes(e.who) && e.when(state.companions[e.who]));
+  const important = [...CAMP_EVENTS.filter(e => e.kind !== "banter"), ...loverTalks()].filter(ok).sort((a, b) => KIND_ORDER[a.kind] - KIND_ORDER[b.kind])[0];
+  return { important: important?.id || null, banter: CAMP_EVENTS.filter(e => e.kind === "banter" && ok(e)).map(e => e.id) };
+}
+
+// 恋爱、关系、补给等字段，营地内外都能用（只在描写战况时不处理）
+function applyBonds(d, notes) {
+  for (const r of (Array.isArray(d.romance) ? d.romance : []).slice(0, 2)) {
+    const id = r?.id, c = state.companions[id]; if (!c || !ROMANCE[r.to]) continue;
+    const from = c.romance || "none";
+    if (r.to === "none") { if (from !== "none") { c.romance = "none"; c.secret = false; notes.push([`你和${PEOPLE[id].name}分开了`, "down"]); } continue; }
+    if (ROMANCE[from].next !== r.to) continue; // 一次只能推进一格
+    if (c.approval < ROMANCE[from].need) continue; // 赞同度不够
+    if (r.to === "vowed" && !c.tested) continue; // 誓约要先通过个人任务的考验
+    if (ROMANCE_RULES[id]?.noLie && c.caughtLie && r.to === "together") continue;
+    c.romance = r.to;
+    if (r.to === "together") {
+      // 已有恋人且没全部同意：这段关系是秘密
+      const others = lovers().filter(l => l !== id);
+      c.secret = others.some(l => state.companions[l].consent?.[id] !== true);
+    }
+    const t = r.to === "hint" ? `你和${PEOPLE[id].name}之间多了点什么` : r.to === "together" ? `你和${PEOPLE[id].name}在一起了${c.secret ? "（瞒着其他恋人）" : ""}` : `你和${PEOPLE[id].name}立下了誓约`;
+    notes.push([t, "up"]); toast(t, "up");
+  }
+  for (const id of (Array.isArray(d.caught_lie) ? d.caught_lie : []).slice(0, 2)) {
+    const c = state.companions[id]; if (!c || c.caughtLie) continue;
+    c.caughtLie = true; remember(id, "发现你对他撒了谎");
+    notes.push([`${PEOPLE[id].name}发现你撒了谎`, "down"]);
+  }
+  for (const x of (Array.isArray(d.consent) ? d.consent : []).slice(0, 2)) {
+    const l = x?.id, c = state.companions[l]; if (!c || !isLover(l) || !COMPANIONS[x.for] || x.for === l) continue;
+    const ok = x.ok === true && c.approval >= (ROMANCE_RULES[l]?.poly ?? 60);
+    c.consent = { ...(c.consent || {}), [x.for]: ok };
+    if (ok) { if (state.companions[x.for].secret && lovers().filter(o => o !== x.for).every(o => state.companions[o].consent?.[x.for] === true)) state.companions[x.for].secret = false; notes.push([`${PEOPLE[l].name}接受了你和${PEOPLE[x.for].name}的关系`, "up"]); }
+    else { c.approval = clamp(c.approval - 15, -100, 100); notes.push([`${PEOPLE[l].name}不接受你和${PEOPLE[x.for].name}的关系 −15`, "down"]); }
+  }
+  for (const x of (Array.isArray(d.relation) ? d.relation : []).slice(0, 3)) {
+    if (!COMPANIONS[x?.a] || !COMPANIONS[x?.b] || x.a === x.b) continue;
+    const delta = num(x.delta, 10); if (!delta) continue;
+    const k = relKey(x.a, x.b); state.rel = state.rel || {}; state.rel[k] = clamp((state.rel[k] || 0) + delta, -100, 100);
+  }
+  const sup = num(d.supplies, 3);
+  if (sup) { state.supplies = Math.max(0, (state.supplies ?? 0) + sup); notes.push([`营地补给 ${sgn(sup)}（现在 ${state.supplies}）`, sup > 0 ? "up" : "down"]); }
+}
+function campBrief() {
+  const k = state.camp, here = campers();
+  const who = here.map(id => { const c = state.companions[id]; return `${PEOPLE[id].name}（赞同 ${c.approval}${c.romance !== "none" ? "，" + ROMANCE[c.romance].name + (c.secret ? "·秘密" : "") : ""}）`; }).join("、");
+  let t = `\n\n【营地】第 ${state.day} 夜，${state.location}。在营地的同伴：${who || "无"}。`;
+  if (k.talk) {
+    const ev = k.event ? eventFor(k.event) : null;
+    const names = ev?.group ? "大家" : ev?.pair ? ev.pair.map(id => PEOPLE[id].name).join("和") : PEOPLE[k.talk]?.name;
+    t += `\n【正在进行】玩家正在和${names}${ev?.group || ev?.pair ? "一起" : "单独"}说话。` + (ev ? `这一晚的处境（素材，可以不用，也可以被玩家带往别处）：${ev.seed}` : "没有特别的事，就是随便聊聊；按对方的性格、心情和记忆即兴。");
+  } else t += "\n玩家还没决定找谁说话。";
+  t += `\n【营地规则】这是夜里的休息时间，节奏慢、私人，适合聊心事。不要推进主线：不要写 advance、combat。对话自然告一段落（对方回去休息、话题聊完）时写 talk_end: true。`;
+  return t;
+}
+
+function enterCamp() {
+  if (!canCamp()) return;
+  const sc = SCENES[state.scene];
+  if (!sc.campFree) state.supplies = Math.max(0, (state.supplies ?? 0) - 1);
+  state.camp = { talk: null, event: null, done: [], plan: planNight() };
+  state.suggestions = [];
+  push("chapter", `营地 · 第 ${state.day} 夜`);
+  if (!sc.campFree) push("sys", `扎营，消耗 1 份补给（剩 ${state.supplies}）`);
+  save(); renderPlay();
+  gm("（扎营。描写这一夜营地的氛围，以及每位同伴各自在做什么；这一晚有心事的同伴表现出想找玩家说话的样子。只写开场，不要替玩家决定找谁说话，suggestions 写 []。）", null);
+}
+// target：同伴 id，或 "event:<事件 id>"（群戏）
+function talkTo(target) {
+  const k = state.camp; if (!k || k.talk || busy) return;
+  let ev = null;
+  if (target.startsWith("event:")) ev = eventFor(target.slice(6));
+  else if (k.plan.important && eventFor(k.plan.important)?.who === target) ev = eventFor(k.plan.important);
+  k.talk = target; k.event = ev?.id || null;
+  if (ev) {
+    state.campSeen = [...(state.campSeen || []), ev.id];
+    if (k.plan.important === ev.id) k.plan.important = null;
+    k.plan.banter = k.plan.banter.filter(x => x !== ev.id);
+  }
+  const name = ev?.group ? "大家" : ev?.pair ? ev.pair.map(id => PEOPLE[id].name).join("和") : PEOPLE[target].name;
+  gm(`（我${ev?.group || ev?.pair ? "加入" : "走向"}${name}${ev ? "" : "，随便聊聊"}。描写对方此刻的样子，开始对话，给出 3~4 条建议。）`, `你走向${name}。`);
+}
+function endTalk() {
+  const k = state.camp; if (!k?.talk) return;
+  if (!k.talk.startsWith("event:")) k.done.push(k.talk);
+  k.talk = null; k.event = null; state.suggestions = [];
+}
+function goSleep() {
+  const k = state.camp; if (!k || busy) return;
+  if (k.talk) endTalk();
+  const near = lovers().filter(id => campers().includes(id));
+  if (!near.length) return restNight(null);
+  modal("夜深了", s => {
+    s.append(el("p", null, "营火渐渐暗下去。今晚——"));
+    const row = el("div", "row");
+    for (const id of near) { const b = el("button", "btn", `和${PEOPLE[id].name}一起`); b.type = "button"; b.onclick = () => { closeModal(); restNight(id); }; row.append(b); }
+    const alone = el("button", "btn", "独自睡"); alone.type = "button"; alone.onclick = () => { closeModal(); restNight(null); }; row.append(alone);
+    s.append(row);
+  });
+}
+// 长休：全员回满、天数 +1；秘密恋情可能败露；有 campNext 的场景睡醒后进入下一场
+function restNight(partner) {
+  const sc = SCENES[state.scene], here = campers(), news = [];
+  for (const id of lovers().filter(id => state.companions[id].secret)) {
+    const others = lovers().filter(l => l !== id && here.includes(l));
+    if (!others.length || Math.random() >= 1 / 3) continue; // 其他恋人也在营地时，每晚三分之一的机会被发现
+    for (const l of lovers()) state.companions[l].approval = clamp(state.companions[l].approval - 25, -100, 100);
+    for (const l of others) remember(l, `发现你瞒着他和${PEOPLE[id].name}在一起`);
+    state.companions[id].secret = false; // 败露之后不再是秘密，现任们会找你谈
+    news.push(`${others.map(l => PEOPLE[l].name).join("、")}发现了你和${PEOPLE[id].name}的秘密恋情，所有恋人赞同度 −25`);
+  }
+  const p = state.player; p.hp = p.hpMax;
+  for (const c of Object.values(state.companions)) if (c.alive) c.hp = c.hpMax;
+  state.day++; state.camp = null;
+  push("sys", "长休：全员生命恢复", { cls: "appr-up" });
+  for (const n of news) push("sys", n, { cls: "appr-down" });
+  const night = partner ? `【夜里】玩家和${PEOPLE[partner].name}共度一夜：按${PEOPLE[partner].name}的性格写这一夜的亲密与情意，到最亲密的那一步用一句暗示性的转场带过。` : "玩家独自睡下。";
+  const after = news.length ? `夜里发生了：${news.join("；")}。要写出这件事的余波。` : "";
+  if (sc.campNext) {
+    goScene(sc.campNext);
+    gm(`（${night}然后玩家沉入梦中，按新场景的锚点开始。${after}）`, partner ? `今晚，你和${PEOPLE[partner].name}在一起。` : "你在壁炉边睡去。");
+  } else {
+    gm(`（${night}然后写第二天清晨：营地醒来，同伴们各自的样子${partner ? `；和${PEOPLE[partner].name}醒来时的画面可以写得亲昵，其他同伴可能察觉到什么` : ""}。${after}给出新一天的建议。）`, partner ? `今晚，你和${PEOPLE[partner].name}在一起。` : "你睡下了。");
+  }
+}
+function renderCamp(box) {
+  const k = state.camp, wrap = el("div", "combat");
+  const head = el("div", "cb-head");
+  head.append(el("span", "t", `营地 · 第 ${state.day} 夜`), el("span", "label", busy ? "说书人正在描写营地……" : `补给 ${state.supplies ?? 0} · 找人聊聊，或者睡觉`));
+  wrap.append(head);
+  const grid = el("div", "zones"), imp = k.plan.important ? eventFor(k.plan.important) : null;
+  for (const id of campers()) {
+    const c = state.companions[id], has = imp?.who === id;
+    const card = el("div", "zone" + (has ? " here" : "")), top = el("div", "zn");
+    top.append(el("span", null, PEOPLE[id].name + (has ? " ！" : "")), el("span", "zt", [relLabel(c.approval), ROMANCE[c.romance]?.name].filter(Boolean).join(" · ")));
+    const im = el("img", "camp-face"); portrait(im, id, isLover(id) ? "tender" : "neutral");
+    card.append(top, im);
+    if (has) card.append(el("div", "cd", "好像有话想对你说"));
+    else if (k.done.includes(id)) card.append(el("div", "zt", "今晚已经聊过"));
+    const b = el("button", "btn small", has ? "过去看看" : "过去聊聊"); b.type = "button"; b.disabled = busy; b.onclick = () => talkTo(id);
+    card.append(b); grid.append(card);
+  }
+  wrap.append(grid);
+  const acts = el("div", "cb-acts");
+  for (const gid of [imp?.group ? imp.id : null, ...k.plan.banter].filter(Boolean)) {
+    const e = eventFor(gid), b = el("button", "btn small", (e.group ? "★ " : "") + e.title);
+    b.type = "button"; b.disabled = busy; b.onclick = () => talkTo("event:" + gid); acts.append(b);
+  }
+  acts.append(el("span", "sp"));
+  const sl = el("button", "btn small gold", "睡觉"); sl.type = "button"; sl.disabled = busy; sl.onclick = goSleep; acts.append(sl);
+  wrap.append(acts); box.append(wrap);
 }
 
 /* =========================================================
@@ -2108,15 +2371,16 @@ function renderPlay() {
     for (const u of cbList().filter(u => u.side === "party")) card(u.ref, u.name, u.dead ? "阵亡" : u.down ? "倒地" : `HP ${u.hp}/${u.max} · AC ${u.ac}`, Math.max(0, u.hp), u.max, u.dead || u.down);
   } else {
     card("player", p.name, `HP ${p.hp}/${p.hpMax} · AC ${p.ac}`, p.hp, p.hpMax);
-    for (const id of pt) { const c = state.companions[id]; card(id, PEOPLE[id].name, `HP ${c.hp}/${c.hpMax} · ${relLabel(c.approval)} ${sgn(c.approval)}`, c.hp, c.hpMax); }
+    for (const id of pt) { const c = state.companions[id]; card(id, PEOPLE[id].name, `HP ${c.hp}/${c.hpMax} · ${ROMANCE[c.romance]?.name || relLabel(c.approval)} ${sgn(c.approval)}`, c.hp, c.hpMax); }
     if (!pt.length) rail.append(el("div", "note", "还没有同伴。酒馆里的人，也许会成为你的伙伴。"));
   }
-  rail.append(el("div", "note", `金币 ${p.gold} · 灵感 ${p.inspiration} · 龙化 ${p.draconic}`));
+  rail.append(el("div", "note", `金币 ${p.gold} · 补给 ${state.supplies ?? 0} · 灵感 ${p.inspiration} · 龙化 ${p.draconic}`));
 
   // stage
   const st = $("stage"); st.textContent = "";
-  st.style.setProperty("--scene", sc.bg);
-  const nm = el("div", "scene-name"); nm.append(el("div", "t", cb ? ENCOUNTERS[cb.id].title : sc.title), el("div", "l", cb ? `第 ${cb.round} 回合 · ${state.location}` : state.location)); st.append(nm);
+  const camp = state.camp;
+  st.style.setProperty("--scene", camp ? "radial-gradient(ellipse at 70% 110%, #b5541c 0%, #5a2a10 30%, #1a0f08 70%)" : sc.bg);
+  const nm = el("div", "scene-name"); nm.append(el("div", "t", cb ? ENCOUNTERS[cb.id].title : camp ? `营地 · 第 ${state.day} 夜` : sc.title), el("div", "l", cb ? `第 ${cb.round} 回合 · ${state.location}` : state.location)); st.append(nm);
   // 战斗中舞台显示当前行动者；说书人描写时显示他点名的角色
   const actor = cb && !busy ? cbCur() : null;
   const spk = actor ? (actor.pid ? [actor.pid] : []) : state.speakers.filter(id => PEOPLE[id]);
@@ -2146,6 +2410,8 @@ function renderPlay() {
     b.onclick = openEnd; opts.append(b);
   } else if (cb) {
     renderCombat(opts);
+  } else if (camp && !camp.talk && !state.pendingCheck) {
+    renderCamp(opts);
   } else if (state.pendingCheck && !busy) {
     const b = el("button", "opt"); b.type = "button";
     b.append(el("span", "k", "20"), el("span", "tx", "掷骰：" + bonusFor(state.pendingCheck.who, state.pendingCheck.skill).label + "检定"), el("span", "ck", "DC " + state.pendingCheck.dc));
@@ -2159,6 +2425,9 @@ function renderPlay() {
       opts.append(b);
     });
   }
+  const optBtn = (k, text, fn) => { const b = el("button", "opt"); b.type = "button"; b.append(el("span", "k", k), el("span", "tx", text)); b.onclick = fn; opts.append(b); };
+  if (camp?.talk && !busy && !state.pendingCheck) optBtn("↩", "结束谈话，回到篝火边", () => { endTalk(); save(); renderPlay(); });
+  if (!camp && !cb && !busy && canCamp()) optBtn("⛺", sc.campFree ? "在壁炉边歇下，度过这一夜" : `扎营休息（消耗 1 份补给，剩 ${state.supplies ?? 0}）`, enterCamp);
   if (state.pendingAsi && !cb && !busy) {
     const b = el("button", "opt"); b.type = "button";
     b.append(el("span", "k", "↑"), el("span", "tx", `属性提升：还有 ${state.pendingAsi} 次没分配`));
@@ -2234,7 +2503,9 @@ function openSheet(focus) {
         const bar = el("div", "apbar"); const i = el("i");
         const v = sc.approval; i.style.left = v >= 0 ? "50%" : (50 + v / 2) + "%"; i.style.width = Math.abs(v) / 2 + "%"; i.style.background = v >= 0 ? "var(--moss)" : "var(--wine)";
         bar.append(i); ap.append(bar, el("b", null, sgn(v)));
-        info.append(ap, el("div", "label", "关系：" + relLabel(v)));
+        info.append(ap, el("div", "label", "关系：" + relLabel(v) + (ROMANCE[sc.romance]?.name ? ` · ${ROMANCE[sc.romance].name}${sc.secret ? "（秘密）" : ""}` : "")));
+        const rels = Object.keys(COMPANIONS).filter(o => o !== cur && relOf(cur, o)).map(o => `${PEOPLE[o].name} ${sgn(relOf(cur, o))}`);
+        if (rels.length) info.append(el("div", "label", "和同伴：" + rels.join("，")));
         info.append(el("div", "label", "喜欢：" + c.likes));
         info.append(el("div", "label", "反感：" + c.dislikes));
       }
