@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync, statSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { createInterface } from 'node:readline';
@@ -10,8 +10,23 @@ export class NarratorError extends Error {
   constructor(code) { super(code); this.code = code; }
 }
 
+// Codex 桌面版自带一份更新的 CLI（%LOCALAPPDATA%\OpenAI\Codex\bin\<版本>\codex.exe），模型目录也更新；
+// 版本文件夹每次更新都会变，所以每次都找最新的那份。
+function desktopCodex() {
+  const base = process.env.LOCALAPPDATA && path.join(process.env.LOCALAPPDATA, 'OpenAI', 'Codex', 'bin');
+  if (!base || !existsSync(base)) return null;
+  try {
+    return readdirSync(base).map(dir => path.join(base, dir, 'codex.exe')).filter(exe => existsSync(exe))
+      .sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)[0] || null;
+  } catch { return null; }
+}
+
 // Resolve the installed CLI, never copy or read its OAuth credentials ourselves.
+// 顺序：环境变量 DRAGON_OATH_CODEX 指定的 → Codex 桌面版自带的 → PATH 里的（npm 安装的）
 export function findCodex() {
+  const forced = process.env.DRAGON_OATH_CODEX;
+  if (forced && existsSync(forced)) return { command: forced, prefix: [] };
+  if (process.platform === 'win32') { const desktop = desktopCodex(); if (desktop) return { command: desktop, prefix: [] }; }
   const names = process.platform === 'win32' ? ['codex.exe', 'codex.cmd', 'codex.ps1'] : ['codex'];
   const dirs = (process.env.PATH || '').split(path.delimiter);
   if (process.env.APPDATA) dirs.push(path.join(process.env.APPDATA, 'npm'));

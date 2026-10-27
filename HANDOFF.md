@@ -73,6 +73,7 @@ GitHub Pages（`https://yiyayoh.github.io/dragon-oath/`）没有开启，用户�
 | `d1cb2b7` | 10-27 | Claude | 等级系统：里程碑升级（序幕结束 2 级）、全队同级、属性提升弹窗、职业随等级成长（偷袭、戏法、特技次数、额外攻击、火球术）、旧存档补级 |
 | `205c13f` | 10-27 | Claude | 营地与恋爱：扎营与补给、夜谈事件、恋爱阶段与角色底线、多人恋爱（同意、秘密、败露）、同伴关系值、共度一夜；序幕打完仗先在壁炉边过一夜再进“第一个梦” |
 | `d9a7181` | 10-27 | Claude | 本机 ChatGPT 可选模型：说书人和整理记忆分别选（账号默认的 Astra 太费额度）；本地服务新增 1 项测试，共 13 项 |
+| （待提交） | 10-27 | Claude | 本机模式优先用 Codex 桌面版自带的新版 CLI（之前误用 npm 装的旧版，看不到 GPT-6.1-Sol） |
 
 **新增提交后，请在这张表末尾补一行。**
 
@@ -80,6 +81,7 @@ GitHub Pages（`https://yiyayoh.github.io/dragon-oath/`）没有开启，用户�
 
 - 读取本机 Codex 已登录的 ChatGPT 账号；不向网页提供 OAuth 凭据。使用账号套餐额度，需要联网。
 - **模型选择**：`/__gpt/status` 返回账号可用的模型列表（只有模型名、显示名、说明、是否默认）；`/__gpt/narrate` 接受可选的 `model`，不在账号目录里就退回账号默认。页面设置里可分别选说书人模型（`pref.gptModel`）和整理记忆用的模型（`pref.gptMemModel`，`narrate(..., { memory: true })` 的调用用它）。用户账号默认是最强的 GPT-6-Astra，额度消耗很快；10-27 时账号目录里还有 GPT-5.6-Sol / Terra / Luna。
+- **用哪个 Codex**：这台电脑有两份 Codex。npm 装的 `D:\node\node_global\...\codex.exe` 是旧版 0.153.0，只看得到旧模型、默认 Astra；用户日常用的 Codex 桌面版自带新版（`%LOCALAPPDATA%\OpenAI\Codex\bin\<版本>\codex.exe`，10-27 时是 0.164.0-alpha），能看到 GPT-6.1-Sol（默认）、6.1 Terra、6-Sol、6-Luna 等。`findCodex()` 现在的顺序：环境变量 `DRAGON_OATH_CODEX` → 桌面版自带的最新一份 → PATH 里的。桌面版的版本文件夹每次更新都会变，所以每次都现找。
 - 启动：`开始游玩.cmd` 或 `node local-server.mjs`，地址 `http://127.0.0.1:8787/`。首次打开会检查账号；登录失效时先在 Codex 里重新登录，再点游戏设置里的“重新检查”。
 - 文件：`local-codex.mjs`（账号探测、无工具的临时叙述会话）、`local-server.mjs`（只绑定 127.0.0.1，静态游戏、同源 SSE 说书人接口、存档接口）、`start-local.ps1`、`开始游玩.cmd`、`tests/local-server.test.mjs`、`.gitignore`（忽略 `.dragon-oath-local/` 运行目录）。
 - 说书人接口：`GET /__gpt/status`；`POST /__gpt/narrate`，JSON `{prompt}`，SSE 事件 `text` / `done` / `error`，收到 `done` 才应用游戏 JSON。停止或断线不应用部分状态。
