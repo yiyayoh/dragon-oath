@@ -65,6 +65,7 @@ GitHub Pages（`https://yiyayoh.github.io/dragon-oath/`）没有开启，用户�
 | `cf67b1e` | 10-27 | Claude | claude.ai 上导出存档改走 `downloads` 能力 |
 | `845c77f` | 10-27 | Claude | 重写交接文档：入口、决定、开发记录、测试与发布方法；新增 `AGENTS.md` / `CLAUDE.md` 让接手的 AI 自动先读交接文档 |
 | `56a7b08` | 10-27 | Claude | 记忆：章节纪要（往事）与关键词找回旧原文；修复角色创建默认属性超出 2 点、超预算仍能开局 |
+| （待提交） | 10-27 | Codex | 第二批立绘 21 张：5 个 NPC 默认立绘，赛勒涅、维克斯、卡西安、博林各 4 种表情差分 |
 
 **新增提交后，请在这张表末尾补一行。**
 
@@ -81,11 +82,16 @@ GitHub Pages（`https://yiyayoh.github.io/dragon-oath/`）没有开启，用户�
 
 ## 立绘
 
-原图在本地桌面的 `dragon-oath-portraits-v2` 文件夹（GPT 生成，1024×1536 PNG，每张 2–3 MB）。仓库里放的是压缩版：
+原图在本地桌面：`dragon-oath-portraits-v2`（第一批 7 张）和 `dragon-oath-portraits-v3`（第二批 21 张，含实际提示词），都是 GPT 内置 imagegen 生成的 1024×1536 PNG。仓库里放的是压缩版：
 
-- `portraits/角色id_表情.webp`，768×1152，`cwebp -q 84 -resize 768 1152` 生成，每张约 100–190 KB。`portrait()` 只找 `.webp`。
-- 已有：`selene` `vex` `kassian` `borin` `lyra` 的 `neutral`，以及奈雅的 `naia_disguise.webp`（伪装）、`naia_true.webp`（真身）。
-- 还缺：`martha` `tom` `hooded` `cultist` `hestia` 的立绘，以及所有角色的 `smile` `angry` `sad` `tender` 差分。缺图显示占位剪影，缺表情退回 `neutral`。
+- `portraits/角色id_表情.webp`，768×1152，`cwebp -q 84 -resize 768 1152` 生成，每张约 70–190 KB，共 28 张约 3.2 MB。`portrait()` 只找 `.webp`。
+- 已有（28 张）：
+  - `selene` `vex` `kassian` `borin`：`neutral` `smile` `angry` `sad` `tender` 五种表情齐全
+  - `lyra`：只有 `neutral`
+  - 奈雅：`naia_disguise.webp`（伪装）、`naia_true.webp`（真身）
+  - NPC 默认立绘：`martha`（独臂，左袖别起）、`tom`、`hestia`（人形）、`hooded`（奈雅在序幕的兜帽伪装，左掌有印记）、`cultist`（狂信徒和烬火术士共用）
+- 还缺：`lyra` 和奈雅的表情差分；`hestia` 的龙形；龙化值 40/80 的变体立绘；第一幕新 NPC（老鳗、总督、萨丝等）。缺图显示占位剪影，缺表情退回 `neutral`。
+- Codex 对第二批的自评：差分保留了人物、衣服和姿势，但有细微纹理重绘；微笑和温柔的区别比较含蓄（尤其维克斯、博林）；小汤姆是半身构图，腿上的绷带没有入画；兜帽客遮脸后能否认出是奈雅比较主观。
 - 奈雅的两张形态图代码还没用到。序幕的“兜帽客”戴着兜帽，和伪装立绘（人类吟游诗人）不一样，所以没有套用；接入第一幕时要处理形态切换。
 - 补新图：同样转成 768×1152 的 webp，按 `角色id_表情.webp` 命名放进 `portraits/`。表情差分以该角色的 v2 图为唯一人物参考。
 
@@ -101,11 +107,13 @@ GitHub Pages（`https://yiyayoh.github.io/dragon-oath/`）没有开启，用户�
 
 ### 推送到 GitHub
 
-仓库是 https://github.com/yiyayoh/dragon-oath ，直接推 `main`。这台电脑的 git 全局代理是 `127.0.0.1:1088`，但那个端口现在不通；能用的是环境变量里的 `1094`：
+仓库是 https://github.com/yiyayoh/dragon-oath ，直接推 `main`。这台电脑的代理端口会变：git 全局配置写的是 `127.0.0.1:1088`，10-26 那天 1088 不通、能用的是 1094，10-27 又换回了 1088。推送失败时先看环境变量 `HTTPS_PROXY` 指向哪个端口，再临时指定：
 
 ```bash
 git -c http.proxy=http://127.0.0.1:1094 -c https.proxy=http://127.0.0.1:1094 push origin main
 ```
+
+（把 1094 换成当前能连上的端口。偶尔会遇到 SSL 连接中断，重试一次通常就好。）
 
 ### 更新 claude.ai 上的游戏页面
 
