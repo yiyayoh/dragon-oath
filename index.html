@@ -380,7 +380,15 @@ const PEOPLE = {
   hooded: { name: "兜帽客", title: "身份不明", color: "#4a4f5c" },
   cultist: { name: "灰烬教团", title: "狂信徒", color: "#6b2a20" },
   hestia: { name: "赫斯提雅", title: "银龙", color: "#b7c6d6" },
+  lyra: { name: "莉拉", title: "人类法师", color: "#7a4f9c" },
+  // 奈雅在身份暴露前以流浪诗人“米拉”的样子出现
+  naia: { get name() { return naiaTrue() ? "奈雅" : "米拉"; }, get title() { return naiaTrue() ? "形变者吟游诗人" : "流浪诗人"; }, color: "#5d6f7d" },
+  eel: { name: "老鳗", title: "黑潮会首领", color: "#3f5c4a" },
+  governor: { name: "艾德蒙总督", title: "灰帆港总督", color: "#3d4f7a" },
+  sath: { name: "萨丝", title: "港卫军尉官", color: "#a07a3a" },
+  facemother: { name: "千面母", title: "教团间谍头子", color: "#4b3f4f" },
 };
+const naiaTrue = () => !!state?.flags?.["act1.naia_exposed"];
 const EXPRS = ["neutral", "smile", "angry", "sad", "tender"];
 const MEM_IDS = Object.keys(PEOPLE).filter(id => id !== "cultist"); // 会记事的角色
 
@@ -425,7 +433,30 @@ const COMPANIONS = {
     secret: "五年前哥哥达林“为掩护同伴死于教团之手”——其实达林没死。（GM 不要透露）",
     join: "袭击时第一个掀桌子冲上去，战后自动加入。",
   },
+  // 第一幕的新同伴（act: 1 表示序幕里不出现）
+  lyra: {
+    act: 1, race: "人类", cls: "法师", kit: "wizard", lvl: 1,
+    ab: { str: 8, dex: 14, con: 13, int: 17, wis: 12, cha: 10 }, hp: 7, ac: 12, atk: "int",
+    prof: ["arcana", "history", "investigation", "perception"],
+    personality: "聪明、野心勃勃、说话刻薄。底子里很怕被人看不起，用嘴硬保护自己。因私下研究龙血被学院除名。",
+    likes: "求知、使用印记力量、尊重她的才智、打破规矩、保留古籍",
+    dislikes: "烧书或毁掉知识、把她当小孩、盲目信仰、拒绝探究印记",
+    secret: "她的导师奥斯瓦尔德（当年替她求情未果后失踪）现在是灰烬教团的首席学者；她的研究笔记正是教团定位印记的依据。（GM 不要透露，第一幕只能发现笔记被人抄录过）",
+    join: "暴风夜第七道银光落在她身上。她把自己反锁在旧学院废塔里研究印记，教团探子正在围塔。帮她赶走探子，并且不把她当小孩或工具，她会（嘴上不情愿地）同行。",
+  },
+  naia: {
+    act: 1, race: "形变者", cls: "吟游诗人", kit: "bard", lvl: 1,
+    ab: { str: 8, dex: 14, con: 12, int: 12, wis: 10, cha: 17 }, hp: 9, ac: 13, atk: "cha",
+    prof: ["deception", "performance", "insight", "persuasion", "stealth"],
+    personality: "风趣、会读空气、永远在演。她不知道自己真正喜欢什么，很想知道，也很怕知道。",
+    likes: "尊重别人的自我认同、艺术与故事、自由选择、宽恕、反抗教团",
+    dislikes: "强迫别人暴露真实身份、盲从、把人当工具、在她准备好之前追问她“真正的脸”",
+    secret: "她就是序幕里窗边的兜帽客。她是灰烬教团从小养大的间谍，由千面母亲手训练；现在以流浪女诗人“米拉”（黑色长卷发、绿眼睛、拼布外套、背着鲁特琴）的身份接近队伍，每天向教团传递队伍的情报。暴风夜她自己也被烙上了印记，所以既是教团的间谍，也是教团的猎物。玩家用洞悉 DC 18 可以提前识破（写 act1.naia_seen）；否则在灯塔之夜暴露。（GM 不要透露）",
+    join: "以“米拉”的身份主动接近队伍，在酒馆里弹琴、搭话、请求同行，很容易招募。",
+  },
 };
+// 这一幕可以出场的同伴：序幕只有前四位
+const inAct = id => (COMPANIONS[id].act || 0) <= (state?.act || 0);
 
 /* 序幕场景锚点（GM 可见） */
 const SCENES = {
@@ -442,26 +473,85 @@ const SCENES = {
   prologue_3: {
     camp: false, title: "教团袭击", loc: "醉龙酒馆 · 大堂", bg: "linear-gradient(160deg,#7a2e17,#2a0f08 60%,#120706)",
     anchor: "十分钟后，6 名灰烬教团狂信徒和 1 名烬火术士破门而入，要求“交出带印记的人”。区域：大堂、吧台、二楼回廊、地窖门。解决方式全部有效：①战斗：双方真正动手时，在 JSON 写 combat 为 tavern_ambush，程序接管回合制战斗（在场同伴一起参战，第 3 回合巨鼠从地窖涌出，敌我不分；玩家可开“留活口”活捉狂信徒）；②谈判：威吓 DC 15 吓跑一半，欺瞒 DC 13 谎称持有者已从后门逃走；③环境：推倒炭盆、砍断吊灯、把酒桶滚下楼梯（GM 定 DC）；④黑暗选择：交出一个同伴——该同伴被带走（flags 写 prologue.betrayed_companion = 其 id），其余同伴赞同 −15~−20。没有开战时，也可以在第 3 轮左右让地窖门被撞开、巨鼠涌出制造混乱。本战不会致死：全队倒下时，由玛莎或援手救起并付出代价。收到【战斗结束】或敌人被驱散后，叙述残局并把 advance 设为 prologue_4。",
-    next: "prologue_4", encounters: ["tavern_ambush"],
+    next: "prologue_4", encounters: ["tavern_ambush"], recruit: ["selene", "vex", "kassian", "borin"],
   },
   prologue_4: {
     title: "余烬", loc: "醉龙酒馆 · 残局", bg: "linear-gradient(160deg,#4a2e1a,#1d130c 60%,#0f0a07)",
     anchor: "战后。玛莎讲述“守誓人”的传说（只讲传说层面：千年前银龙赫斯提雅封印了黑龙烬王，她亡夫曾是守誓人；酒馆就是守誓人的老据点）。招募：用 recruit 字段加入同伴，条件见同伴资料。可选支线：下地窖处理“鼠王”（狗那么大的独眼巨鼠，尾巴缠铜链，会召唤鼠群；可用博林的铜哨或模仿教团哨音 魅力 DC 14 让它退兵，可用火墙 智力 DC 12 驱散；放过写 prologue.rat_king=spared）。若和鼠王动手，在 JSON 写 combat 为 rat_king，由程序接管战斗，结束后按结果写 prologue.rat_king。当玩家决定休息/睡觉时，在 JSON 写 camp 为 true：大家在壁炉边度过这一夜（程序打开营地，玩家可以找同伴夜谈），睡下后程序会进入 prologue_5；不要自己写 advance。",
-    next: "prologue_5", encounters: ["rat_king"], campFree: true, campNext: "prologue_5",
+    next: "prologue_5", encounters: ["rat_king"], campFree: true, campNext: "prologue_5", recruit: ["selene", "vex", "kassian", "borin"],
   },
   prologue_5: {
     title: "第一个梦", loc: "梦境 · 银雾", bg: "linear-gradient(160deg,#8fa2b6,#2f3a47 55%,#11161c)",
     anchor: "玩家入睡。银色雾中，赫斯提雅入梦（银发老妇人，脸颊有淡淡龙鳞；也可显现为巨大的垂死银龙）。她温柔地说：“我选中了你们。去誓约神殿。”她回避“代价”的问题（洞悉 DC 16 可察觉她有所隐瞒，但看不出是什么）。根据玩家回应（信任/质问/拒绝）给 hestia_trust 变化（−20~+20），并写 flags prologue.hestia_answer = trust|question|refuse。对话 1~3 轮后，玩家醒来，晨光照进酒馆，把 scene_end 设为 true，序幕结束。玩家进入这一场时印记觉醒，全队已升到 2 级（程序处理），可以在梦里让玩家感到掌心的印记在发热、力量在苏醒。",
-    next: null, level: 2, camp: false,
+    next: null, level: 2, camp: false, alone: true, dream: true, endAct: 0, after: "act1_1",
+  },
+
+  /* 第一幕：灰帆港。开场 → 港口（枢纽）⇄ 五个地点，任意顺序；拿到航海图和船后去灯塔 → 黎明 */
+  act1_1: {
+    camp: false, title: "灰帆港的早晨", loc: "醉龙酒馆 · 清晨", bg: "linear-gradient(160deg,#6d6a5e,#2a2621 60%,#13110e)",
+    anchor: "暴风雨停了。清晨，醉龙酒馆一片狼藉，海湾里漂着银色的碎光，全港都在议论昨夜坠落的银光。玛莎把队伍叫到吧台：要去梦里说的誓约神殿，需要两样东西——①航海图：她亡夫（最后一位守誓人）留下的，十年前被总督艾德蒙·科尔以“违禁物”为名没收，锁在总督府；②一艘能进雾海的船：黑潮会的老鳗有船，港卫军也有船，两边都不会白给。若维克斯在场，黑潮会的打手会上门“提醒”他：欠老鳗的债限期三天，不然他妹妹莉丝会被卖到外海（维克斯会尽量遮掩）。另一件事：酒馆里来了一位流浪女诗人“米拉”（奈雅伪装，见同伴资料），她弹着鲁特琴讲昨夜坠龙的歌，主动凑过来搭话，想和这群“被银光选中的人”同行；可以用 recruit 让她加入，也可以拒绝。玩家了解情况、做好打算后（2~4 轮），把 advance 设为 act1_hub，并在 journal 写下“第一幕：灰帆港”的目标。",
+    next: "act1_hub", recruit: ["naia"], meet: ["naia"], act: 1,
+  },
+  act1_hub: {
+    title: "灰帆港", loc: "灰帆港 · 醉龙酒馆", bg: "linear-gradient(160deg,#4f5a63,#1f252b 60%,#0e1114)", campFree: true, hub: true,
+    anchor: "醉龙酒馆是队伍的据点；在这里可以和玛莎、小汤姆、米拉说话，打听消息，商量下一步。本幕目标：拿到航海图和一艘船。港口各处可以按任意顺序去，玩家说要去哪里时，把 advance 设为对应的场景 id：黑潮码头 act1_docks（老鳗、维克斯的债、斗兽场）；旧学院废塔 act1_tower（第七道银光落在那里，有人看见教团在围塔）；沉船湾 act1_wreck（银龙的尸体搁浅在那里）；总督府 act1_manor（航海图锁在金库里；三天后的晚上有月光舞会，需要请柬）；下水道迷宫 act1_sewers（教团在港口底下的据点）。两条路线：为老鳗偷航海图换“黑鳗号”和维克斯债务减半；或者帮港卫军尉官萨丝搜集总督通教的证据，揭发后合法取回航海图、借到“海鸥号”。两条路互斥，也可以都不选，自己偷一艘船。航海图和船都到手后（act1.chart 和 act1.ship 都有值），教团会在当晚动手：把 advance 设为 act1_lighthouse。在酒馆里睡觉不消耗补给（写 camp: true）；每睡一晚就是一天，维克斯的债有期限。",
+    next: ["act1_docks", "act1_tower", "act1_wreck", "act1_manor", "act1_sewers", "act1_lighthouse"], recruit: ["naia"], meet: ["naia"], act: 1,
+    gate: { act1_lighthouse: () => !!(state.flags["act1.chart"] && state.flags["act1.ship"]) },
+  },
+  act1_docks: {
+    title: "黑潮码头", loc: "灰帆港 · 黑潮码头", bg: "linear-gradient(160deg,#3c4a44,#18201c 60%,#0b0f0d)", loc1: true,
+    anchor: "鱼腥、焦油和赌徒的吆喝。黑潮会控制着这里：仓库、私船、地下斗兽场。老鳗·莫格（笑眉笑眼、毒如蛇蝎的胖老头）在一艘改成赌场的旧船“金鳗”上见客，只认利益。他可以：拿维克斯的债要挟（妹妹莉丝扣在他手里，三天期限）；开价——替他从总督府金库偷出航海图（他也想要），他就借出“黑鳗号”并把维克斯的债减半（写 act1.eel=deal）。玩家也可以与黑潮会为敌（写 act1.eel=enemy），强行救莉丝（写 act1.lise=saved）。斗兽场：卡西安会认出这个地方（他是十年前的头牌“碎潮”），会有人认出他。若维克斯在序幕里离开了队伍，他就在码头躲债，可以用 recruit 劝他回来。真正打起来时在 JSON 写 combat 为 docks_brawl。离开码头时把 advance 设为 act1_hub。",
+    next: ["act1_hub"], encounters: ["docks_brawl"], recruit: ["vex"], meet: ["vex"], act: 1,
+  },
+  act1_tower: {
+    title: "旧学院废塔", loc: "灰帆港 · 旧学院废塔", bg: "linear-gradient(160deg,#4d3f5c,#1d1724 60%,#0d0a11)", loc1: true,
+    anchor: "港口北边半塌的学院塔楼，暴风夜第七道银光落在这里。被学院除名的法师莉拉·星烬把自己反锁在塔顶研究掌心的印记，几名教团探子（3 名狂信徒、1 名烬火术士）正在撬塔门、往里放烟。莉拉在塔顶用火焰箭和刻薄话死守。帮她赶走探子：动手时在 JSON 写 combat 为 tower_spies（莉拉会一起参战），也可以智取、吓跑。之后莉拉会审视这群“也被烙上印记的人”，嘴硬地提出交换研究，条件见同伴资料，可以用 recruit 让她加入。发现：塔底地下室里她的研究笔记被人整本抄录过（写 act1.notes_copied=true），抄写的笔迹她觉得眼熟但想不起来。抉择：把笔记烧掉（莉拉赞同 −15，教团更难追踪印记，写 act1.lyra_notes=burned），或保留（写 act1.lyra_notes=kept）。离开时把 advance 设为 act1_hub。",
+    next: ["act1_hub"], encounters: ["tower_spies"], recruit: ["lyra"], meet: ["lyra"], act: 1,
+  },
+  act1_wreck: {
+    title: "沉船湾", loc: "灰帆港 · 沉船湾", bg: "linear-gradient(160deg,#5f7380,#212b31 60%,#0c1013)", loc1: true,
+    anchor: "退潮后的沉船湾，礁石间搁浅着坠落的银龙尸体，大得像一座倒下的山，鳞片已经开始黯淡。拾荒者、学者和好奇的平民远远围着；水下有被龙死时的银光惊醒的溺死水手在游荡，天黑后会爬上岸。赛勒涅看到龙尸会非常动摇（晨星骑士团等了百年的召唤，等来的却是一具尸体），这是她个人任务的第一步：她想在龙尸旁找到骑士团的遗物或誓言的线索。抉择：取龙鳞龙血（可以制成道具，写进 items_add；赛勒涅 −10，写 act1.dragon_body=harvested），或者为龙举行葬礼（写 act1.dragon_body=funeral）。印记在龙尸旁会发烫，可以给少量龙化值。溺死水手爬上岸时，如果动手，在 JSON 写 combat 为 wreck_drowned；也可以用宗教检定（DC 13）让它们安息。离开时把 advance 设为 act1_hub。",
+    next: ["act1_hub"], encounters: ["wreck_drowned"], act: 1,
+  },
+  act1_manor: {
+    title: "总督府", loc: "灰帆港 · 总督府", bg: "linear-gradient(160deg,#3f4a6e,#191d2c 60%,#0b0d14)", loc1: true, camp: false,
+    anchor: "总督艾德蒙·科尔（风度翩翩、满口法度的半精灵）的府邸。航海图锁在地下金库。白天可以以访客身份试探总督、打听金库；港卫军尉官萨丝·铁锤（正直的青铜龙裔）对印记持有者充满怀疑，但她也在暗中查总督——可以和她合作搜集“总督秘密接受教团资助”的证据（写 act1.sath_trust=true；揭发后合法取回航海图、借到“海鸥号”）。重头戏是月光舞会：需要请柬（伪造、购买、或让米拉变形，写 act1.invite）。舞会上可以和同伴跳舞（适合推进恋爱）、和总督交锋、在一旁发现一位举止古怪的贵妇人（其实是千面母伪装，察觉 DC 17，写 act1.facemother_seen=true；不要直接点破身份）。偷航海图：隐匿 DC 14 + 巧手 DC 15（金库），成功写 act1.chart=stolen；揭发总督写 act1.chart=legal、act1.governor=exposed；勒索总督写 act1.chart=blackmail、act1.governor=blackmailed。失败触发守卫：动手时在 JSON 写 combat 为 manor_guards，或者逃跑。若和萨丝合作揭发，船写 act1.ship=seagull；若替老鳗偷图并交给他，船写 act1.ship=black_eel。离开时把 advance 设为 act1_hub。",
+    next: ["act1_hub"], encounters: ["manor_guards"], act: 1,
+  },
+  act1_sewers: {
+    title: "下水道迷宫", loc: "灰帆港 · 下水道迷宫", bg: "linear-gradient(160deg,#3c4434,#171a13 60%,#0a0b08)", loc1: true, rescue: true,
+    anchor: "港口底下的古老排水道，是教团在灰帆港的据点。入口可以从酒馆地窖（若序幕放过了鼠王，它会带路，写清楚它的样子）、码头排水口或旧学院下水口找到。深处有教团的祭室，一名教团执事主持；墙上挂着一把刻满符文的矮人战斧——博林认得，那是他“死去”的哥哥达林的斧子（写 act1.darin_axe=true；斧子上的烬火痕迹说明达林可能没死，不要直接说破）。若序幕里有同伴被交给了教团，他就被关在这里，可以用 recruit 救回。动手时在 JSON 写 combat 为 sewers_cult。抓住执事后的抉择：拷问他（写 act1.deacon=tortured，得知“教团在等七片印记聚齐”的线索和教团在港口的眼线），或放他回去当线人（写 act1.deacon=informant）。离开时把 advance 设为 act1_hub。",
+    next: ["act1_hub"], encounters: ["sewers_cult"], act: 1,
+  },
+  act1_lighthouse: {
+    title: "灯塔之夜", loc: "灰帆港 · 灯塔", bg: "linear-gradient(160deg,#6b3a2a,#26140f 60%,#0f0806)", level: 5, camp: false, act: 1,
+    anchor: "航海图和船都到手的当晚，灰烬教团动手了：酒馆被砸，玛莎被绑走（若 act1.hostage=tom，被绑的是小汤姆），留话“一个小时内，带着印记持有者到灯塔来交换”。同时米拉的身份暴露：她传给教团的情报让教团知道了你们的航线和船（若 act1.naia_seen 为 true，玩家早已知道，现在她可以选择当面坦白）。把 act1.naia_exposed 设为 true，她从此显出真身（灰白皮肤、水银色头发、没有瞳孔的乳白眼睛），名字是奈雅。玩家必须当场或事后决定怎么处置她：杀掉、关押、接纳（写 act1.naia_fate = killed|imprisoned|recruited；killed 时她死去，imprisoned 时她离队被关在酒馆地窖）。其他同伴会强烈表态：赛勒涅、博林主张严惩，卡西安主张宽恕。教团还在码头埋了炸药，目标是你们的船：队伍可以拆分，一部分人去码头拆炸药（用检定解决，结果写 act1.ship_intact），其余人去灯塔。灯塔分底层、旋梯、灯室三层；千面母（教团间谍头子、奈雅的养母，永远不用同一张脸）带着无面刺客混在一群“平民”里等着。动手时在 JSON 写 combat 为 lighthouse；若奈雅已被接纳且赞同度 ≥ 40，她可以和千面母对话让她动摇退场，用千面母的真名威胁也能让她投降。战后写 act1.martha_alive（人质是否活着），把 advance 设为 act1_dawn。",
+    next: "act1_dawn", encounters: ["lighthouse"],
+  },
+  act1_dawn: {
+    title: "雾海的黎明", loc: "灰帆港 · 码头", bg: "linear-gradient(160deg,#7d8790,#2d3338 60%,#111416)", camp: false, act: 1, endAct: 1,
+    anchor: "灯塔之夜过后的清晨。清点代价：人质是否活着、船是否完好（船被炸毁的话，只能找一艘平民渔船出海，航程会更危险）、奈雅的去留。同伴们各自对昨晚的事表态。玛莎（如果活着）把亡夫的守誓人徽记交给你。船准备出港，驶向雾海深处的龙骨群岛。对话 1~3 轮后，把 scene_end 设为 true，第一幕结束。",
+    next: null,
   },
 };
-const SCENE_ORDER = ["prologue_1", "prologue_2", "prologue_3", "prologue_4", "prologue_5"];
+const ACT_NAMES = ["序幕 · 暴风之夜", "第一幕 · 灰帆港", "第二幕 · 龙骨群岛", "第三幕 · 烬冠"];
+const nextOf = sc => sc.next == null ? [] : [].concat(sc.next);
+// 第一幕的地点，走完的越多等级越高
+const ACT1_LOCS = Object.keys(SCENES).filter(id => SCENES[id].loc1);
 
 const FLAG_KEYS = {
   "prologue.betrayed_companion": "id", "prologue.tom_saved": "bool", "prologue.talked_hooded": "bool", "prologue.saw_gem": "bool",
   "prologue.fight_style": ["fought", "talked", "tricked", "hid", "mixed"], "prologue.captured_cultist": "bool",
   "prologue.rat_king": ["killed", "spared", "driven"], "prologue.vex_left": "bool",
   "prologue.hestia_answer": ["trust", "question", "refuse"], "prologue.martha_legend": "bool",
+  // 第一幕
+  "act1.chart": ["stolen", "legal", "blackmail", "eel"], "act1.ship": ["black_eel", "seagull", "stolen"],
+  "act1.eel": ["deal", "enemy", "ally"], "act1.vex_debt": ["paid", "halved", "defied"], "act1.lise": ["saved", "sold"],
+  "act1.lyra_notes": ["burned", "kept"], "act1.notes_copied": "bool", "act1.dragon_body": ["harvested", "funeral"],
+  "act1.sath_trust": "bool", "act1.invite": ["forged", "bought", "naia"], "act1.governor": ["exposed", "blackmailed", "robbed", "ally"],
+  "act1.facemother_seen": "bool", "act1.darin_axe": "bool", "act1.deacon": ["tortured", "informant", "killed"],
+  "act1.naia_seen": "bool", "act1.naia_exposed": "bool", "act1.naia_fate": ["recruited", "imprisoned", "killed"],
+  "act1.hostage": ["martha", "tom"], "act1.martha_alive": "bool", "act1.ship_intact": "bool",
 };
 
 /* 战斗数据。武器 d 是伤害骰面数，cantrip 戏法不加属性伤害；ab 决定命中和伤害用的属性。 */
@@ -507,6 +597,11 @@ const ENEMIES = {
   rat_king: { name: "鼠王", hp: 28, ac: 13, dex: 2, atk: { n: "撕咬", cnt: 1, d: 8, plus: 2, hit: 5 }, summon: true, unique: true },
   thug: { name: "黑潮会打手", hp: 16, ac: 13, dex: 0, atk: { n: "棍棒", cnt: 1, d: 8, plus: 2, hit: 4 }, plead: true },
   assassin: { name: "无面刺客", hp: 22, ac: 15, dex: 3, atk: { n: "匕首", cnt: 1, d: 4, plus: 4, hit: 6 }, sneak: 2 },
+  drowned: { name: "溺死水手", hp: 30, ac: 12, dex: 0, atk: { n: "爪击", cnt: 2, d: 6, plus: 0, hit: 5 } },
+  guard: { name: "总督府卫兵", hp: 16, ac: 16, dex: 0, atk: { n: "长戟", cnt: 1, d: 8, plus: 2, hit: 4 }, plead: true },
+  deacon: { name: "教团执事", pid: "cultist", hp: 24, ac: 13, dex: 1, atk: { n: "烬火杖", cnt: 2, d: 6, plus: 0, hit: 5, ranged: true }, ignite: true, plead: true, unique: true },
+  // 设定集里千面母还有“受到 15 点以上伤害换脸”的机制，还没做
+  facemother: { name: "千面母", pid: "facemother", hp: 70, ac: 15, dex: 4, atk: { n: "淬毒匕首", cnt: 2, d: 4, plus: 4, hit: 7 }, sneak: 3, unique: true },
 };
 const ZONE_TAGS = { cover: "掩体", high: "高处", obscured: "遮蔽", exit: "出口" };
 // zones 的 adj 是相邻区域的下标；foes：[敌人, 数量, 起始区域]；events 在指定回合开始时触发
@@ -539,6 +634,88 @@ const ENCOUNTERS = {
     start: 0,
     foes: [["rat_king", 1, 2], ["rat", 2, 1], ["rat", 1, 3]],
   },
+  docks_brawl: {
+    title: "码头斗殴", lethal: false,
+    brief: "黑潮会的 4 名打手围上来，血量低于一半时会求饶",
+    props: "堆成山的货箱、头顶摇晃的吊货臂、湿滑的栈桥、成桶的鱼油",
+    zones: [
+      { n: "栈桥", adj: [1, 3] },
+      { n: "货箱堆", tags: ["cover"], adj: [0, 2] },
+      { n: "吊货臂", tags: ["high"], adj: [1] },
+      { n: "水边", tags: ["exit"], adj: [0] },
+    ],
+    start: 0,
+    foes: [["thug", 2, 0], ["thug", 2, 1]],
+  },
+  tower_spies: {
+    title: "围塔的探子", lethal: true,
+    brief: "3 名狂信徒（濒死自爆）和 1 名烬火术士在撬塔门、放烟；莉拉在塔顶",
+    props: "满地散落的书和卷轴、摇摇欲坠的书架、塔里的浓烟、观星台的铜望远镜",
+    zones: [
+      { n: "塔门", tags: ["exit"], adj: [1] },
+      { n: "一层书库", tags: ["cover"], adj: [0, 2] },
+      { n: "旋梯", tags: ["obscured"], adj: [1, 3] },
+      { n: "观星台", tags: ["high"], adj: [2] },
+    ],
+    start: 0, startAt: { lyra: 3 },
+    foes: [["cultist", 2, 1], ["cultist", 1, 2], ["mage", 1, 1]],
+  },
+  wreck_drowned: {
+    title: "溺死者上岸", lethal: true,
+    brief: "被银光惊醒的 2 名溺死水手从水里爬上来",
+    props: "退潮的积水、锋利的礁石、龙尸巨大的骨刺、沉船的断桅",
+    zones: [
+      { n: "沙滩", tags: ["exit"], adj: [1, 2] },
+      { n: "礁石", tags: ["cover"], adj: [0, 3] },
+      { n: "龙尸旁", adj: [0, 3] },
+      { n: "沉船残骸", tags: ["obscured"], adj: [1, 2] },
+    ],
+    start: 0,
+    foes: [["drowned", 1, 2], ["drowned", 1, 3]],
+  },
+  manor_guards: {
+    title: "金库警报", lethal: false,
+    brief: "总督府卫兵 4 人（血量低于一半时会求饶），会把人抓起来而不是杀掉",
+    props: "金库的铁门、走廊的挂毯和盔甲架、舞厅的水晶吊灯、花园的喷泉",
+    zones: [
+      { n: "金库", adj: [1] },
+      { n: "走廊", tags: ["cover"], adj: [0, 2] },
+      { n: "舞厅", adj: [1, 3] },
+      { n: "花园", tags: ["exit"], adj: [2] },
+    ],
+    start: 0,
+    foes: [["guard", 2, 1], ["guard", 2, 2]],
+  },
+  sewers_cult: {
+    title: "地下祭室", lethal: true,
+    brief: "教团执事（可以放火、会求饶）带着 3 名狂信徒和 1 名无面刺客",
+    props: "齐腰深的污水、腐朽的窄桥、祭坛上的烬火盆、头顶的排水闸门",
+    zones: [
+      { n: "污水渠", adj: [1] },
+      { n: "窄桥", adj: [0, 2] },
+      { n: "祭室", adj: [1, 3] },
+      { n: "暗道", tags: ["obscured", "exit"], adj: [2] },
+    ],
+    start: 0,
+    foes: [["cultist", 2, 1], ["deacon", 1, 2], ["cultist", 1, 2], ["assassin", 1, 3]],
+  },
+  lighthouse: {
+    title: "灯塔之夜", lethal: true,
+    brief: "千面母和 3 名无面刺客；第 4 回合她点燃灯室的导火线，没人扑灭的话第 8 回合灯塔爆炸",
+    props: "盘旋而上的铁梯、灯室里巨大的透镜和灯油桶、底层被捆着的人质、窗外的悬崖和海",
+    zones: [
+      { n: "底层", adj: [1] },
+      { n: "旋梯", tags: ["obscured"], adj: [0, 2] },
+      { n: "灯室", tags: ["high"], adj: [1] },
+    ],
+    start: 0,
+    foes: [["assassin", 2, 0], ["assassin", 1, 1], ["facemother", 1, 2]],
+    events: [
+      { round: 4, text: "千面母点燃了灯室里的导火线！火花顺着引线爬向油桶——再过四个回合，整座灯塔都会炸上天。（即兴行动可以扑灭）" },
+      { round: 8, unless: "fuse", blast: { dice: [6, 6] }, text: "导火线烧到了尽头，灯塔在巨响中炸开，碎石和火焰席卷了每一层！" },
+    ],
+    stops: { fuse: "灯室的导火线" },
+  },
 };
 
 /* =========================================================
@@ -563,7 +740,8 @@ const failed = new Set();
 function portrait(img, id, expr) {
   if (id === "player" && state?.player?.portraitData) { img.src = state.player.portraitData; return; }
   const cands = [];
-  if (id !== "player") {
+  if (id === "naia") cands.push(`portraits/naia_${naiaTrue() ? "true" : "disguise"}.webp`); // 奈雅只有伪装和真身两张，没有表情差分
+  else if (id !== "player") {
     if (expr && expr !== "neutral") cands.push(`portraits/${id}_${expr}.webp`);
     cands.push(`portraits/${id}_neutral.webp`);
   }
@@ -689,6 +867,12 @@ async function loadSave(key) { const m = slotMeta(key); return !m ? null : m.fro
 const validState = s => !!s && typeof s === "object" && s.phase === "play" && !!s.player && Array.isArray(s.log) && !!SCENES[s.scene];
 // 读进来的存档统一整理：去掉没写完的条目；旧存档的条目没有场景标记，按记录里的章节标题补上
 function tidyLog(s) {
+  // 旧存档没有后来加的同伴
+  for (const [id, cd] of Object.entries(COMPANIONS)) if (!s.companions[id]) {
+    const hp = cd.hp + ((s.player.level || 1) - 1) * Math.max(1, Math.floor(CLASSES[cd.kit].hd / 2) + 1 + mod(cd.ab.con));
+    s.companions[id] = { recruited: false, alive: true, taken: false, approval: 0, romance: "none", hp, hpMax: hp };
+  }
+  s.act ||= 0;
   s.log.forEach(e => delete e.live); s.log = s.log.filter(e => e.t || e.k === "chapter");
   const byTitle = Object.fromEntries(Object.entries(SCENES).map(([id, sc]) => [sc.title, id]));
   let cur = Object.keys(SCENES)[0];
@@ -748,16 +932,25 @@ async function readImport(file) {
 /* =========================================================
    规则
    ========================================================= */
+// 在场的同伴：序幕里酒馆的人都在；之后是入队的同伴，加上这一场能遇到的人（meet）和能救回的人（rescue）
 function present() {
-  if (state.scene === "prologue_5") return [];
-  return Object.keys(COMPANIONS).filter(id => {
+  const sc = SCENES[state.scene];
+  if (sc.alone) return [];
+  if (!state.act) return Object.keys(COMPANIONS).filter(id => {
     const c = state.companions[id];
-    if (!c.alive || c.taken) return false;
+    if (!inAct(id) || !c.alive || c.taken) return false;
     if (id === "vex" && state.flags["prologue.vex_left"]) return false;
     return true;
   });
+  const out = party();
+  for (const id of Object.keys(COMPANIONS)) {
+    const c = state.companions[id];
+    if (out.includes(id) || !c.alive || !inAct(id) || c.left) continue;
+    if (c.taken ? sc.rescue : sc.meet?.includes(id)) out.push(id);
+  }
+  return out;
 }
-function party() { return Object.keys(COMPANIONS).filter(id => state.companions[id].recruited && !state.companions[id].taken && state.companions[id].alive); }
+function party() { return Object.keys(COMPANIONS).filter(id => state.companions[id]?.recruited && !state.companions[id].taken && state.companions[id].alive); }
 
 /* 等级：里程碑制，不攒经验。同伴始终和玩家同级（state.player.level 就是全队等级）。 */
 const partyLevel = () => state?.player?.level || 1;
@@ -826,8 +1019,14 @@ function levelUp(to) {
 // 旧存档：已经走过的场景要求的等级还没达到，就补上
 function catchUpLevel() {
   if (!state || state.phase !== "play") return;
-  const need = Math.max(1, ...[...new Set(state.log.map(e => e.s))].map(id => SCENES[id]?.level || 1));
+  const need = levelNeed();
   if (need > partyLevel()) levelUp(need);
+}
+// 应有的等级：走过的场景里写的 level；第一幕每走完两个地点升一级（2 → 3 → 4），灯塔之夜是 5 级
+function levelNeed() {
+  const seen = [...new Set(state.log.map(e => e.s))];
+  const done = ACT1_LOCS.filter(id => seen.includes(id) && id !== state.scene).length;
+  return Math.max(1, ...seen.map(id => SCENES[id]?.level || 1), state.act >= 1 ? 2 + Math.min(2, Math.floor(done / 2)) : 1);
 }
 // 属性提升：choice 形如 { str: 2 } 或 { dex: 1, cha: 1 }，总共 2 点，单项最高 20
 function applyAsi(choice) {
@@ -877,7 +1076,7 @@ const SYSTEM = `你是奇幻跑团游戏《醉龙酒馆：龙誓》的游戏主�
 
 【输出格式】先写叙述正文（纯文本，可分段，不要标题、不要 Markdown）。然后单独一行写 @@@ 。然后写一个 JSON 对象（不要代码块），没有变化的字段可以省略：
 {"location":"简短地点","speakers":["borin"],"expressions":{"borin":"smile"},"check":null,"approval":[{"id":"selene","delta":3,"reason":"你保护了小汤姆"}],"flags":{},"hp":[{"id":"player","delta":-2}],"gold":0,"items_add":[],"items_remove":[],"draconic":0,"inspiration":0,"recruit":[],"hestia_trust":0,"journal":[{"quest":"任务名","note":"一句话进展"}],"remember":[{"id":"vex","note":"你答应帮他救回妹妹"}],"romance":[],"relation":[],"advance":null,"scene_end":false,"suggestions":[{"text":"建议行动","check":"说服"}]}
-- speakers：本轮主要说话或被聚焦的角色 id（最多 3 个，第一个最重要）。可用 id：selene vex kassian borin martha tom hooded cultist hestia。
+- speakers：本轮主要说话或被聚焦的角色 id（最多 3 个，第一个最重要）。可用 id：${Object.keys(PEOPLE).join(" ")}。
 - expressions：可选，表情取 neutral smile angry sad tender。
 - check：需要检定时写 {"skill":"技能键","dc":15,"who":"player","reason":"一句话难点","advantage":false,"disadvantage":false}，此时 suggestions 写 []。who 可以是 player 或已加入的同伴 id。
 - 技能键：athletics 运动、acrobatics 杂技、sleight 巧手、stealth 隐匿、arcana 奥秘、history 历史、investigation 调查、nature 自然、religion 宗教、animal 驯兽、insight 洞悉、medicine 医疗、perception 察觉、survival 求生、deception 欺瞒、intimidation 威吓、performance 表演、persuasion 说服；也可用属性 str dex con int wis cha、攻击 attack、豁免 save_con 等。
@@ -912,6 +1111,27 @@ function companionBrief(id) {
   秘密：${c.secret}
   加入条件：${c.join}`;
 }
+// 这一幕会出场的 NPC：[id, 从第几幕起, 说明, 到第几幕为止]
+const NPC_NOTES = [
+  ["martha", 0, "独臂退休冒险者，嘴硬心软，酒馆老板娘。亡夫是最后一位守誓人。"],
+  ["tom", 0, "胆小热心的半身人帮工，序幕里被老鼠咬伤了腿。"],
+  ["hooded", 0, "窗边的兜帽客，其实是教团间谍形变者奈雅，GM 不要透露。", 0],
+  ["eel", 1, "老鳗·莫格，黑潮会首领，控制港口地下世界的胖老头，笑眉笑眼、毒如蛇蝎，只认利益；脖子上盘着鳗鱼刺青，满手金戒指。和维克斯、卡西安的过去都有关。"],
+  ["governor", 1, "艾德蒙·科尔，灰帆港总督，风度翩翩、满口法度的半精灵。十年前没收了玛莎亡夫的航海图。他秘密接受教团资助，但并不信仰教团，只是想借教团打压黑潮会（GM 不要透露，要靠证据揭开）。"],
+  ["sath", 1, "萨丝·铁锤，港卫军尉官，正直的青铜龙裔。对印记持有者充满怀疑，可以用行动赢得她的信任；她在暗中调查总督。"],
+  ["facemother", 1, "千面母，灰烬教团的间谍头子、奈雅的养母，从不以同一张脸出现两次。第一幕里可以让她伪装成路人、贵妇、小贩和玩家说上几句话埋下伏笔（GM 不要透露身份），灯塔之夜主导伏击。"],
+];
+const npcLines = () => NPC_NOTES.filter(([, from, , to]) => from <= state.act && (to == null || state.act <= to))
+  .map(([id, , t]) => `${PEOPLE[id].name}（${id}）：${t}`).join("\n");
+function nextLine(sc) {
+  const ids = nextOf(sc);
+  if (!ids.length) return sc.endAct != null ? "下一个场景：无（这一场结束时 scene_end 为 true）" : "下一个场景：无";
+  return "可以 advance 到的场景 id：" + ids.map(id => `${id}「${SCENES[id].title}」${sc.gate?.[id] && !sc.gate[id]() ? "（条件还没满足，不能去）" : ""}`).join("、");
+}
+// 第一幕：维克斯欠老鳗的债限期三天（按长休计）
+const DEBT_DAYS = 3;
+const debtOpen = () => state.act === 1 && state.act1Day != null && !state.flags["act1.vex_debt"] && !state.flags["act1.lise"];
+const debtLine = () => debtOpen() ? `；维克斯的债还剩 ${Math.max(0, state.act1Day + DEBT_DAYS - state.day)} 天（每睡一晚少一天，到期莉丝会被卖到外海）` : "";
 function buildPrompt(action, mode) {
   const p = state.player, sc = SCENES[state.scene];
   const profs = p.profs.map(k => SKILLS[k][0]).join("、");
@@ -920,14 +1140,14 @@ function buildPrompt(action, mode) {
   const pres = present();
   const encs = (sc.encounters || []).filter(id => !state.fought?.[id]);
   return SYSTEM + rulesBlock() +
-    `\n\n【当前场景】${state.scene}「${sc.title}」，地点：${state.location}\n场景锚点（GM 可见）：${sc.anchor}\n下一个场景 id：${sc.next || "无（本场景结束时 scene_end 为 true）"}` +
+    `\n\n【当前场景】${state.scene}「${sc.title}」，地点：${state.location}\n场景锚点（GM 可见）：${sc.anchor}\n${nextLine(sc)}` +
     (state.combat ? combatBrief(mode) : state.camp ? campBrief() : encs.length ? `\n可开战的遭遇：${encs.map(id => id + "（" + ENCOUNTERS[id].brief + "）").join("；")}` : "") +
     `\n\n【玩家角色】${p.name}，${p.gender}，${p.level} 级${RACES[p.race].name}${CLASSES[p.cls].name}，背景：${BACKGROUNDS[p.bg].name}（灵感条件：${BACKGROUNDS[p.bg].insp}）。外貌：${p.appearance}` +
     `\n属性：${AB_KEYS.map(k => AB[k] + p.abilities[k] + "(" + sgn(mod(p.abilities[k])) + ")").join(" ")}；熟练技能：${profs}` +
     `\nHP ${p.hp}/${p.hpMax}，AC ${p.ac}，金币 ${p.gold}，灵感 ${p.inspiration}，龙化值 ${p.draconic}，物品：${p.inventory.join("、") || "无"}` +
     `\n\n【在场同伴】\n${pres.length ? pres.map(companionBrief).join("\n") : "（无，玩家独自一人）"}` +
-    `\n\n【NPC】玛莎（martha）：独臂退休冒险者，嘴硬心软，酒馆老板娘。小汤姆（tom）：胆小热心的半身人帮工。兜帽客（hooded）：其实是教团间谍形变者奈雅，GM 不要透露。` +
-    `\n\n【世界标记】${JSON.stringify(state.flags)}；赫斯提雅信任 ${state.hestiaTrust}；第 ${state.day} 天，营地补给 ${state.supplies ?? 0}` +
+    `\n\n【NPC】\n${npcLines()}` +
+    `\n\n【世界标记】${JSON.stringify(state.flags)}；赫斯提雅信任 ${state.hestiaTrust}；第 ${state.day} 天，营地补给 ${state.supplies ?? 0}${debtLine()}` +
     (Object.entries(state.rel || {}).some(([, v]) => v) ? `\n【同伴之间】${Object.entries(state.rel).filter(([, v]) => v).map(([k, v]) => k.split("_").map(id => PEOPLE[id].name).join("×") + " " + sgn(v)).join("，")}` : "") +
     (chapters ? `\n\n【往事】（已经结束的各章纪要）\n${chapters}` : "") +
     `\n\n【前情提要】${m.summary || (chapters ? "（往事之后的事都在下面的最近剧情里）" : "（还没有，更早的剧情都在下面的最近剧情里）")}` +
@@ -1036,14 +1256,14 @@ function queueMem(fn) {
 function maybeSummarize() { queueMem(writeChapter); return queueMem(summarize); }
 // 已经结束、还没写纪要的场景（按在记录里出现的顺序）；一次只写一章，旧存档会一轮补一章
 function pendingChapter() {
-  const done = new Set(memo().chapters.map(c => c.id)), order = [];
-  for (const e of state.log) if (e.s && !order.includes(e.s)) order.push(e.s);
-  return order.find(id => (id !== state.scene || state.ended) && !done.has(id)
-    && state.log.some(e => e.s === id && e.t && e.k !== "chapter" && e.k !== "cb"));
+  const done = new Set(memo().chapters.map(c => c.id)), order = [], cur = curKey();
+  for (const e of state.log) if (e.s && !order.includes(chKey(e))) order.push(chKey(e));
+  return order.find(id => (id !== cur || state.ended) && !done.has(id)
+    && state.log.some(e => chKey(e) === id && e.t && e.k !== "chapter" && e.k !== "cb"));
 }
 function chapterPrompt(id, text) {
   const p = state.player;
-  return `你是跑团游戏《醉龙酒馆：龙誓》的记录员。玩家角色叫${p.name}（${p.gender}，${RACES[p.race].name}${CLASSES[p.cls].name}）。下面是已经结束的一章「${SCENES[id]?.title || id}」的完整记录。写一份 250–400 字的章节纪要：
+  return `你是跑团游戏《醉龙酒馆：龙誓》的记录员。玩家角色叫${p.name}（${p.gender}，${RACES[p.race].name}${CLASSES[p.cls].name}）。下面是已经结束的一章「${chTitle(id)}」的完整记录。写一份 250–400 字的章节纪要：
 - 用“你”指玩家，按时间顺序。
 - 必须写进：发生了什么；你做的关键选择；你许下的承诺、撒过的谎；每个在场角色对你的态度怎么变了、为什么；得到的线索和物品；留下的悬念。
 - 人名、地名、物品名照原文写。战斗只写结果。
@@ -1055,7 +1275,7 @@ ${text}`;
 async function writeChapter() {
   if (!state || state.combat || !narratorReady()) return;
   const id = pendingChapter(); if (!id) return;
-  const entries = state.log.filter(e => e.s === id && e.t && e.k !== "chapter" && e.k !== "cb");
+  const entries = state.log.filter(e => chKey(e) === id && e.t && e.k !== "chapter" && e.k !== "cb");
   let text = entries.map(entryLine).join("\n");
   if (text.length > CHAPTER_SRC) text = entries.map(e => (LINE_TAG[e.k] || "") + e.t.slice(0, 300)).join("\n"); // 太长就每条截短
   if (text.length > CHAPTER_SRC) text = text.slice(0, CHAPTER_SRC / 2) + "\n……\n" + text.slice(-CHAPTER_SRC / 2);
@@ -1065,7 +1285,7 @@ async function writeChapter() {
   const body = str(splitReply(out)[0].replace(/^[#\s*「」【】]*纪要[:：]?/, "").trim(), 900);
   const m = memo();
   if (!body || m.chapters.some(c => c.id === id)) return;
-  m.chapters.push({ id, title: SCENES[id]?.title || id, text: body });
+  m.chapters.push({ id, title: chTitle(id), text: body });
   save();
 }
 async function summarize() {
@@ -1118,7 +1338,15 @@ const ERR = {
   empty_completion: "说书人没有返回内容，点“重试上一步”再试。",
 };
 
-function push(k, t, extra) { const e = Object.assign({ k, t, s: state.scene }, extra || {}); state.log.push(e); return e; } // s：发生在哪个场景，章节纪要按它分
+// s：发生在哪个场景，章节纪要按它分；v：第几次来这一场（第一幕的港口和地点可以反复去，每次单独写一章）
+function push(k, t, extra) {
+  const e = Object.assign({ k, t, s: state.scene }, extra || {}), v = state.visits?.[state.scene];
+  if (v > 1) e.v = v;
+  state.log.push(e); return e;
+}
+const chKey = e => e.v ? e.s + "#" + e.v : e.s;
+const curKey = () => chKey({ s: state.scene, v: state.visits?.[state.scene] > 1 ? state.visits[state.scene] : 0 });
+const chTitle = k => { const [id, v] = k.split("#"); return (SCENES[id]?.title || id) + (v ? `（第 ${v} 次）` : ""); };
 
 /* 说书人接口：本机 ChatGPT、claude.ai sample、OpenAI 兼容 API（密钥只存在本浏览器）。
    想接别的模型，只需改 narrate()：输入完整提示词，流式回调全文，返回最终文本。 */
@@ -1331,9 +1559,17 @@ function applyGM(d, mode) {
     else if (Array.isArray(rule) && rule.includes(v)) state.flags[k] = v;
   }
   const taken = state.flags["prologue.betrayed_companion"];
-  if (taken && COMPANIONS[taken] && !state.companions[taken].taken) {
+  if (taken && COMPANIONS[taken] && !state.companions[taken].taken && !state.companions[taken].rescued) {
     state.companions[taken].taken = true; state.companions[taken].recruited = false;
     notes.push([PEOPLE[taken].name + " 被教团带走了", "down"]);
+  }
+  // 灯塔之夜处置奈雅
+  const nc = state.companions.naia, fate = state.flags["act1.naia_fate"];
+  if (fate && nc.fate !== fate) {
+    nc.fate = fate;
+    if (fate === "killed") { nc.alive = false; nc.recruited = false; notes.push(["奈雅死了", "down"]); }
+    else if (fate === "imprisoned") { nc.recruited = false; nc.left = true; notes.push(["奈雅被关押起来", "down"]); }
+    else if (fate === "recruited") { nc.left = false; if (!nc.recruited) { nc.recruited = true; notes.push(["奈雅留在了队伍里", "up"]); } }
   }
 
   // approval
@@ -1379,14 +1615,18 @@ function applyGM(d, mode) {
   if (num(d.inspiration, 1) > 0 && state.player.inspiration < 4) { state.player.inspiration++; notes.push(["获得 1 点灵感", "up"]); toast("获得灵感", "up"); }
   // hestia
   const ht = num(d.hestia_trust, 20);
-  if (ht && state.scene === "prologue_5") state.hestiaTrust = clamp(state.hestiaTrust + ht, -100, 100);
-  // recruit
+  if (ht && SCENES[state.scene].dream) state.hestiaTrust = clamp(state.hestiaTrust + ht, -100, 100);
+  // recruit：只能招募这一场登记过的人（recruit），或者从教团手里救回被带走的同伴（rescue）
+  const sc0 = SCENES[state.scene];
   for (const id of (!inCb && Array.isArray(d.recruit) ? d.recruit : [])) {
     const c = state.companions[id];
-    if (!c || c.recruited || c.taken || !c.alive || !["prologue_3", "prologue_4"].includes(state.scene)) continue;
-    if (id === "vex" && state.flags["prologue.vex_left"]) continue;
+    if (!c || c.recruited || !c.alive || c.left || !inAct(id)) continue;
+    if (c.taken ? !sc0.rescue : !sc0.recruit?.includes(id)) continue;
+    if (id === "vex" && state.flags["prologue.vex_left"]) { if (!state.act) continue; state.flags["prologue.vex_left"] = false; }
+    const back = c.taken;
+    if (back) { c.taken = false; c.rescued = true; }
     c.recruited = true;
-    notes.push([PEOPLE[id].name + " 加入了队伍", "up"]); toast(PEOPLE[id].name + " 加入了队伍", "up");
+    notes.push([PEOPLE[id].name + (back ? " 被救了回来，重新加入队伍" : " 加入了队伍"), "up"]); toast(PEOPLE[id].name + " 加入了队伍", "up");
   }
   // memory
   for (const r of (Array.isArray(d.remember) ? d.remember : []).slice(0, 2)) {
@@ -1431,17 +1671,35 @@ function applyGM(d, mode) {
 
   // scene flow
   const sc = SCENES[state.scene];
-  if (d.advance && d.advance === sc.next) goScene(d.advance, !!d.location);
-  if (d.scene_end === true && state.scene === "prologue_5") { state.ended = true; state.pendingCheck = null; state.suggestions = []; }
+  if (d.advance && canGo(sc, d.advance)) goScene(d.advance, !!d.location);
+  else if (d.scene_end === true && sc.endAct != null) { state.ended = true; state.pendingCheck = null; state.suggestions = []; }
 }
+// 能不能去这一场：必须是 next 里登记的，且满足 gate（例如灯塔要先拿到航海图和船）
+const canGo = (sc, id) => nextOf(sc).includes(id) && (!sc.gate?.[id] || sc.gate[id]());
 function goScene(id, keepLocation) {
   state.scene = id;
+  state.visits = { ...(state.visits || {}), [id]: (state.visits?.[id] || 1) + (state.log.some(e => e.s === id) ? 1 : 0) };
   const ns = SCENES[id];
   push("chapter", ns.title);
   if (!keepLocation) state.location = ns.loc;
   if (id === "prologue_5") { const p = state.player; p.hp = p.hpMax; for (const c of Object.values(state.companions)) c.hp = c.hpMax; push("sys", "长休：全员生命恢复"); }
-  if (ns.level) levelUp(ns.level); // 里程碑升级写在场景数据里
+  const need = levelNeed(); // 里程碑升级：场景数据里的 level，第一幕按走完的地点数
+  if (need > partyLevel()) levelUp(need);
   flashScene = !!ns.flash;
+}
+// 一幕结束后进入下一幕（结束卡片上的按钮）
+function nextAct() {
+  const sc = SCENES[state.scene];
+  if (!state.ended || !sc.after || !SCENES[sc.after]) return;
+  state.ended = false; state.act = SCENES[sc.after].act || state.act + 1;
+  if (state.act === 1) {
+    state.act1Day = state.day;
+    state.journal.push({ quest: "第一幕：灰帆港", note: "去誓约神殿需要航海图和船。" });
+  }
+  push("chapter", ACT_NAMES[state.act]);
+  goScene(sc.after);
+  closeModal(); save(); render();
+  gm("（新的一幕开始。按场景锚点描写开场：时间、地点、气氛，在场的人各自在做什么。给出 3~4 个建议行动。）", null);
 }
 
 /* =========================================================
@@ -1459,6 +1717,7 @@ const ROMANCE_ORDER = ["none", "hint", "together", "vowed"];
 // 角色底线（设定集“赞同度、羁绊与恋爱”）：noLie 被发现撒谎就不接受告白；poly 接受多人恋爱需要的赞同度
 const ROMANCE_RULES = {
   selene: { noLie: true, poly: 80 }, vex: { poly: 0 }, kassian: { poly: 60 }, borin: { poly: 60 },
+  lyra: { noLie: true, poly: 80 }, naia: { poly: 0 },
 };
 const isLover = id => ["together", "vowed"].includes(state.companions[id]?.romance);
 const lovers = () => Object.keys(COMPANIONS).filter(id => isLover(id) && state.companions[id].alive && !state.companions[id].taken);
@@ -1508,6 +1767,30 @@ const CAMP_EVENTS = [
     seed: "博林没有喝酒，这本身就很反常。素材：他第一次在人前哭，说起哥哥，也说起你。" },
   { id: "borin_lovers", who: "borin", kind: "romance", when: c => c.romance === "together",
     seed: "成为恋人后的某个夜晚。博林笨拙又真诚：喝醉时胆子大，清醒时反而脸红；他在考虑要不要为你少喝一点。" },
+  { id: "lyra_friend", who: "lyra", kind: "friend", when: c => c.approval >= 20,
+    seed: "莉拉借着火光翻她那本烧焦了角的笔记，嘴里念念有词，被打扰时先嫌你烦，再忍不住给你讲印记的新发现。素材：她被学院除名的那天；失踪的导师奥斯瓦尔德是唯一替她说过话的人。" },
+  { id: "lyra_hint", who: "lyra", kind: "romance", when: c => c.approval >= 40 && c.romance === "none",
+    seed: "深夜，莉拉拉你一起研究两人掌心的印记，靠得很近，讲着讲着不小心靠在你肩上睡着了。醒来后她会嘴硬地否认，耳朵却红了。" },
+  { id: "lyra_confess", who: "lyra", kind: "romance", when: c => c.approval >= 60 && c.romance === "hint",
+    seed: "莉拉罕见地没带书来找你。素材：她最怕的是被人当成好用的工具；她想知道你在意的是她，还是她能做到的事。如果她曾发现你撒谎，她会冷着脸走开。" },
+  { id: "lyra_lovers", who: "lyra", kind: "romance", when: c => c.romance === "together",
+    seed: "成为恋人后的某个夜晚。莉拉还是刻薄，但会把最好的位置让给你，偷偷把你的名字写进笔记的页边。" },
+  { id: "naia_friend", who: "naia", kind: "friend", when: c => c.approval >= 20,
+    seed: "米拉/奈雅抱着琴在火边即兴编歌，歌里藏着关于你的小玩笑。素材：她会反问你喜欢什么、想要什么，问得太认真，像在替自己找答案；如果身份还没暴露，她的谎言之下有一闪而过的疲惫。" },
+  { id: "naia_hint", who: "naia", kind: "romance", when: c => c.approval >= 40 && c.romance === "none",
+    seed: "她邀你在月光下跳一支舞，一边跳一边模仿别人的样子逗你笑，最后停下来，用自己（或她以为是自己）的样子看着你。" },
+  { id: "naia_confess", who: "naia", kind: "romance", when: c => c.approval >= 60 && c.romance === "hint",
+    seed: "她第一次以真面目（灰白皮肤、水银色头发、乳白的眼睛）站在你面前，问：“你喜欢的是哪一张脸？”回答“哪张都是你”或“你自己想用的那张”能打动她。如果身份还没暴露，这一幕可以改成她差一点就要说出真相。" },
+  { id: "naia_lovers", who: "naia", kind: "romance", when: c => c.romance === "together",
+    seed: "成为恋人后的某个夜晚。她会按你的喜好变换样子，又会突然问你：“如果我不变了，你还会这样看我吗？”" },
+  { id: "act1_home", group: true, kind: "main", title: "回到酒馆的夜晚", when: () => state.act === 1 && !SCENES[state.scene].alone,
+    seed: "在灰帆港奔波一天后回到醉龙酒馆。玛莎留了热汤，小汤姆在擦桌子。大家各自说说今天看到的事：航海图、船、教团的动静、维克斯的债还剩几天。这是商量下一步、也是互相了解的时候。" },
+  { id: "lyra_selene_mark", pair: ["lyra", "selene"], kind: "banter", title: "要不要研究印记",
+    seed: "莉拉想用赛勒涅的印记做个小实验，赛勒涅认为印记是神圣的托付、不该当玩具，两人吵得越来越凶，要你表态。" },
+  { id: "vex_naia_liars", pair: ["vex", "naia"], kind: "banter", title: "两个骗子",
+    seed: "维克斯和米拉/奈雅比赛讲谎话，一个比一个离谱。维克斯好像看出了点什么，话里有话；她笑着接招。玩家可以旁观，也可以加入。" },
+  { id: "kassian_lyra_worry", pair: ["kassian", "lyra"], kind: "banter", title: "兄长式的担心",
+    seed: "卡西安注意到莉拉在偷偷用印记做实验，手上的银鳞又多了一片。他不好意思直说，想请你帮忙劝劝她；莉拉嫌他啰嗦。" },
   { id: "selene_vex_badge", pair: ["selene", "vex"], kind: "banter", title: "被偷走的徽章",
     seed: "维克斯偷走了赛勒涅的骑士徽章开玩笑，赛勒涅冷着脸讨要，两人吵到要你评理。你站在谁那边，会同时影响两个人。" },
   { id: "borin_kassian_drink", pair: ["borin", "kassian"], kind: "banter", title: "拼酒大赛",
@@ -1644,6 +1927,11 @@ function restNight(partner) {
   const p = state.player; p.hp = p.hpMax;
   for (const c of Object.values(state.companions)) if (c.alive) c.hp = c.hpMax;
   state.day++; state.camp = null;
+  if (debtOpen() && state.day >= state.act1Day + DEBT_DAYS) {
+    state.flags["act1.lise"] = "sold";
+    const v = state.companions.vex; if (v.alive) { v.approval = clamp(v.approval - 30, -100, 100); remember("vex", "你没能在期限内救下莉丝"); }
+    news.push("维克斯的债到期了：老鳗把莉丝卖到了外海，维克斯赞同度 −30");
+  }
   push("sys", "长休：全员生命恢复", { cls: "appr-up" });
   for (const n of news) push("sys", n, { cls: "appr-down" });
   const night = partner ? `【夜里】玩家和${PEOPLE[partner].name}共度一夜：按${PEOPLE[partner].name}的性格写这一夜的亲密与情意，到最亲密的那一步用一句暗示性的转场带过。` : "玩家独自睡下。";
@@ -1997,9 +2285,13 @@ function nextTurn() {
   c.turn = 0; c.round++;
   for (const z of c.zones) if (z.burning && --z.burning === 0) clog(`${z.n}的火熄灭了`);
   clog(`第 ${c.round} 回合`, "round");
-  for (const ev of ENCOUNTERS[c.id].events || []) if (ev.round === c.round) {
-    for (const [type, n, zone] of ev.spawn) for (let i = 0; i < n; i++) { const u = foeUnit(type, zone, ev.side || "enemy"); u.init = rollD20() + u.dexMod; c.units[u.id] = u; }
+  // 回合事件：spawn 增援；blast 炸到所有人（或 zones 里的人）；unless 是即兴行动可以阻止的机关（combat.stop）
+  for (const ev of ENCOUNTERS[c.id].events || []) if (ev.round === c.round && !(ev.unless && c.stopped?.[ev.unless])) {
+    for (const [type, n, zone] of ev.spawn || []) for (let i = 0; i < n; i++) { const u = foeUnit(type, zone, ev.side || "enemy"); u.init = rollD20() + u.dexMod; c.units[u.id] = u; }
     clog(ev.text, "event");
+    if (ev.blast) for (const u of cbList()) if (!u.dead && !u.out && (!ev.blast.zones || ev.blast.zones.includes(u.zone))) {
+      const n = roll(...ev.blast.dice), r = hurt(u, n); clog(`${u.name} 受到 ${n} 点伤害` + (r ? "。" + r : ""), "hit");
+    }
   }
   sortOrder();
 }
@@ -2086,6 +2378,8 @@ function applyCombatFx(x) {
     else if (["frightened", "restrained"].includes(h.effect)) { u.cond[h.effect] = 2; clog(`${u.name} ${COND[h.effect]}了`); }
   }
   if (x.burn) { const z = c.zones.find(z => z.n === x.burn); if (z) { z.burning = 3; clog(`${z.n}燃起了大火`, "event"); } }
+  const stops = ENCOUNTERS[c.id].stops || {};
+  if (stops[x.stop] && !c.stopped?.[x.stop]) { c.stopped = { ...(c.stopped || {}), [x.stop]: true }; clog(`${stops[x.stop]}被阻止了`, "event"); }
   if (x.end === "surrendered" || x.end === "fled") {
     for (const u of cbList()) if (u.side !== "party" && ACTIVE(u)) u.out = x.end;
     c.end = "talked"; clog(x.end === "fled" ? "剩下的敌人四散奔逃" : "剩下的敌人放下了武器");
@@ -2108,6 +2402,8 @@ function combatBrief(mode) {
 - 伤害参考：小 1d6，中 2d6，大 3d6，最多 4d10。zone_damage 会伤到该区域里的所有人，包括我方。
 - effect 可选 prone（倒地）、frightened（恐惧）、restrained（束缚）、fled（逃跑）、surrendered（投降）。end 可选 "surrendered" 或 "fled"，表示剩下的敌人全部投降或逃走，只有谈判、威吓真正成功时才用。
 - 不要写 hp、advance、scene_end、suggestions。`;
+  const stops = Object.entries(E.stops || {}).filter(([k]) => !c.stopped?.[k]);
+  if (mode === "improv" && stops.length) t += `\n- 可以阻止的机关：${stops.map(([k, n]) => `${n}（成功阻止时在 combat 里写 "stop":"${k}"）`).join("；")}。`;
   return t;
 }
 
@@ -2445,7 +2741,7 @@ function renderPlay() {
     const b = el("button", "opt"); b.type = "button"; b.append(el("span", "k", "✝"), el("span", "tx", "你的旅程在这里结束了。读取存档"));
     b.onclick = () => openSaves(true); opts.append(b);
   } else if (state.ended) {
-    const b = el("button", "opt"); b.type = "button"; b.append(el("span", "k", "★"), el("span", "tx", "序幕完。查看你的旅程总结"));
+    const b = el("button", "opt"); b.type = "button"; b.append(el("span", "k", "★"), el("span", "tx", `${(SCENES[state.scene].endAct ? ACT_NAMES[SCENES[state.scene].endAct].split(" · ")[0] : "序幕")}完。查看你的旅程总结`));
     b.onclick = openEnd; opts.append(b);
   } else if (cb) {
     renderCombat(opts);
@@ -2586,7 +2882,7 @@ function openJournal() {
     s.append(el("div", "label", "任务"));
     for (const j of state.journal.slice().reverse()) { const d = el("div", "slot"); const t = el("div"); t.append(el("b", null, j.quest), el("div", "meta", j.note)); d.append(t); s.append(d); }
     const f = Object.entries(state.flags);
-    if (f.length) { s.append(el("div", "label", "你做过的选择")); const l = el("div", "skills-list"); for (const [k, v] of f) l.append(el("span", "tag", k.replace("prologue.", "") + "：" + v)); s.append(l); }
+    if (f.length) { s.append(el("div", "label", "你做过的选择")); const l = el("div", "skills-list"); for (const [k, v] of f) l.append(el("span", "tag", k.replace(/^(prologue|act\d)\./, "") + "：" + v)); s.append(l); }
   });
 }
 const SLOT_LABEL = { auto: "自动存档", slot1: "存档 1", slot2: "存档 2", slot3: "存档 3" };
@@ -2762,18 +3058,28 @@ function asiPicker(box) {
   };
   draw();
 }
+const END_TEXT = [
+  "晨光照进醉龙酒馆。你掌心的银色印记还在微微发烫。灰帆港的街道上，有人在找你们，也有人在等你们。",
+  "船帆鼓满了风，灰帆港在身后的雾里越来越小。航海图上的墨线指向雾海深处的龙骨群岛，沉没的誓约神殿在那里等着你们。",
+];
 function openEnd() {
-  modal("序幕完", s => {
+  const sc = SCENES[state.scene], act = sc.endAct ?? state.act, nextSc = SCENES[sc.after];
+  modal(act ? ACT_NAMES[act].split(" · ")[0] + "完" : "序幕完", s => {
     s.classList.add("endcard");
-    s.append(el("p", null, "晨光照进醉龙酒馆。你掌心的银色印记还在微微发烫。灰帆港的街道上，有人在找你们，也有人在等你们。"));
+    s.append(el("p", null, END_TEXT[act] || ""));
     const list = el("div", "step"); list.style.width = "100%";
-    for (const id of Object.keys(COMPANIONS)) {
+    for (const id of Object.keys(COMPANIONS).filter(id => inAct(id))) {
       const c = state.companions[id];
-      const r = el("div", "kv"); r.append(el("span", null, PEOPLE[id].name + (c.recruited ? "（同行）" : c.taken ? "（被带走）" : "")), el("b", null, `${relLabel(c.approval)} ${sgn(c.approval)}`)); list.append(r);
+      if (!c.recruited && !c.taken && !c.approval && c.alive) continue; // 没打过交道的人不列
+      const r = el("div", "kv"); r.append(el("span", null, PEOPLE[id].name + (!c.alive ? "（已死）" : c.recruited ? "（同行）" : c.taken ? "（被带走）" : "")), el("b", null, `${relLabel(c.approval)} ${sgn(c.approval)}`)); list.append(r);
     }
     const ht = el("div", "kv"); ht.append(el("span", null, "赫斯提雅的信任"), el("b", null, sgn(state.hestiaTrust))); list.append(ht);
     s.append(list);
-    s.append(el("p", null, "第一幕《灰帆港》会在下一个版本开放。你的存档会保留，到时可以接着玩。"));
+    if (nextSc) {
+      const b = el("button", "btn gold", `进入${ACT_NAMES[nextSc.act]}`); b.type = "button";
+      b.onclick = () => { if (busy) return; nextAct(); };
+      s.append(b);
+    } else s.append(el("p", null, `${ACT_NAMES[act + 1] || "后面的故事"}会在下一个版本开放。你的存档会保留，到时可以接着玩。`));
   });
 }
 

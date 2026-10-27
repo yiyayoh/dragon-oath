@@ -9,7 +9,7 @@
 | 阶段 | 内容 | 状态 |
 | --- | --- | --- |
 | 第一阶段 | 角色创建、AI 说书人、d20 检定、存档、序幕《暴风之夜》 | ✅ 完成 |
-| 第二阶段 | 第一幕《灰帆港》、区域制回合战斗 ✅、营地夜谈、立绘对话框 | 进行中 |
+| 第二阶段 | 第一幕《灰帆港》（场景骨架 ✅，Boss 机制和个人任务待做）、区域制回合战斗 ✅、营地夜谈 ✅、新同伴莉拉和奈雅 ✅ | 进行中 |
 | 第三阶段 | 第二、三幕、恋爱线、龙化系统、七种结局 | 计划中 |
 
 ## 文件
@@ -47,7 +47,7 @@
 | --- | --- |
 | `RACES` `CLASSES` `BACKGROUNDS` `SKILLS` | 角色创建数据。仿 BG3：选职业时 `classPreset()` 套用该职业的推荐属性（`CLASSES[x].base`，都是 27 点）；种族加值 +2/+1 由玩家自选（`draft.bonus`，默认放在 `CLASSES[x].prime` 两项），种族只决定特性；背景只给技能 |
 | `COMPANIONS` `PEOPLE` | 同伴角色卡与立绘 id |
-| `SCENES` `SCENE_ORDER` | 场景锚点：每场必然发生什么、何时推进到下一场 |
+| `SCENES` `nextAct()` | 场景锚点：每场必然发生什么、能推进到哪些场景；一幕结束后的卡片按钮进入下一幕 |
 | `FLAG_KEYS` | 允许写入的世界状态标记及取值 |
 | `SYSTEM` `buildPrompt()` | 说书人提示词与每轮上下文 |
 | `rulesBlock()` | 玩家在设置里写的“给说书人的额外要求”：通用要求存在浏览器（`pref.rules`），这一局的要求跟着存档（`state.rules`），排在系统规则之后，只管怎么讲故事，不能改规则、数值、输出格式和尺度 |
@@ -65,7 +65,19 @@
 | `enterCamp()` `talkTo()` `restNight()` `renderCamp()` | 营地：扎营、找人夜谈、睡觉长休与共度一夜、营地面板 |
 | `newGame()` `save()` `diskInit()` | 存档：浏览器 localStorage 一份，本机服务上再写硬盘（`/__save/*` 接口，见 `local-server.mjs`）；导出 / 导入 |
 
-加新的一幕：在 `SCENES` 里追加场景、在 `FLAG_KEYS` 里登记新标记、在 `COMPANIONS` 里加新同伴，然后把上一幕最后一场的 `next` 指向新场景。需要升级的场景写上 `level: n`（进入这一场时全队升到 n 级）。
+加新的一幕：在 `SCENES` 里追加场景（写 `act: n`）、在 `FLAG_KEYS` 里登记新标记、在 `COMPANIONS` 里加新同伴（写 `act: n`，之前的幕里不出现），在 `ACT_NAMES` `END_TEXT` 里补上幕名和结束语，再给上一幕最后一场写 `after: "新场景 id"`。需要升级的场景写上 `level: n`（进入这一场时全队升到 n 级）。
+
+### 场景怎么组织
+
+- 场景字段：`next` 可以是一个 id，也可以是数组（多个出口）；`gate: { 场景id: () => 条件 }` 控制某个出口什么时候能走；说书人只能 `advance` 到 `next` 里、且满足条件的场景。
+- `recruit`：这一场可以招募谁（序幕的袭击和余烬是四位老同伴，第一幕开场和港口是米拉/奈雅，废塔是莉拉，码头可以把序幕离开的维克斯劝回来）。`meet`：这一场在场但还没入队的同伴。`rescue: true`：序幕被交给教团的同伴关在这里，可以救回。
+- `alone: true`：没有同伴在场（梦境）；`dream: true`：可以改赫斯提雅的信任。`endAct: n`：这一场 `scene_end` 后第 n 幕结束，弹出结束卡片；`after` 是卡片上“进入下一幕”去的场景。
+- 第一幕是**枢纽 + 地点**：`act1_1` 开场 → `act1_hub`（灰帆港，在醉龙酒馆睡觉不耗补给）⇄ 五个地点（`loc1: true`，任意顺序、可以反复去）→ 拿到航海图和船（`act1.chart`、`act1.ship`）后才能去 `act1_lighthouse` → `act1_dawn` 结束。
+- 反复去的场景每次单独写一章纪要（记录条目带 `v`，章节标题写“（第 2 次）”）。
+- 第一幕等级：每走完两个地点升一级（2 → 3 → 4），灯塔之夜 5 级（`levelNeed()`）。
+- 维克斯的债：进入第一幕时记下 `state.act1Day`，睡满 3 晚还没写 `act1.vex_debt` 或 `act1.lise`，代码自动写 `act1.lise=sold`、维克斯 −30。
+- 奈雅：身份暴露前叫“米拉”、用 `naia_disguise.webp`；说书人写 `act1.naia_exposed=true` 后叫“奈雅”、用 `naia_true.webp`。`act1.naia_fate` 由代码执行：`killed` 死亡、`imprisoned` 离队、`recruited` 留下。
+- NPC 说明在 `NPC_NOTES`，按幕给说书人（第一幕加了老鳗、总督、萨丝、千面母）。
 
 ### 等级怎么运作
 
@@ -87,7 +99,7 @@
 - **同伴之间**：`state.rel` 记两两关系值，说书人用 `relation` 字段调整（每次最多 ±10），提示词里会带上。
 - **亲密的尺度**写在 `SYSTEM` 里：随关系阶段递进，双方都可以拒绝，每个同伴的方式不同。
 
-加新的战斗：在 `ENCOUNTERS` 里写区域（`adj` 是相邻区域下标，`tags` 可用 `cover` 掩体、`high` 高处、`obscured` 遮蔽、`exit` 出口）、敌人和回合事件，新敌人加进 `ENEMIES`，再把遭遇 id 写进对应场景的 `encounters`。说书人只能开启当前场景登记过的遭遇。
+加新的战斗：在 `ENCOUNTERS` 里写区域（`adj` 是相邻区域下标，`tags` 可用 `cover` 掩体、`high` 高处、`obscured` 遮蔽、`exit` 出口）、敌人和回合事件（`spawn` 增援、`blast` 炸到所有人、`unless` 写在 `stops` 里的机关，即兴行动用 `"stop"` 阻止后就不触发，例如灯塔的导火线），新敌人加进 `ENEMIES`，再把遭遇 id 写进对应场景的 `encounters`。说书人只能开启当前场景登记过的遭遇。
 
 ### 战斗怎么运作
 
@@ -110,5 +122,5 @@
 
 阈值在 `RECENT_CHARS` `SUM_AT` `SUM_KEEP` `CHAPTER_SRC` `RECALL_CHARS` `RECALL_MIN` 几个常量里，调大能记得更多原文，但每轮更费额度。往事每章约 400 字，三幕全部写完大约 1 万字；到时可以考虑把一整幕的纪要再合并成一段。
 
-角色 id：`selene` `vex` `kassian` `borin` `lyra` `naia` `martha` `tom` `hooded` `cultist` `hestia`  
+角色 id：`selene` `vex` `kassian` `borin` `lyra` `naia` `martha` `tom` `hooded` `cultist` `hestia` `eel` `governor` `sath` `facemother`  
 表情：`neutral` `smile` `angry` `sad` `tender`
