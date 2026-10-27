@@ -86,6 +86,9 @@ h1, h2, h3 { text-wrap: balance; }
 .pb-val .m { color: var(--brass); font-size: 13px; }
 .pb-val .r { color: var(--muted); font-size: 12px; }
 .pb-val button { width: 28px; height: 28px; border-radius: 50%; padding: 0; background: var(--oak-2); border: 1px solid var(--line); }
+.pb-bonus { display: flex; gap: 4px; }
+.pb-bonus .btn { padding: 0 8px; font-size: 12px; color: var(--muted); }
+.pb-bonus .btn[aria-pressed="true"] { border-color: var(--brass); color: var(--brass); }
 .points { font-variant-numeric: tabular-nums; }
 .points b { color: var(--brass); }
 .summary { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
@@ -333,25 +336,27 @@ const SKILLS = {
   animal: ["驯兽", "wis"], insight: ["洞悉", "wis"], medicine: ["医疗", "wis"], perception: ["察觉", "wis"], survival: ["求生", "wis"],
   deception: ["欺瞒", "cha"], intimidation: ["威吓", "cha"], performance: ["表演", "cha"], persuasion: ["说服", "cha"],
 };
+// 种族加值像 BG3 一样自选：+2 和 +1 分给任意两项属性（默认放在职业最需要的两项上），种族只决定特性
 const RACES = {
-  human: { name: "人类", bonus: { str: 1, dex: 1, con: 1, int: 1, wis: 1, cha: 1 }, trait: "全属性 +1，适应力强" },
-  elf: { name: "精灵", bonus: { dex: 2, wis: 1 }, trait: "黑暗视觉；察觉熟练" , skill: "perception" },
-  half_elf: { name: "半精灵", bonus: { cha: 2, dex: 1 }, trait: "黑暗视觉；左右逢源" },
-  dwarf: { name: "矮人", bonus: { con: 2, str: 1 }, trait: "黑暗视觉；抗毒" },
-  halfling: { name: "半身人", bonus: { dex: 2, cha: 1 }, trait: "幸运：掷出 1 可重掷一次" },
-  tiefling: { name: "提夫林", bonus: { cha: 2, int: 1 }, trait: "黑暗视觉；火焰抗性" },
-  half_orc: { name: "半兽人", bonus: { str: 2, con: 1 }, trait: "坚韧：每日一次倒地时保留 1 生命；威吓熟练", skill: "intimidation" },
-  dragonborn: { name: "龙裔", bonus: { str: 2, cha: 1 }, trait: "龙息；印记与你格外共鸣" },
+  human: { name: "人类", trait: "多才多艺：额外掌握说服", skill: "persuasion" },
+  elf: { name: "精灵", trait: "黑暗视觉；察觉熟练", skill: "perception" },
+  half_elf: { name: "半精灵", trait: "黑暗视觉；左右逢源" },
+  dwarf: { name: "矮人", trait: "黑暗视觉；抗毒" },
+  halfling: { name: "半身人", trait: "幸运：掷出 1 可重掷一次" },
+  tiefling: { name: "提夫林", trait: "黑暗视觉；火焰抗性" },
+  half_orc: { name: "半兽人", trait: "坚韧：每日一次倒地时保留 1 生命；威吓熟练", skill: "intimidation" },
+  dragonborn: { name: "龙裔", trait: "龙息；印记与你格外共鸣" },
 };
+// base：BG3 式推荐属性（都正好 27 点）；prime：种族 +2/+1 默认给的两项
 const CLASSES = {
-  fighter: { name: "战士", hd: 10, ac: [16, false], atk: ["str", "dex"], skills: ["athletics", "intimidation"], items: ["长剑", "链甲", "盾牌", "治疗药水"], desc: "可靠的前线，武器与盔甲专家" },
-  ranger: { name: "游荡者", hd: 10, ac: [13, true], atk: ["dex"], skills: ["survival", "perception", "stealth"], items: ["长弓", "双短剑", "皮甲", "猎人斗篷"], desc: "荒野猎手，远程与追踪" },
-  rogue: { name: "盗贼", hd: 8, ac: [11, true], atk: ["dex"], skills: ["stealth", "sleight", "deception", "acrobatics"], items: ["匕首", "短弓", "撬锁工具", "灰斗篷"], desc: "潜行、开锁、致命偷袭" },
-  wizard: { name: "法师", hd: 6, ac: [13, true], atk: ["int"], skills: ["arcana", "history", "investigation"], items: ["法杖", "法术书", "墨水与羽毛笔", "火绒盒"], desc: "博学的施法者，法术最多" },
-  warlock: { name: "术士", hd: 8, ac: [11, true], atk: ["cha"], skills: ["arcana", "deception"], items: ["契约护符", "匕首", "黑皮手套"], desc: "与神秘存在立约换取力量" },
-  cleric: { name: "牧师", hd: 8, ac: [16, false], atk: ["wis"], skills: ["medicine", "religion", "insight"], items: ["钉头锤", "鳞甲", "圣徽", "治疗药水"], desc: "神的代行者，治疗与庇护" },
-  paladin: { name: "圣武士", hd: 10, ac: [18, false], atk: ["str"], skills: ["athletics", "religion", "persuasion"], items: ["长剑", "板甲（旧）", "盾牌", "誓言徽章"], desc: "以誓言为力量的圣骑士" },
-  bard: { name: "吟游诗人", hd: 8, ac: [11, true], atk: ["cha"], skills: ["performance", "persuasion", "insight"], items: ["鲁特琴", "细剑", "旅行斗篷"], desc: "用言语与音乐改变战局" },
+  fighter: { name: "战士", hd: 10, ac: [16, false], atk: ["str", "dex"], skills: ["athletics", "intimidation"], items: ["长剑", "链甲", "盾牌", "治疗药水"], base: { str: 15, dex: 13, con: 14, int: 8, wis: 12, cha: 10 }, prime: ["str", "con"], desc: "可靠的前线，武器与盔甲专家" },
+  ranger: { name: "游荡者", hd: 10, ac: [13, true], atk: ["dex"], skills: ["survival", "perception", "stealth"], items: ["长弓", "双短剑", "皮甲", "猎人斗篷"], base: { str: 10, dex: 15, con: 14, int: 10, wis: 14, cha: 8 }, prime: ["dex", "wis"], desc: "荒野猎手，远程与追踪" },
+  rogue: { name: "盗贼", hd: 8, ac: [11, true], atk: ["dex"], skills: ["stealth", "sleight", "deception", "acrobatics"], items: ["匕首", "短弓", "撬锁工具", "灰斗篷"], base: { str: 8, dex: 15, con: 14, int: 12, wis: 10, cha: 13 }, prime: ["dex", "con"], desc: "潜行、开锁、致命偷袭" },
+  wizard: { name: "法师", hd: 6, ac: [13, true], atk: ["int"], skills: ["arcana", "history", "investigation"], items: ["法杖", "法术书", "墨水与羽毛笔", "火绒盒"], base: { str: 8, dex: 14, con: 14, int: 15, wis: 12, cha: 8 }, prime: ["int", "con"], desc: "博学的施法者，法术最多" },
+  warlock: { name: "术士", hd: 8, ac: [11, true], atk: ["cha"], skills: ["arcana", "deception"], items: ["契约护符", "匕首", "黑皮手套"], base: { str: 8, dex: 14, con: 14, int: 10, wis: 10, cha: 15 }, prime: ["cha", "con"], desc: "与神秘存在立约换取力量" },
+  cleric: { name: "牧师", hd: 8, ac: [16, false], atk: ["wis"], skills: ["medicine", "religion", "insight"], items: ["钉头锤", "鳞甲", "圣徽", "治疗药水"], base: { str: 14, dex: 10, con: 14, int: 8, wis: 15, cha: 10 }, prime: ["wis", "con"], desc: "神的代行者，治疗与庇护" },
+  paladin: { name: "圣武士", hd: 10, ac: [18, false], atk: ["str"], skills: ["athletics", "religion", "persuasion"], items: ["长剑", "板甲（旧）", "盾牌", "誓言徽章"], base: { str: 15, dex: 10, con: 14, int: 8, wis: 10, cha: 14 }, prime: ["str", "cha"], desc: "以誓言为力量的圣骑士" },
+  bard: { name: "吟游诗人", hd: 8, ac: [11, true], atk: ["cha"], skills: ["performance", "persuasion", "insight"], items: ["鲁特琴", "细剑", "旅行斗篷"], base: { str: 8, dex: 14, con: 14, int: 10, wis: 10, cha: 15 }, prime: ["cha", "dex"], desc: "用言语与音乐改变战局" },
 };
 const BACKGROUNDS = {
   soldier: { name: "士兵", skills: ["athletics", "intimidation"], insp: "在危险中挺身保护同伴" },
@@ -593,12 +598,19 @@ try { const stored = localStorage.getItem(PREF); prefSaved = stored !== null; pr
 let chatgpt = { known: false, checking: false, available: false, ready: false, authenticated: false, model: null, error: null };
 
 function freshDraft() {
-  return { name: "艾林", gender: "女", appearance: "黑色短发，左眼下有一颗泪痣，穿旧皮夹克，总是带着漫不经心的笑。", race: "half_elf", cls: "rogue", bg: "urchin",
-    base: { str: 8, dex: 15, con: 13, int: 12, wis: 10, cha: 14 }, portraitData: null }; // 正好 27 点
+  const d = { name: "艾林", gender: "女", appearance: "黑色短发，左眼下有一颗泪痣，穿旧皮夹克，总是带着漫不经心的笑。", race: "half_elf", cls: "rogue", bg: "urchin", portraitData: null };
+  return classPreset(d);
+}
+// 选职业时像 BG3 一样套用推荐属性，种族 +2/+1 默认放在这个职业最需要的两项
+function classPreset(d) {
+  const c = CLASSES[d.cls];
+  d.base = { ...c.base };
+  d.bonus = { two: c.prime[0], one: c.prime[1] };
+  return d;
 }
 function finalAbilities(d) {
-  const b = RACES[d.race].bonus, out = {};
-  for (const k of AB_KEYS) out[k] = d.base[k] + (b[k] || 0);
+  const b = d.bonus || { two: CLASSES[d.cls].prime[0], one: CLASSES[d.cls].prime[1] }, out = {};
+  for (const k of AB_KEYS) out[k] = d.base[k] + (b.two === k ? 2 : 0) + (b.one === k ? 1 : 0);
   return out;
 }
 function pointsUsed(d) { return AB_KEYS.reduce((s, k) => s + PB_COST[d.base[k]], 0); }
@@ -2252,21 +2264,28 @@ function renderCreate() {
     for (const [k, o] of Object.entries(dict)) {
       const b = el("button", "chip"); b.type = "button"; b.setAttribute("aria-pressed", String(d[key] === k));
       b.append(el("b", null, o.name), el("small", null, sub(o)));
-      b.onclick = () => { d[key] = k; renderCreate(); };
+      b.onclick = () => {
+        d[key] = k;
+        if (key === "cls") { classPreset(d); toast(`已按${o.name}的推荐分配属性，可以再自己调整`); }
+        renderCreate();
+      };
       g.append(b);
     }
     s.append(g); return s;
   };
-  left.append(pick("种族", RACES, "race", o => Object.entries(o.bonus).length === 6 ? o.trait : Object.entries(o.bonus).map(([a, n]) => AB[a] + "+" + n).join(" ") + " · " + o.trait));
+  left.append(pick("种族", RACES, "race", o => o.trait + " · 属性 +2/+1 自选"));
   left.append(pick("职业", CLASSES, "cls", o => `生命骰 d${o.hd} · ${o.desc}`));
   left.append(pick("背景", BACKGROUNDS, "bg", o => o.skills.map(k => SKILLS[k][0]).join("、") + " · 灵感：" + o.insp));
 
   // point buy
   const s4 = el("div", "step");
   const used = pointsUsed(d);
-  const head = el("div", "row"); head.append(el("div", "label", "属性（27 点购买，8–15）"));
+  const head = el("div", "row"); head.append(el("div", "label", "属性（27 点购买，8–15；种族 +2 和 +1 自选）"));
   const pts = el("span", "points"); pts.append("剩余点数 "); pts.append(el("b", null, String(27 - used))); head.append(pts);
+  const reset = el("button", "btn small", `恢复${CLASSES[d.cls].name}的推荐`); reset.type = "button"; reset.onclick = () => { classPreset(d); renderCreate(); };
+  head.append(reset);
   s4.append(head);
+  if (!d.bonus) d.bonus = { two: CLASSES[d.cls].prime[0], one: CLASSES[d.cls].prime[1] }; // 旧草稿没有这个字段
   const grid = el("div", "pb"); const fin = finalAbilities(d);
   for (const k of AB_KEYS) {
     const c = el("div", "pb-cell");
@@ -2278,10 +2297,18 @@ function renderCreate() {
     plus.disabled = d.base[k] >= 15 || PB_COST[d.base[k] + 1] - PB_COST[d.base[k]] > 27 - used;
     minus.onclick = () => { d.base[k]--; renderCreate(); };
     plus.onclick = () => { d.base[k]++; renderCreate(); };
-    const bonus = RACES[d.race].bonus[k] || 0;
+    const bonus = d.bonus.two === k ? 2 : d.bonus.one === k ? 1 : 0;
     val.append(minus, el("span", "n", String(fin[k])), plus, el("span", "m", sgn(mod(fin[k]))));
     if (bonus) val.append(el("span", "r", "种族+" + bonus));
-    c.append(val); grid.append(c);
+    // 种族加值放在哪一项：点 +2 / +1；放到另一个加值所在的属性上时两者互换
+    const pick2 = el("div", "pb-bonus");
+    for (const [slot, other, label] of [["two", "one", "+2"], ["one", "two", "+1"]]) {
+      const b = el("button", "btn small", label); b.type = "button"; b.setAttribute("aria-pressed", String(d.bonus[slot] === k));
+      b.setAttribute("aria-label", `把种族 ${label} 放在${AB[k]}`);
+      b.onclick = () => { if (d.bonus[other] === k) d.bonus[other] = d.bonus[slot]; d.bonus[slot] = k; renderCreate(); };
+      pick2.append(b);
+    }
+    c.append(val, pick2); grid.append(c);
   }
   s4.append(grid);
   left.append(s4);

@@ -45,7 +45,7 @@
 
 | 代码位置 | 作用 |
 | --- | --- |
-| `RACES` `CLASSES` `BACKGROUNDS` `SKILLS` | 角色创建数据 |
+| `RACES` `CLASSES` `BACKGROUNDS` `SKILLS` | 角色创建数据。仿 BG3：选职业时 `classPreset()` 套用该职业的推荐属性（`CLASSES[x].base`，都是 27 点）；种族加值 +2/+1 由玩家自选（`draft.bonus`，默认放在 `CLASSES[x].prime` 两项），种族只决定特性；背景只给技能 |
 | `COMPANIONS` `PEOPLE` | 同伴角色卡与立绘 id |
 | `SCENES` `SCENE_ORDER` | 场景锚点：每场必然发生什么、何时推进到下一场 |
 | `FLAG_KEYS` | 允许写入的世界状态标记及取值 |
