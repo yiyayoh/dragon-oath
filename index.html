@@ -445,8 +445,8 @@ const SCENES = {
   },
   prologue_5: {
     title: "第一个梦", loc: "梦境 · 银雾", bg: "linear-gradient(160deg,#8fa2b6,#2f3a47 55%,#11161c)",
-    anchor: "玩家入睡。银色雾中，赫斯提雅入梦（银发老妇人，脸颊有淡淡龙鳞；也可显现为巨大的垂死银龙）。她温柔地说：“我选中了你们。去誓约神殿。”她回避“代价”的问题（洞悉 DC 16 可察觉她有所隐瞒，但看不出是什么）。根据玩家回应（信任/质问/拒绝）给 hestia_trust 变化（−20~+20），并写 flags prologue.hestia_answer = trust|question|refuse。对话 1~3 轮后，玩家醒来，晨光照进酒馆，把 scene_end 设为 true，序幕结束。",
-    next: null,
+    anchor: "玩家入睡。银色雾中，赫斯提雅入梦（银发老妇人，脸颊有淡淡龙鳞；也可显现为巨大的垂死银龙）。她温柔地说：“我选中了你们。去誓约神殿。”她回避“代价”的问题（洞悉 DC 16 可察觉她有所隐瞒，但看不出是什么）。根据玩家回应（信任/质问/拒绝）给 hestia_trust 变化（−20~+20），并写 flags prologue.hestia_answer = trust|question|refuse。对话 1~3 轮后，玩家醒来，晨光照进酒馆，把 scene_end 设为 true，序幕结束。玩家进入这一场时印记觉醒，全队已升到 2 级（程序处理），可以在梦里让玩家感到掌心的印记在发热、力量在苏醒。",
+    next: null, level: 2,
   },
 };
 const SCENE_ORDER = ["prologue_1", "prologue_2", "prologue_3", "prologue_4", "prologue_5"];
@@ -461,13 +461,13 @@ const FLAG_KEYS = {
 /* 战斗数据。武器 d 是伤害骰面数，cantrip 戏法不加属性伤害；ab 决定命中和伤害用的属性。 */
 const W = (n, d, ab, o) => Object.assign({ n, d, ab }, o || {});
 const KITS = {
-  fighter: { weapons: [W("长剑", 8, "str")], feat: "second_wind" },
-  ranger: { weapons: [W("双短剑", 6, "dex"), W("长弓", 8, "dex", { ranged: true })], feat: "mark" },
+  fighter: { weapons: [W("长剑", 8, "str")], feat: "second_wind", extra: true },
+  ranger: { weapons: [W("双短剑", 6, "dex"), W("长弓", 8, "dex", { ranged: true })], feat: "mark", extra: true },
   rogue: { weapons: [W("匕首", 4, "dex"), W("短弓", 6, "dex", { ranged: true })], feat: "sneak" },
-  wizard: { weapons: [W("法杖", 6, "str"), W("火焰箭", 10, "int", { ranged: true, cantrip: true })], feat: "missile" },
+  wizard: { weapons: [W("法杖", 6, "str"), W("火焰箭", 10, "int", { ranged: true, cantrip: true })], feat: "missile", fireball: true },
   warlock: { weapons: [W("匕首", 4, "dex"), W("魔能爆", 10, "cha", { ranged: true, cantrip: true })], feat: "hex" },
   cleric: { weapons: [W("钉头锤", 6, "str"), W("圣火", 8, "wis", { ranged: true, cantrip: true })], feat: "heal", healAb: "wis", uses: 2 },
-  paladin: { weapons: [W("长剑", 8, "str")], feat: "smite" },
+  paladin: { weapons: [W("长剑", 8, "str")], feat: "smite", extra: true },
   bard: { weapons: [W("细剑", 8, "dex"), W("恶言相加", 4, "cha", { ranged: true, cantrip: true, mock: true })], feat: "heal", healAb: "cha", uses: 1 },
 };
 // 职业特技的次数按“每场战斗”计，等有了短休/长休再改成按休息恢复
@@ -475,11 +475,24 @@ const FEATS = {
   second_wind: { name: "回气", uses: 1, desc: "附赠动作：恢复 1d10+等级 生命" },
   mark: { name: "猎人印记", uses: 1, desc: "附赠动作：标记一个敌人，命中它时额外 1d6" },
   hex: { name: "妖术", uses: 1, desc: "附赠动作：诅咒一个敌人，命中它时额外 1d6" },
-  sneak: { name: "偷袭", uses: 0, desc: "每回合一次：有优势，或有同伴与目标同区时，命中额外 1d6；附赠动作“灵巧移动”多走一步且不引发借机攻击" },
+  sneak: { name: "偷袭", uses: 0, desc: "每回合一次：有优势，或有同伴与目标同区时，命中额外伤害（每 2 级 1d6）；附赠动作“灵巧移动”多走一步且不引发借机攻击" },
   missile: { name: "魔法飞弹", uses: 2, desc: "动作：必中，3d4+3 力场伤害，可打任意区域" },
   heal: { name: "治疗之语", uses: 2, desc: "附赠动作：远程治疗 1d4+调整值，能救醒倒地的同伴" },
   smite: { name: "至圣斩", uses: 2, desc: "近战命中时额外 2d8 光耀伤害" },
 };
+// 随等级成长：戏法伤害骰（5 级翻倍）、偷袭骰（每 2 级 +1d6）、特技次数、额外攻击（5 级）、火球术（法师 5 级）
+const cantripDice = lvl => lvl >= 11 ? 3 : lvl >= 5 ? 2 : 1;
+function featUses(kit, lvl) {
+  const base = kit.uses ?? FEATS[kit.feat].uses;
+  if (!base) return 0;
+  return ["missile", "heal", "smite"].includes(kit.feat) ? base + Math.floor((lvl - 1) / 2) : base + (lvl >= 5 ? 1 : 0);
+}
+function growth(kitKey, lvl) {
+  const k = KITS[kitKey];
+  return { pb: profBonus(lvl), cantrip: k.weapons.some(w => w.cantrip) ? cantripDice(lvl) : 0, sneak: k.feat === "sneak" ? Math.ceil(lvl / 2) : 0,
+    uses: featUses(k, lvl), extra: !!k.extra && lvl >= 5, fireball: !!k.fireball && lvl >= 5 };
+}
+const FIREBALL = { name: "火球术", dice: 8, desc: "动作，每场一次：炸向一个区域，里面的所有人（包括同伴）受 8d6 火焰伤害，敏捷豁免成功减半" };
 // 数值取自设定集“普通敌人”表；atk：cnt d 面骰 + plus，命中加值 hit
 const ENEMIES = {
   cultist: { name: "狂信徒", pid: "cultist", hp: 9, ac: 12, dex: 1, atk: { n: "弯刀", cnt: 1, d: 6, plus: 2, hit: 4 }, explode: true },
@@ -668,10 +681,10 @@ function tidyLog(s) {
   for (const e of s.log) { if (e.k === "chapter" && byTitle[e.t]) cur = byTitle[e.t]; if (!e.s) e.s = cur; }
 }
 function loadState(s) {
-  state = s; tidyLog(state);
+  state = s; tidyLog(state); catchUpLevel();
   lastAction = null; pick = null; cbGen++;
   closeModal(); render();
-  if (state.pendingCheck) openDice(); else if (state.combat) advanceCombat();
+  if (state.pendingCheck) openDice(); else if (state.combat) advanceCombat(); else if (state.levelNote) openLevelUp();
 }
 // 开页时和硬盘对一次：硬盘更新（换了浏览器、清过缓存）就换成硬盘的；浏览器更新就补写到硬盘
 async function diskInit() {
@@ -732,12 +745,19 @@ function present() {
 }
 function party() { return Object.keys(COMPANIONS).filter(id => state.companions[id].recruited && !state.companions[id].taken && state.companions[id].alive); }
 
+/* 等级：里程碑制，不攒经验。同伴始终和玩家同级（state.player.level 就是全队等级）。 */
+const partyLevel = () => state?.player?.level || 1;
+const profBonus = lvl => 2 + Math.floor((Math.max(1, lvl) - 1) / 4); // 1–4 级 +2，5–8 级 +3，9–12 级 +4
+const ASI_LEVELS = [4, 8, 12];
+// 同伴的属性：属性提升后存在 state.companions[id].ab，没有就用角色卡原值
+const abOf = who => who === "player" ? state.player.abilities : state.companions[who]?.ab || COMPANIONS[who].ab;
+
 function bonusFor(who, key) {
   // who: "player" | companion id ; key: skill | ability | "attack" | "save_xxx"
   const isP = who === "player";
-  const ab = isP ? state.player.abilities : COMPANIONS[who].ab;
+  const ab = abOf(who);
   const profs = isP ? state.player.profs : COMPANIONS[who].prof;
-  const pb = 2;
+  const pb = profBonus(partyLevel());
   if (key === "attack") {
     const atk = isP ? CLASSES[state.player.cls].atk : [COMPANIONS[who].atk];
     const best = Math.max(...atk.map(a => mod(ab[a])));
@@ -752,6 +772,61 @@ function bonusFor(who, key) {
   const m = mod(ab[a]); const p = profs.includes(key) ? pb : 0;
   const parts = [[AB[a], m]]; if (p) parts.push(["熟练", p]);
   return { total: m + p, parts, label: name };
+}
+const kitOf = who => who === "player" ? state.player.cls : COMPANIONS[who].kit;
+// 每升一级的生命：生命骰的一半 + 1 + 体质调整值（取平均值，不掷骰），至少 1
+const hpGain = who => Math.max(1, Math.floor(CLASSES[kitOf(who)].hd / 2) + 1 + mod(abOf(who).con));
+// 升到 to 级：全队一起升，满血；4/8/12 级玩家自己分配属性提升，同伴自动给主属性 +2
+function levelUp(to) {
+  const p = state.player, from = p.level || 1;
+  to = clamp(Math.round(to), 1, 12);
+  if (to <= from) return null;
+  const before = growth(p.cls, from), hpBefore = p.hpMax;
+  for (let L = from + 1; L <= to; L++) {
+    p.hpMax += hpGain("player");
+    for (const id of Object.keys(COMPANIONS)) {
+      const c = state.companions[id];
+      c.hpMax += hpGain(id);
+      if (ASI_LEVELS.includes(L)) { const a = { ...abOf(id) }, k = COMPANIONS[id].atk; a[k] = Math.min(20, a[k] + 2); c.ab = a; }
+    }
+    if (ASI_LEVELS.includes(L)) state.pendingAsi = (state.pendingAsi || 0) + 1;
+  }
+  p.level = to;
+  p.hp = p.hpMax;
+  for (const c of Object.values(state.companions)) if (c.alive) c.hp = c.hpMax;
+  const after = growth(p.cls, to), lines = [`生命上限 +${p.hpMax - hpBefore}（现在 ${p.hpMax}），全队恢复满血`];
+  if (after.pb > before.pb) lines.push(`熟练加值变为 +${after.pb}：熟练的检定和所有攻击更准了`);
+  if (after.sneak > before.sneak) lines.push(`偷袭伤害提升到 ${after.sneak}d6`);
+  if (after.cantrip > before.cantrip) lines.push(`戏法伤害骰变为 ${after.cantrip} 个`);
+  if (after.uses > before.uses) lines.push(`${FEATS[KITS[p.cls].feat].name}每场战斗可用 ${after.uses} 次`);
+  if (after.extra && !before.extra) lines.push("额外攻击：一个攻击动作可以连续攻击两次");
+  if (after.fireball && !before.fireball) lines.push("学会火球术：" + FIREBALL.desc);
+  if (state.pendingAsi) lines.push("获得属性提升：给一项属性 +2，或两项各 +1");
+  lines.push("同伴们也一起成长了");
+  push("chapter", `升到 ${to} 级`);
+  for (const l of lines) push("sys", l, { cls: "appr-up" });
+  toast(`升到 ${to} 级！`, "up");
+  state.levelNote = { to, lines };
+  return lines;
+}
+// 旧存档：已经走过的场景要求的等级还没达到，就补上
+function catchUpLevel() {
+  if (!state || state.phase !== "play") return;
+  const need = Math.max(1, ...[...new Set(state.log.map(e => e.s))].map(id => SCENES[id]?.level || 1));
+  if (need > partyLevel()) levelUp(need);
+}
+// 属性提升：choice 形如 { str: 2 } 或 { dex: 1, cha: 1 }，总共 2 点，单项最高 20
+function applyAsi(choice) {
+  const p = state.player, pts = Object.entries(choice).filter(([, v]) => v > 0);
+  if (!state.pendingAsi || pts.reduce((s, [, v]) => s + v, 0) !== 2 || pts.some(([k, v]) => !AB[k] || p.abilities[k] + v > 20)) return false;
+  const oldCon = mod(p.abilities.con), oldDex = mod(p.abilities.dex);
+  for (const [k, v] of pts) p.abilities[k] += v;
+  const dCon = mod(p.abilities.con) - oldCon; // 体质调整值变了，生命上限按等级补差
+  if (dCon) { p.hpMax += dCon * p.level; p.hp = clamp(p.hp + dCon * p.level, 1, p.hpMax); }
+  if (mod(p.abilities.dex) !== oldDex) p.ac = acOf(p.cls, mod(p.abilities.dex));
+  state.pendingAsi--;
+  push("sys", "属性提升：" + pts.map(([k, v]) => `${AB[k]} +${v}`).join("，"), { cls: "appr-up" });
+  return true;
 }
 function validCheckKey(k) { return k === "attack" || !!SKILLS[k] || !!AB[k] || (k.startsWith("save_") && !!AB[k.slice(5)]); }
 function whoName(who) { return who === "player" ? state.player.name : PEOPLE[who]?.name || who; }
@@ -796,7 +871,7 @@ const SYSTEM = `你是奇幻跑团游戏《醉龙酒馆：龙誓》的游戏主�
 
 function companionBrief(id) {
   const c = COMPANIONS[id], s = state.companions[id], p = PEOPLE[id];
-  return `· ${p.name}（id: ${id}，${c.race}${c.cls}）${s.recruited ? "【已加入队伍】" : "【尚未加入】"} 赞同度 ${s.approval}（${relLabel(s.approval)}），HP ${s.hp}/${s.hpMax}
+  return `· ${p.name}（id: ${id}，${c.race}${c.cls}，${partyLevel()} 级）${s.recruited ? "【已加入队伍】" : "【尚未加入】"} 赞同度 ${s.approval}（${relLabel(s.approval)}），HP ${s.hp}/${s.hpMax}
   性格：${c.personality}
   赞同：${c.likes}；反感：${c.dislikes}
   秘密：${c.secret}
@@ -812,7 +887,7 @@ function buildPrompt(action, mode) {
   return SYSTEM +
     `\n\n【当前场景】${state.scene}「${sc.title}」，地点：${state.location}\n场景锚点（GM 可见）：${sc.anchor}\n下一个场景 id：${sc.next || "无（本场景结束时 scene_end 为 true）"}` +
     (state.combat ? combatBrief(mode) : encs.length ? `\n可开战的遭遇：${encs.map(id => id + "（" + ENCOUNTERS[id].brief + "）").join("；")}` : "") +
-    `\n\n【玩家角色】${p.name}，${p.gender}，${RACES[p.race].name}${CLASSES[p.cls].name}，背景：${BACKGROUNDS[p.bg].name}（灵感条件：${BACKGROUNDS[p.bg].insp}）。外貌：${p.appearance}` +
+    `\n\n【玩家角色】${p.name}，${p.gender}，${p.level} 级${RACES[p.race].name}${CLASSES[p.cls].name}，背景：${BACKGROUNDS[p.bg].name}（灵感条件：${BACKGROUNDS[p.bg].insp}）。外貌：${p.appearance}` +
     `\n属性：${AB_KEYS.map(k => AB[k] + p.abilities[k] + "(" + sgn(mod(p.abilities[k])) + ")").join(" ")}；熟练技能：${profs}` +
     `\nHP ${p.hp}/${p.hpMax}，AC ${p.ac}，金币 ${p.gold}，灵感 ${p.inspiration}，龙化值 ${p.draconic}，物品：${p.inventory.join("、") || "无"}` +
     `\n\n【在场同伴】\n${pres.length ? pres.map(companionBrief).join("\n") : "（无，玩家独自一人）"}` +
@@ -1196,6 +1271,7 @@ async function gm(action, shown, mode) {
     if (state.pendingCombat && !state.combat) { const id = state.pendingCombat; state.pendingCombat = null; startCombat(id); }
     else if (mode === "improv" && state.combat && !state.pendingCheck && !lastAction) { state.combat.improv = false; state.combat.res.action = false; afterAct(); }
     if (state.pendingCheck) openDice();
+    else if (state.levelNote && !state.combat) openLevelUp();
     if (!state.combat && !lastAction) maybeSummarize(); // 后台整理记忆，不挡玩家
   }
 }
@@ -1314,6 +1390,7 @@ function applyGM(d, mode) {
     push("chapter", ns.title);
     if (!d.location) state.location = ns.loc;
     if (state.scene === "prologue_5") { const p = state.player; p.hp = p.hpMax; for (const c of Object.values(state.companions)) c.hp = c.hpMax; push("sys", "长休：全员生命恢复"); }
+    if (ns.level) levelUp(ns.level); // 里程碑升级写在场景数据里
     flashScene = !!ns.flash;
   }
   if (d.scene_end === true && state.scene === "prologue_5") { state.ended = true; state.pendingCheck = null; state.suggestions = []; }
@@ -1409,14 +1486,14 @@ function clog(t, cls) { push("cb", t, cls ? { cls } : null); state.combat?.feed.
 
 function partyUnit(ref, zone) {
   const isP = ref === "player";
-  const ab = isP ? state.player.abilities : COMPANIONS[ref].ab;
-  const kit = KITS[isP ? state.player.cls : COMPANIONS[ref].kit];
+  const ab = abOf(ref), kitKey = kitOf(ref), kit = KITS[kitKey], lvl = partyLevel(), g = growth(kitKey, lvl);
   const s = isP ? state.player : state.companions[ref];
   return {
     id: ref, ref, side: "party", pid: ref, name: whoName(ref), zone, dexMod: mod(ab.dex),
-    hp: Math.max(1, s.hp), max: s.hpMax, ac: isP ? s.ac : COMPANIONS[ref].ac, level: isP ? s.level : COMPANIONS[ref].lvl,
-    weapons: kit.weapons.map(w => ({ n: w.n, cnt: 1, d: w.d, plus: w.cantrip ? 0 : mod(ab[w.ab]), hit: mod(ab[w.ab]) + 2, ranged: !!w.ranged, mock: !!w.mock })),
-    feat: kit.feat, uses: kit.uses ?? FEATS[kit.feat].uses, healMod: kit.healAb ? mod(ab[kit.healAb]) : 0,
+    hp: Math.max(1, s.hp), max: s.hpMax, ac: isP ? s.ac : COMPANIONS[ref].ac, level: lvl,
+    weapons: kit.weapons.map(w => ({ n: w.n, cnt: w.cantrip ? g.cantrip : 1, d: w.d, plus: w.cantrip ? 0 : mod(ab[w.ab]), hit: mod(ab[w.ab]) + g.pb, ranged: !!w.ranged, mock: !!w.mock })),
+    feat: kit.feat, uses: g.uses, healMod: kit.healAb ? mod(ab[kit.healAb]) : 0,
+    sneakDice: g.sneak, extra: g.extra, fireball: g.fireball ? 1 : 0, spellDc: 8 + g.pb + mod(ab.int),
     cond: {}, saves: { s: 0, f: 0 },
   };
 }
@@ -1518,7 +1595,7 @@ function attack(a, t, w, o = {}) {
   if (!hit) { clog(head + (d === 1 ? "大失手" : "未命中")); return false; }
   const k = crit ? 2 : 1, extra = [];
   let n = roll(w.cnt * k, w.d) + w.plus;
-  const sneak = a.feat === "sneak" ? 1 : ENEMIES[a.type]?.sneak || 0;
+  const sneak = a.feat === "sneak" ? a.sneakDice || 1 : ENEMIES[a.type]?.sneak || 0;
   if (sneak && !a.sneakUsed && (m.adv || cbList().some(v => v !== a && v.side === a.side && ACTIVE(v) && v.zone === t.zone))) { a.sneakUsed = true; n += roll(sneak * k, 6); extra.push("偷袭"); }
   if (t.cond.marked === a.id) { n += roll(k, 6); extra.push(FEATS[a.feat]?.name || "印记"); }
   if (o.smite && !w.ranged && a.uses > 0) { a.uses--; n += roll(2 * k, 8); extra.push("至圣斩"); }
@@ -1611,13 +1688,16 @@ function allyTurn(u) {
     if (to != null) { c.res.move--; moveUnit(u, to); if (!ACTIVE(u)) return; }
   }
   const withMate = v => cbList().some(x => x !== u && x.side === "party" && ACTIVE(x) && x.zone === v.zone);
-  fightTurn(u, { smite: u.feat === "smite", prefer: u.feat === "sneak" ? withMate : null });
+  const o = { smite: u.feat === "smite", prefer: u.feat === "sneak" ? withMate : null };
+  fightTurn(u, o);
+  // 额外攻击（5 级战士、圣武士、游荡者）：还有敌人就再打一次
+  if (u.extra && ACTIVE(u) && cbList().some(v => hostile(u, v) && ACTIVE(v))) fightTurn(u, o);
 }
 
 // ---------- 回合循环 ----------
 function beginTurn(u) {
   const c = state.combat;
-  c.res = { action: true, bonus: true, move: 1, free: false };
+  c.res = { action: true, bonus: true, move: 1, free: false, attackOnly: false }; // attackOnly：额外攻击的第二击还没用
   u.reacted = false; u.sneakUsed = false; delete u.cond.dodge;
   for (const k of ["frightened", "restrained"]) if (u.cond[k] && --u.cond[k] <= 0) delete u.cond[k];
   const z = c.zones[u.zone];
@@ -1760,16 +1840,34 @@ function setPick(p) { pick = p; renderPlay(); }
 function validTarget(p, u) {
   const me = state.combat.units.player;
   if (p.kind === "heal") return u.side === "party" && !u.dead && !u.out;
+  if (p.kind === "fireball") return false; // 火球选的是区域
   if (!hostile(me, u) || !ACTIVE(u)) return false;
   return p.kind !== "attack" || me.weapons[p.w].ranged || u.zone === me.zone;
 }
 function doPick(u) {
   const p = pick;
   act((c, me) => {
-    if (p.kind === "attack") { c.res.action = false; attack(me, u, me.weapons[p.w], { smite: p.smite, spare: c.spare }); }
+    if (p.kind === "attack") {
+      // 额外攻击：第一击之后动作先留着，只能再攻击一次
+      if (me.extra && !c.res.attackOnly) c.res.attackOnly = true; else { c.res.action = false; c.res.attackOnly = false; }
+      attack(me, u, me.weapons[p.w], { smite: p.smite, spare: c.spare });
+    }
     else if (p.kind === "missile") { c.res.action = false; me.uses--; const n = roll(3, 4) + 3, r = hurt(u, n); clog(`${me.name} 射出三枚魔法飞弹，${u.name} 受到 ${n} 点力场伤害` + (r ? "。" + r : ""), "hit"); }
     else if (p.kind === "mark") { c.res.bonus = false; me.uses--; u.cond.marked = me.id; clog(`${me.name} 对 ${u.name} 施加了${FEATS[me.feat].name}`); }
     else if (p.kind === "heal") { c.res.bonus = false; me.uses--; clog(`${me.name} 念出治疗之语：` + heal(u, Math.max(1, roll(1, 4) + me.healMod)), "up"); }
+  });
+}
+function castFireball(zi) {
+  act((c, me) => {
+    c.res.action = false; me.fireball--;
+    const n = roll(FIREBALL.dice, 6), z = c.zones[zi], hit = [];
+    for (const v of cbList()) {
+      if (v.zone !== zi || v.dead || v.out) continue;
+      const save = rollD20() + (v.dexMod || 0) >= me.spellDc, dmg = save ? Math.floor(n / 2) : n;
+      const r = hurt(v, dmg, { fire: true });
+      hit.push(`${v.name} ${dmg}${save ? "（闪开一半）" : ""}${r ? "，" + r : ""}`);
+    }
+    clog(`${me.name} 把一团火球砸进${z.n}，${n} 点火焰伤害（豁免 DC ${me.spellDc}）` + (hit.length ? "：" + hit.join("；") : "，但那里空无一人"), "crit");
   });
 }
 function playerEnd() { if (!myTurn()) return; pick = null; nextTurn(); advanceCombat(); }
@@ -1809,29 +1907,34 @@ function renderCombat(box) {
     if (turn && !pick && r.move > 0 && !me.cond.prone && !me.cond.restrained && c.zones[me.zone].adj.includes(zi)) {
       const b = el("button", "btn small", "移动到这里"); b.type = "button"; b.onclick = () => act((c, me) => { c.res.move--; moveUnit(me, zi, c.res.free); }); zb.append(b);
     }
+    if (turn && pick?.kind === "fireball") { const b = el("button", "btn small gold", "火球砸向这里"); b.type = "button"; b.onclick = () => castFireball(zi); zb.append(b); }
     zs.append(zb);
   });
   wrap.append(zs);
 
   if (turn) {
     const res = el("div", "cb-res");
-    res.append(el("span", r.action ? "on" : "off", "动作"), el("span", r.bonus ? "on" : "off", "附赠动作"), el("span", r.move > 0 ? "on" : "off", "移动" + (r.move > 1 ? " ×" + r.move : "")));
+    res.append(el("span", r.action ? "on" : "off", r.attackOnly ? "动作（还能再攻击一次）" : "动作"), el("span", r.bonus ? "on" : "off", "附赠动作"), el("span", r.move > 0 ? "on" : "off", "移动" + (r.move > 1 ? " ×" + r.move : "")));
     if (FEATS[me.feat]?.uses) res.append(el("span", "label", `${FEATS[me.feat].name} 剩 ${me.uses}`));
+    if (me.fireball) res.append(el("span", "label", `火球术 剩 ${me.fireball}`));
     wrap.append(res);
   }
   const acts = el("div", "cb-acts");
   const add = (label, fn, cls, title) => { const b = el("button", "btn small" + (cls ? " " + cls : ""), label); b.type = "button"; b.onclick = fn; if (title) b.title = title; acts.append(b); return b; };
   if (pick) {
-    acts.append(el("span", "label", `${pick.label}：点一个高亮的目标`));
+    acts.append(el("span", "label", pick.kind === "fireball" ? "火球术：点一个区域里的“火球砸向这里”（同伴也会被烧到）" : `${pick.label}：点一个高亮的目标`));
     add("取消", () => setPick(null));
   } else if (turn) {
     const feat = FEATS[me.feat];
     if (r.action) {
       me.weapons.forEach((w, i) => {
-        add(`${w.ranged ? "远程" : "近战"} · ${w.n}`, () => setPick({ kind: "attack", w: i, label: w.n }), null, `命中 ${sgn(w.hit)}，伤害 1d${w.d}${w.plus ? sgn(w.plus) : ""}`);
+        add(`${r.attackOnly ? "再攻击" : w.ranged ? "远程" : "近战"} · ${w.n}`, () => setPick({ kind: "attack", w: i, label: w.n }), null, `命中 ${sgn(w.hit)}，伤害 ${w.cnt}d${w.d}${w.plus ? sgn(w.plus) : ""}`);
         if (me.feat === "smite" && !w.ranged && me.uses > 0) add(`${w.n} + 至圣斩`, () => setPick({ kind: "attack", w: i, smite: true, label: "至圣斩" }), null, feat.desc);
       });
+    }
+    if (r.action && !r.attackOnly) {
       if (me.feat === "missile" && me.uses > 0) add("魔法飞弹", () => setPick({ kind: "missile", label: "魔法飞弹" }), null, feat.desc);
+      if (me.fireball) add("火球术", () => setPick({ kind: "fireball", label: "火球术" }), null, FIREBALL.desc);
       add("冲刺", () => act((c, me) => { c.res.action = false; c.res.move++; clog(`${me.name} 冲刺`); }), null, "本回合多移动一次");
       add("闪避", () => act((c, me) => { c.res.action = false; me.cond.dodge = true; clog(`${me.name} 摆出防守架势`); }), null, "直到你下回合开始，攻击你的人有劣势");
       if (c.zones[me.zone].tags.includes("exit")) add("撤离战场", () => act((c, me) => { c.res.action = false; c.end = "escaped"; clog(`${me.name} 招呼众人撤离`); }));
@@ -2056,7 +2159,12 @@ function renderPlay() {
       opts.append(b);
     });
   }
-  const blocked = busy || !!state.pendingCheck || state.ended || (cb && !(myTurn() && cb.res.action && !pick));
+  if (state.pendingAsi && !cb && !busy) {
+    const b = el("button", "opt"); b.type = "button";
+    b.append(el("span", "k", "↑"), el("span", "tx", `属性提升：还有 ${state.pendingAsi} 次没分配`));
+    b.onclick = openLevelUp; opts.prepend(b);
+  }
+  const blocked = busy || !!state.pendingCheck || state.ended || (cb && !(myTurn() && cb.res.action && !cb.res.attackOnly && !pick));
   $("freeForm").hidden = state.ended;
   $("freeBtn").disabled = blocked; $("freeText").disabled = busy;
   $("freeBtn").textContent = cb ? "即兴" : "行动";
@@ -2113,14 +2221,14 @@ function openSheet(focus) {
         const p = state.player;
         info.append(el("div", "label", `${p.gender} · ${RACES[p.race].name}${CLASSES[p.cls].name} · ${BACKGROUNDS[p.bg].name} · ${p.level} 级`));
         info.append(el("div", null, p.appearance));
-        for (const [k, v] of [["生命", `${p.hp} / ${p.hpMax}`], ["AC", p.ac], ["金币", p.gold], ["灵感", `${p.inspiration} / 4`], ["龙化值", `${p.draconic} / 100`]]) { const r = el("div", "kv"); r.append(el("span", null, k), el("b", null, String(v))); info.append(r); }
+        for (const [k, v] of [["生命", `${p.hp} / ${p.hpMax}`], ["AC", p.ac], ["熟练加值", sgn(profBonus(p.level))], ["金币", p.gold], ["灵感", `${p.inspiration} / 4`], ["龙化值", `${p.draconic} / 100`]]) { const r = el("div", "kv"); r.append(el("span", null, k), el("b", null, String(v))); info.append(r); }
         info.append(el("div", "label", "种族特性：" + RACES[p.race].trait));
         info.append(el("div", "label", "灵感条件：" + BACKGROUNDS[p.bg].insp));
       } else {
         const c = COMPANIONS[cur], sc = state.companions[cur];
         info.append(el("div", "label", `${c.race}${c.cls} · ${sc.recruited ? "已加入" : sc.taken ? "被教团带走" : "未加入"}`));
         info.append(el("div", null, c.personality));
-        for (const [k, v] of [["生命", `${sc.hp} / ${sc.hpMax}`], ["AC", c.ac]]) { const r = el("div", "kv"); r.append(el("span", null, k), el("b", null, String(v))); info.append(r); }
+        for (const [k, v] of [["等级", partyLevel()], ["生命", `${sc.hp} / ${sc.hpMax}`], ["AC", c.ac]]) { const r = el("div", "kv"); r.append(el("span", null, k), el("b", null, String(v))); info.append(r); }
         const ap = el("div", "appr");
         ap.append(el("span", null, "赞同度"));
         const bar = el("div", "apbar"); const i = el("i");
@@ -2277,6 +2385,36 @@ function openSettings() {
     s.append(nb);
   });
 }
+function openLevelUp() {
+  const note = state.levelNote; state.levelNote = null; save();
+  modal(note ? `升到 ${note.to} 级` : "属性提升", s => {
+    if (note) { const ul = el("ul", "mem"); for (const l of note.lines) ul.append(el("li", null, l)); s.append(ul); }
+    if (state.pendingAsi) {
+      s.append(el("div", "label", "属性提升：给一项属性 +2，或两项各 +1（单项最高 20）"));
+      const box = el("div", "step"); s.append(box); asiPicker(box);
+    } else { const b = el("button", "btn gold", "继续"); b.type = "button"; b.onclick = closeModal; s.append(b); }
+  });
+}
+function asiPicker(box) {
+  const add = {}, p = state.player;
+  const draw = () => {
+    box.textContent = "";
+    const used = Object.values(add).reduce((a, b) => a + b, 0), grid = el("div", "pb");
+    for (const k of AB_KEYS) {
+      const v = p.abilities[k] + (add[k] || 0), cell = el("div", "pb-cell"), top = el("div", "pb-top"), val = el("div", "pb-val");
+      top.append(el("b", null, AB[k]), el("span", "label", k.toUpperCase()));
+      const minus = el("button", null, "−"); minus.type = "button"; minus.disabled = !add[k]; minus.setAttribute("aria-label", AB[k] + "减一"); minus.onclick = () => { add[k]--; draw(); };
+      const plus = el("button", null, "+"); plus.type = "button"; plus.disabled = used >= 2 || v >= 20; plus.setAttribute("aria-label", AB[k] + "加一"); plus.onclick = () => { add[k] = (add[k] || 0) + 1; draw(); };
+      val.append(minus, el("span", "n", String(v)), plus, el("span", "m", sgn(mod(v))));
+      if (add[k]) val.append(el("span", "r", "+" + add[k]));
+      cell.append(top, val); grid.append(cell);
+    }
+    const ok = el("button", "btn gold", used === 2 ? "确认提升" : `还剩 ${2 - used} 点`); ok.type = "button"; ok.disabled = used !== 2;
+    ok.onclick = () => { if (!applyAsi(add)) return; save(); closeModal(); render(); toast("属性提升完成", "up"); if (state.pendingAsi) openLevelUp(); };
+    box.append(grid, ok);
+  };
+  draw();
+}
 function openEnd() {
   modal("序幕完", s => {
     s.classList.add("endcard");
@@ -2309,7 +2447,7 @@ $("freeForm").addEventListener("submit", e => {
   const t = $("freeText").value.trim();
   if (!t || busy || state.pendingCheck) return;
   if (state.combat) {
-    if (!myTurn() || !state.combat.res.action) return;
+    if (!myTurn() || !state.combat.res.action || state.combat.res.attackOnly) return;
     if (!narratorReady()) { toast("即兴行动需要可用的说书人，请在设置里连接 ChatGPT、Claude 或 API。"); return; }
     state.combat.improv = true;
   }
@@ -2326,10 +2464,11 @@ function start(data) {
   const auto = readSave(AUTO);
   state = data && data.state ? data.state : auto ? auto.state : null;
   if (data && data.draft) draft = data.draft;
-  if (state) tidyLog(state);
+  if (state) { tidyLog(state); catchUpLevel(); }
   render();
   if (state?.pendingCheck) openDice();
   else if (state?.combat) advanceCombat();
+  else if (state?.levelNote) openLevelUp();
 }
 window.claude?.hot?.snapshot?.(() => ({ state, draft }));
 window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
