@@ -608,7 +608,8 @@ const ZONE_TAGS = { cover: "掩体", high: "高处", obscured: "遮蔽", exit: "
 const ENCOUNTERS = {
   tavern_ambush: {
     title: "教团袭击", lethal: false,
-    brief: "6 名狂信徒（濒死自爆）和 1 名烬火术士破门而入；第 3 回合地窖门被撞开，巨鼠涌出，敌我不分",
+    startFlags: { "prologue.fight_style": "fought" },
+    brief: "6 名狂信徒（濒死自爆，同区 1d6；被自爆烧死不再连锁）和 1 名烬火术士破门而入；第 3 回合地窖门被撞开，巨鼠涌出，敌我不分",
     props: "大堂中央的炭盆、头顶的铁吊灯、二楼回廊的酒桶、吧台后的烈酒",
     zones: [
       { n: "大门", adj: [1] },
@@ -2136,10 +2137,11 @@ function hurt(u, n, o = {}) {
   u.hp = 0;
   if (o.spare) { u.out = "captured"; return `${u.name} 被打晕，活捉了`; }
   u.dead = true;
+  if (o.blast && ENEMIES[u.type].explode) return `${u.name} 被烬火烧尽`;
   let t = `${u.name} 倒下了`;
   if (ENEMIES[u.type].explode) {
     const n2 = roll(1, 6), hit = [];
-    for (const v of cbList()) if (v !== u && v.zone === u.zone && !v.dead && !v.out) { const r = hurt(v, n2, { fire: true }); hit.push(v.name + (r ? "（" + r + "）" : "")); }
+    for (const v of cbList()) if (v !== u && v.zone === u.zone && !v.dead && !v.out) { const r = hurt(v, n2, { fire: true, blast: true }); hit.push(v.name + (r ? "（" + r + "）" : "")); }
     t += `，体内的烬火炸开，${c.zones[u.zone].n}里的人受到 ${n2} 点火焰伤害` + (hit.length ? "：" + hit.join("、") : "");
   }
   return t;
@@ -2281,7 +2283,7 @@ function allyTurn(u) {
     if (to != null) { c.res.move--; moveUnit(u, to); if (!ACTIVE(u)) return; }
   }
   const withMate = v => cbList().some(x => x !== u && x.side === "party" && ACTIVE(x) && x.zone === v.zone);
-  const o = { smite: u.feat === "smite", prefer: u.feat === "sneak" ? withMate : null };
+  const o = { smite: u.feat === "smite", spare: c.spare, prefer: u.feat === "sneak" ? withMate : null };
   fightTurn(u, o);
   // 额外攻击（5 级战士、圣武士、游荡者）：还有敌人就再打一次
   if (u.extra && ACTIVE(u) && cbList().some(v => hostile(u, v) && ACTIVE(v))) fightTurn(u, o);
@@ -2408,6 +2410,7 @@ function combatBrief(mode) {
   const side = u => u.side === "party" ? "我方" : u.side === "wild" ? "野兽，敌我不分" : "敌方";
   const units = cbList().filter(u => !u.dead && !u.out).map(u => {
     const cd = Object.keys(u.cond).filter(k => COND[k]).map(k => COND[k]);
+    if (u.type && ENEMIES[u.type].explode) cd.push("濒死自爆：同区 1d6，被自爆烧死不连锁");
     return `${u.name}（id: ${u.id}，${side(u)}，HP ${u.hp}/${u.max}${u.down ? "，倒地" : ""}，AC ${u.ac}，在${c.zones[u.zone].n}${cd.length ? "，" + cd.join("、") : ""}）`;
   });
   const gone = cbList().filter(u => u.dead || u.out).length;
@@ -2484,6 +2487,7 @@ function unitChip(u) {
   n.append(top, bar);
   const cd = Object.keys(u.cond).filter(k => COND[k]).map(k => COND[k]);
   if (u.cond.marked) cd.push("被标记");
+  if (u.type && ENEMIES[u.type].explode) cd.push("濒死自爆：同区 1d6");
   if (cd.length) n.append(el("div", "cd", cd.join(" · ")));
   return n;
 }
@@ -2550,7 +2554,7 @@ function renderCombat(box) {
     }
     if (me.cond.prone && r.move > 0) add("起身", () => act((c, me) => { c.res.move--; delete me.cond.prone; clog(`${me.name} 站了起来`); }), null, "消耗本回合的移动");
     acts.append(el("span", "sp"));
-    add(c.spare ? "留活口：开" : "留活口：关", () => { c.spare = !c.spare; renderPlay(); }, null, "开启后，你的近战把敌人打到 0 生命时会活捉而不是杀死");
+    add(c.spare ? "留活口：开" : "留活口：关", () => { c.spare = !c.spare; renderPlay(); }, null, "开启后，全队的近战把敌人打到 0 生命时会活捉而不是杀死");
     add("结束回合", playerEnd, "gold");
   }
   wrap.append(acts);
