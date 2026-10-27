@@ -462,12 +462,12 @@ const inAct = id => (COMPANIONS[id].act || 0) <= (state?.act || 0);
 const SCENES = {
   prologue_1: {
     camp: false, title: "酒馆里的人", loc: "醉龙酒馆 · 大堂", bg: "linear-gradient(160deg,#5a3517,#24150b 60%,#120c08)",
-    anchor: "雨夜，下了三天。在场：老板娘玛莎在吧台擦杯子；博林在角落挑战全场掰手腕；卡西安在给被老鼠咬伤腿的小汤姆包扎；赛勒涅独自在壁炉边擦剑；维克斯四处兜售一颗“银宝石”；窗边坐着沉默的兜帽客（形变者奈雅伪装，被搭话会敷衍，随后溜走）。地板下偶尔传来抓挠声（地窖闹老鼠）。玩家可以自由与任何人互动，第一印象影响赞同度（±1~5）。必然事件：当玩家已与 2~3 人互动，或大约 5 轮之后，银龙坠落：此时把 advance 设为 prologue_2，并在叙述末尾写出天空中的银光。不要提前透露印记的事。",
+    anchor: "雨夜，下了三天。在场：老板娘玛莎在吧台擦杯子；博林在角落挑战全场掰手腕；卡西安在给被老鼠咬伤腿的小汤姆包扎；赛勒涅独自在壁炉边擦剑；维克斯四处兜售一颗“银宝石”（玩家看见宝石时写 prologue.saw_gem=true）；窗边坐着沉默的兜帽客（形变者奈雅伪装，被搭话会敷衍，随后溜走）。地板下偶尔传来抓挠声（地窖闹老鼠）。玩家可以自由与任何人互动，第一印象影响赞同度（±1~5）。必然事件：当玩家已与 2~3 人互动，或大约 5 轮之后，银龙坠落：此时把 advance 设为 prologue_2，并在叙述末尾写出天空中的银光。不要提前透露印记的事。",
     next: "prologue_2",
   },
   prologue_2: {
     camp: false, title: "坠龙", loc: "醉龙酒馆 · 大堂", bg: "linear-gradient(160deg,#55677a,#1d2530 60%,#0c0f14)", flash: true,
-    anchor: "一道银光划过天空坠入海湾，酒馆剧烈震动。银光穿墙而入，在六个人掌心烙下银色龙鳞印记：玩家、赛勒涅、维克斯、卡西安、博林、兜帽客；第七道光飞出窗外，落向北边的旧学院废塔。烙印时所有持有者同时看到一只巨大的银色眼睛，并短暂看到彼此的记忆碎片。剧痛。兜帽客趁乱消失。众人惊疑、议论、互相查看掌心。玩家反应 1~3 轮后，门外传来沉重的撞门声，把 advance 设为 prologue_3。",
+    anchor: "一道银光划过天空坠入海湾，酒馆剧烈震动。银光穿墙而入，在六个人掌心烙下银色龙鳞印记：玩家、赛勒涅、维克斯、卡西安、博林、兜帽客；第七道光飞出窗外，落向北边的旧学院废塔。烙印时所有持有者同时看到一只巨大的银色眼睛，并短暂看到彼此的记忆碎片。剧痛。兜帽客趁乱消失。众人惊疑、议论、互相查看掌心。玩家在坠龙时保护小汤姆就写 prologue.tom_saved=true。玩家反应 1~3 轮后，门外传来沉重的撞门声，把 advance 设为 prologue_3。",
     next: "prologue_3",
   },
   prologue_3: {
@@ -526,7 +526,7 @@ const SCENES = {
   },
   act1_lighthouse: {
     title: "灯塔之夜", loc: "灰帆港 · 灯塔", bg: "linear-gradient(160deg,#6b3a2a,#26140f 60%,#0f0806)", level: 5, camp: false, act: 1,
-    anchor: "航海图和船都到手的当晚，灰烬教团动手了：酒馆被砸，玛莎被绑走（若 act1.hostage=tom，被绑的是小汤姆），留话“一个小时内，带着印记持有者到灯塔来交换”。同时米拉的身份暴露：她传给教团的情报让教团知道了你们的航线和船（若 act1.naia_seen 为 true，玩家早已知道，现在她可以选择当面坦白）。把 act1.naia_exposed 设为 true，她从此显出真身（灰白皮肤、水银色头发、没有瞳孔的乳白眼睛），名字是奈雅。玩家必须当场或事后决定怎么处置她：杀掉、关押、接纳（写 act1.naia_fate = killed|imprisoned|recruited；killed 时她死去，imprisoned 时她离队被关在酒馆地窖）。其他同伴会强烈表态：赛勒涅、博林主张严惩，卡西安主张宽恕。教团还在码头埋了炸药，目标是你们的船：队伍可以拆分，一部分人去码头拆炸药（用检定解决，结果写 act1.ship_intact），其余人去灯塔。灯塔分底层、旋梯、灯室三层；千面母（教团间谍头子、奈雅的养母，永远不用同一张脸）带着无面刺客混在一群“平民”里等着。动手时在 JSON 写 combat 为 lighthouse；若奈雅已被接纳且赞同度 ≥ 40，她可以和千面母对话让她动摇退场，用千面母的真名威胁也能让她投降。战后写 act1.martha_alive（人质是否活着），把 advance 设为 act1_dawn。",
+    anchor: "航海图和船都到手的当晚，灰烬教团动手了：酒馆被砸，玛莎被绑走（若 act1.hostage=tom，被绑的是小汤姆；确定人质时写 act1.hostage=martha 或 tom），留话“一个小时内，带着印记持有者到灯塔来交换”。同时米拉的身份暴露：她传给教团的情报让教团知道了你们的航线和船（若 act1.naia_seen 为 true，玩家早已知道，现在她可以选择当面坦白）。把 act1.naia_exposed 设为 true，她从此显出真身（灰白皮肤、水银色头发、没有瞳孔的乳白眼睛），名字是奈雅。玩家必须当场或事后决定怎么处置她：杀掉、关押、接纳（写 act1.naia_fate = killed|imprisoned|recruited；killed 时她死去，imprisoned 时她离队被关在酒馆地窖）。其他同伴会强烈表态：赛勒涅、博林主张严惩，卡西安主张宽恕。教团还在码头埋了炸药，目标是你们的船：队伍可以拆分，一部分人去码头拆炸药（用检定解决，结果写 act1.ship_intact），其余人去灯塔。灯塔分底层、旋梯、灯室三层；千面母（教团间谍头子、奈雅的养母，永远不用同一张脸）带着无面刺客混在一群“平民”里等着。动手时在 JSON 写 combat 为 lighthouse；若奈雅已被接纳且赞同度 ≥ 40，她可以和千面母对话让她动摇退场，用千面母的真名威胁也能让她投降。战后写 act1.martha_alive（人质是否活着），把 advance 设为 act1_dawn。",
     next: "act1_dawn", encounters: ["lighthouse"],
   },
   act1_dawn: {
@@ -554,7 +554,7 @@ const FLAG_KEYS = {
   "act1.sath_trust": "bool", "act1.invite": ["forged", "bought", "naia"], "act1.governor": ["exposed", "blackmailed", "robbed", "ally"],
   "act1.facemother_seen": "bool", "act1.darin_axe": "bool", "act1.deacon": ["tortured", "informant", "killed"],
   "act1.naia_seen": "bool", "act1.naia_exposed": "bool", "act1.naia_fate": ["recruited", "imprisoned", "killed"],
-  "act1.hostage": ["martha", "tom"], "act1.martha_alive": "bool", "act1.ship_intact": "bool",
+  "act1.hostage": ["martha", "tom"], "act1.martha_alive": "bool", "act1.ship_intact": "bool", "act1.departure_ship": ["black_eel", "seagull", "stolen", "fishing"],
 };
 
 /* 战斗数据。武器 d 是伤害骰面数，cantrip 戏法不加属性伤害；ab 决定命中和伤害用的属性。 */
@@ -1680,7 +1680,7 @@ function applyGM(d, mode) {
   } else {
     const cid = typeof d.combat === "string" ? d.combat : d.combat?.start;
     if (cid && SCENES[state.scene].encounters?.includes(cid) && !state.fought?.[cid]) { state.pendingCombat = cid; return; }
-    if (d.camp === true && canCamp()) { state.pendingCamp = true; state.suggestions = []; return; } // 要扎营就先不推进场景
+    if (d.camp === true && mode !== "morning" && canCamp()) { state.pendingCamp = true; state.suggestions = []; return; } // 要扎营就先不推进场景；睡醒后不能自动再扎营
   }
 
   // check
@@ -1975,7 +1975,7 @@ function restNight(partner) {
     goScene(sc.campNext, false, true);
     gm(`（${night}然后玩家沉入梦中，按新场景的锚点开始。${after}）`, null);
   } else {
-    gm(`（${night}然后写第二天清晨：营地醒来，同伴们各自的样子${partner ? `；和${PEOPLE[partner].name}醒来时的画面可以写得亲昵，其他同伴可能察觉到什么` : ""}。${after}给出新一天的建议。）`, partner ? `今晚，你和${PEOPLE[partner].name}在一起。` : "你睡下了。");
+    gm(`（${night}直接写第二天清晨醒来后：同伴们各自的样子${partner ? `；和${PEOPLE[partner].name}醒来时的画面可以写得亲昵，其他同伴可能察觉到什么` : ""}。${after}给出新一天的建议。不要再次写入睡或 camp: true。）`, partner ? `今晚，你和${PEOPLE[partner].name}在一起。` : "你睡下了。", "morning");
   }
 }
 function renderCamp(box) {
@@ -2120,6 +2120,10 @@ function sortOrder() { const c = state.combat; c.order = cbList().sort((a, b) =>
 
 function startCombat(id) {
   const E = ENCOUNTERS[id]; if (!E || state.combat) return;
+  for (const [key, value] of Object.entries(E.startFlags || {})) {
+    const rule = FLAG_KEYS[key];
+    if (!(key in state.flags) && (rule === "bool" && typeof value === "boolean" || Array.isArray(rule) && rule.includes(value))) state.flags[key] = value;
+  }
   state.combat = { id, round: 1, turn: 0, started: false, units: {}, order: [], feed: [], res: null, spare: false, improv: false, count: {}, end: null,
     zones: E.zones.map(z => ({ n: z.n, tags: z.tags || [], adj: z.adj, burning: 0 })) };
   const c = state.combat;
