@@ -539,7 +539,7 @@ const SCENES = {
 const ACT_NAMES = ["序幕 · 暴风之夜", "第一幕 · 灰帆港", "第二幕 · 龙骨群岛", "第三幕 · 烬冠"];
 const nextOf = sc => sc.next == null ? [] : [].concat(sc.next);
 const actGoals = () => Object.values(SCENES).find(sc => sc.act === state.act && sc.goals)?.goals || [];
-const GOAL_VALUES = { opened: "从龙息酒桶底的暗格取出", stolen: "偷来的", legal: "揭发总督后合法取回", blackmail: "勒索总督", eel: "从老鳗那里拿到", black_eel: "黑鳗号", seagull: "海鸥号" };
+const GOAL_VALUES = { opened: "从龙息酒桶底的暗格取出", stolen: "偷来的", legal: "合法取回", blackmail: "勒索总督", eel: "从老鳗那里拿到", black_eel: "黑鳗号", seagull: "海鸥号" };
 // 第一幕的地点，走完的越多等级越高
 const ACT1_LOCS = Object.keys(SCENES).filter(id => SCENES[id].loc1);
 
