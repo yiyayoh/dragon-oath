@@ -489,7 +489,7 @@ const SCENES = {
   /* 第一幕：灰帆港。开场 → 港口（枢纽）⇄ 五个地点，任意顺序；拿到航海图和船后去灯塔 → 黎明 */
   act1_1: {
     camp: false, title: "灰帆港的早晨", loc: "醉龙酒馆 · 清晨", bg: "linear-gradient(160deg,#6d6a5e,#2a2621 60%,#13110e)",
-    anchor: "暴风雨停了。清晨，醉龙酒馆一片狼藉，海湾里漂着银色的碎光，全港都在议论昨夜坠落的银光。玛莎把队伍叫到吧台：要去梦里说的誓约神殿，需要两样东西——①航海图：她亡夫（最后一位守誓人）留下的，十年前被总督艾德蒙·科尔以“违禁物”为名没收，锁在总督府；②一艘能进雾海的船：黑潮会的老鳗有船，港卫军也有船，两边都不会白给。若维克斯在场，黑潮会的打手会上门“提醒”他：欠老鳗的债限期三天，不然他妹妹莉丝会被卖到外海（维克斯会尽量遮掩）。另一件事：酒馆里来了一位流浪女诗人“米拉”（奈雅伪装，见同伴资料），她弹着鲁特琴讲昨夜坠龙的歌，主动凑过来搭话，想和这群“被银光选中的人”同行；可以用 recruit 让她加入，也可以拒绝。玩家了解情况、做好打算后（2~4 轮），把 advance 设为 act1_hub，并在 journal 写下“第一幕：灰帆港”的目标。",
+    anchor: "暴风雨停了。清晨，醉龙酒馆一片狼藉，海湾里漂着银色的碎光，全港都在议论昨夜坠落的银光。玛莎把队伍叫到吧台：要去梦里说的誓约神殿，需要两样东西——①航海图：她亡夫（最后一位守誓人）留下的，十年前被总督艾德蒙·科尔以“违禁物”为名没收，锁在总督府；②一艘能进雾海的船：黑潮会的老鳗有船，港卫军也有船，两边都不会白给。若维克斯在场，黑潮会的打手会上门“提醒”他：欠老鳗的债限期三天，不然他妹妹莉丝会被卖到外海（维克斯会尽量遮掩；债务被提起时写 act1.debt_known=true）。另一件事：酒馆里来了一位流浪女诗人“米拉”（奈雅伪装，见同伴资料），她弹着鲁特琴讲昨夜坠龙的歌，主动凑过来搭话，想和这群“被银光选中的人”同行；可以用 recruit 让她加入，也可以拒绝。玩家了解情况、做好打算后（2~4 轮），把 advance 设为 act1_hub，并在 journal 写下“第一幕：灰帆港”的目标。",
     next: "act1_hub", recruit: ["naia"], meet: ["naia"], act: 1,
   },
   act1_hub: {
@@ -501,7 +501,7 @@ const SCENES = {
   },
   act1_docks: {
     title: "黑潮码头", loc: "灰帆港 · 黑潮码头", bg: "linear-gradient(160deg,#3c4a44,#18201c 60%,#0b0f0d)", loc1: true,
-    anchor: "鱼腥、焦油和赌徒的吆喝。黑潮会控制着这里：仓库、私船、地下斗兽场。老鳗·莫格（笑眉笑眼、毒如蛇蝎的胖老头）在一艘改成赌场的旧船“金鳗”上见客，只认利益。他可以：拿维克斯的债要挟（妹妹莉丝扣在他手里，三天期限）；开价——替他从总督府金库偷出航海图（他也想要），他就借出“黑鳗号”并把维克斯的债减半（写 act1.eel=deal）。玩家也可以与黑潮会为敌（写 act1.eel=enemy），强行救莉丝（写 act1.lise=saved）。斗兽场：卡西安会认出这个地方（他是十年前的头牌“碎潮”），会有人认出他。若维克斯在序幕里离开了队伍，他就在码头躲债，可以用 recruit 劝他回来。真正打起来时在 JSON 写 combat 为 docks_brawl。离开码头时把 advance 设为 act1_hub。",
+    anchor: "鱼腥、焦油和赌徒的吆喝。黑潮会控制着这里：仓库、私船、地下斗兽场。老鳗·莫格（笑眉笑眼、毒如蛇蝎的胖老头）在一艘改成赌场的旧船“金鳗”上见客，只认利益。他可以：拿维克斯的债要挟（妹妹莉丝扣在他手里，三天期限；债务被提起时写 act1.debt_known=true）；开价——替他从总督府金库偷出航海图（他也想要），他就借出“黑鳗号”并把维克斯的债减半（写 act1.eel=deal）。玩家也可以与黑潮会为敌（写 act1.eel=enemy），强行救莉丝（写 act1.lise=saved）。斗兽场：卡西安会认出这个地方（他是十年前的头牌“碎潮”），会有人认出他。若维克斯在序幕里离开了队伍，他就在码头躲债，可以用 recruit 劝他回来。真正打起来时在 JSON 写 combat 为 docks_brawl。离开码头时把 advance 设为 act1_hub。",
     next: ["act1_hub"], encounters: ["docks_brawl"], recruit: ["vex"], meet: ["vex"], act: 1,
   },
   act1_tower: {
@@ -549,7 +549,7 @@ const FLAG_KEYS = {
   "prologue.hestia_answer": ["trust", "question", "refuse"], "prologue.martha_legend": "bool",
   // 第一幕
   "act1.chart": ["stolen", "legal", "blackmail", "eel"], "act1.ship": ["black_eel", "seagull", "stolen"],
-  "act1.eel": ["deal", "enemy", "ally"], "act1.vex_debt": ["paid", "halved", "defied"], "act1.lise": ["saved", "sold"],
+  "act1.eel": ["deal", "enemy", "ally"], "act1.vex_debt": ["paid", "halved", "defied"], "act1.lise": ["saved", "sold"], "act1.debt_known": "bool",
   "act1.lyra_notes": ["burned", "kept"], "act1.notes_copied": "bool", "act1.dragon_body": ["harvested", "funeral"],
   "act1.sath_trust": "bool", "act1.invite": ["forged", "bought", "naia"], "act1.governor": ["exposed", "blackmailed", "robbed", "ally"],
   "act1.facemother_seen": "bool", "act1.darin_axe": "bool", "act1.deacon": ["tortured", "informant", "killed"],
@@ -1143,7 +1143,14 @@ function nextLine(sc) {
 }
 // 第一幕：维克斯欠老鳗的债限期三天（按长休计）
 const DEBT_DAYS = 3;
-const debtOpen = () => state.act === 1 && state.act1Day != null && !state.flags["act1.vex_debt"] && !state.flags["act1.lise"];
+const debtOpen = () => state.act === 1 && state.act1Day != null && state.companions.vex.alive && !state.flags["act1.vex_debt"] && !state.flags["act1.lise"];
+const debtDays = () => Math.max(0, state.act1Day + DEBT_DAYS - state.day);
+function updateDebtJournal() {
+  if (state.act !== 1 || !state.flags["act1.debt_known"]) return;
+  const note = debtOpen() ? `莉丝：还剩 ${debtDays()} 天。` : state.flags["act1.lise"] === "sold" ? "莉丝已被卖到外海。" : state.flags["act1.lise"] === "saved" ? "莉丝已获救。" : !state.companions.vex.alive ? "维克斯已死，债务倒计时停止。" : "维克斯的债已有处理结果。";
+  const entry = state.journal.find(j => j.quest === "维克斯的债");
+  if (entry) entry.note = note; else state.journal.push({ quest: "维克斯的债", note });
+}
 const debtLine = () => debtOpen() ? `；维克斯的债还剩 ${Math.max(0, state.act1Day + DEBT_DAYS - state.day)} 天（每睡一晚少一天，到期莉丝会被卖到外海）` : "";
 function buildPrompt(action, mode) {
   const p = state.player, sc = SCENES[state.scene];
@@ -1654,6 +1661,7 @@ function applyGM(d, mode) {
     const ex = state.journal.find(x => x.quest === q);
     if (ex) ex.note = n; else { state.journal.push({ quest: q, note: n }); notes.push(["日志更新：" + q, ""]); }
   }
+  updateDebtJournal();
   for (const [t, kind] of notes) push("sys", t, { cls: kind === "up" ? "appr-up" : kind === "down" ? "appr-down" : "" });
 
   // combat
@@ -1952,6 +1960,7 @@ function restNight(partner) {
     const v = state.companions.vex; if (v.alive) { v.approval = clamp(v.approval - 30, -100, 100); remember("vex", "你没能在期限内救下莉丝"); }
     news.push("维克斯的债到期了：老鳗把莉丝卖到了外海，维克斯赞同度 −30");
   }
+  updateDebtJournal();
   push("sys", "长休：全员生命恢复", { cls: "appr-up" });
   for (const n of news) push("sys", n, { cls: "appr-down" });
   const night = partner ? `【夜里】玩家和${PEOPLE[partner].name}共度一夜：按${PEOPLE[partner].name}的性格写这一夜的亲密与情意，到最亲密的那一步用一句暗示性的转场带过。` : "玩家独自睡下。";
@@ -2735,6 +2744,8 @@ function renderPlay() {
     if (!pt.length) rail.append(el("div", "note", "还没有同伴。酒馆里的人，也许会成为你的伙伴。"));
   }
   rail.append(el("div", "note", `金币 ${p.gold} · 补给 ${state.supplies ?? 0} · 灵感 ${p.inspiration} · 龙化 ${p.draconic}`));
+  if (state.flags["act1.debt_known"] && debtOpen()) rail.append(el("div", "note", `莉丝：还剩 ${debtDays()} 天`));
+  if (sc.hub && sc.goals?.length) rail.append(el("div", "note", "目标：" + sc.goals.map(g => `${g.name} ${state.flags[g.flag] ? "✓" : "✗"}`).join(" · ")));
 
   // stage
   const st = $("stage"); st.textContent = "";
