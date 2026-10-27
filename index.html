@@ -483,7 +483,7 @@ const SCENES = {
   prologue_5: {
     title: "第一个梦", loc: "梦境 · 银雾", bg: "linear-gradient(160deg,#8fa2b6,#2f3a47 55%,#11161c)",
     anchor: "玩家入睡。银色雾中，赫斯提雅入梦（银发老妇人，脸颊有淡淡龙鳞；也可显现为巨大的垂死银龙）。她温柔地说：“我选中了你们。去誓约神殿。”她回避“代价”的问题（洞悉 DC 16 可察觉她有所隐瞒，但看不出是什么）。根据玩家回应（信任/质问/拒绝）给 hestia_trust 变化（−20~+20），并写 flags prologue.hestia_answer = trust|question|refuse。对话 1~3 轮后，玩家醒来，晨光照进酒馆，把 scene_end 设为 true，序幕结束。玩家进入这一场时印记觉醒，全队已升到 2 级（程序处理），可以在梦里让玩家感到掌心的印记在发热、力量在苏醒。",
-    next: null, level: 2, camp: false, alone: true, dream: true, endAct: 0, after: "act1_1",
+    next: null, level: 2, camp: false, alone: true, dream: true, endAct: 0, after: "act1_1", endNeeds: { flags: ["prologue.hestia_answer"], turns: 1 },
   },
 
   /* 第一幕：灰帆港。开场 → 港口（枢纽）⇄ 五个地点，任意顺序；拿到航海图和船后去灯塔 → 黎明 */
@@ -529,9 +529,9 @@ const SCENES = {
     next: "act1_dawn", encounters: ["lighthouse"],
   },
   act1_dawn: {
-    title: "雾海的黎明", loc: "灰帆港 · 码头", bg: "linear-gradient(160deg,#7d8790,#2d3338 60%,#111416)", camp: false, act: 1, endAct: 1,
-    anchor: "灯塔之夜过后的清晨。清点代价：人质是否活着、船是否完好（船被炸毁的话，只能找一艘平民渔船出海，航程会更危险）、奈雅的去留。同伴们各自对昨晚的事表态。玛莎（如果活着）把亡夫的守誓人徽记交给你。船准备出港，驶向雾海深处的龙骨群岛。对话 1~3 轮后，把 scene_end 设为 true，第一幕结束。",
-    next: null,
+    title: "雾海的黎明", loc: "灰帆港 · 码头", bg: "linear-gradient(160deg,#7d8790,#2d3338 60%,#111416)", camp: false, act: 1, endAct: 1, jail: true,
+    anchor: "灯塔之夜过后的清晨。清点代价：人质是否活着、船是否完好（船被炸毁的话，只能找一艘平民渔船出海，航程会更危险）、奈雅的去留。同伴们各自对昨晚的事表态。玛莎（如果活着）把亡夫的守誓人徽记交给你。船准备出港，驶向雾海深处的龙骨群岛。确定实际出海的船时写 act1.departure_ship：black_eel、seagull、stolen 或 fishing（民用渔船）；原先取得的船记录仍保留在 act1.ship。对话 1~3 轮后，把 scene_end 设为 true，第一幕结束。",
+    next: null, endNeeds: { turns: 1 },
   },
 };
 const ACT_NAMES = ["序幕 · 暴风之夜", "第一幕 · 灰帆港", "第二幕 · 龙骨群岛", "第三幕 · 烬冠"];
@@ -1081,7 +1081,7 @@ const SYSTEM = `你是奇幻跑团游戏《醉龙酒馆：龙誓》的游戏主�
 - check：需要检定时写 {"skill":"技能键","dc":15,"who":"player","reason":"一句话难点","advantage":false,"disadvantage":false}，此时 suggestions 写 []。who 可以是 player 或已加入的同伴 id。
 - 技能键：athletics 运动、acrobatics 杂技、sleight 巧手、stealth 隐匿、arcana 奥秘、history 历史、investigation 调查、nature 自然、religion 宗教、animal 驯兽、insight 洞悉、medicine 医疗、perception 察觉、survival 求生、deception 欺瞒、intimidation 威吓、performance 表演、persuasion 说服；也可用属性 str dex con int wis cha、攻击 attack、豁免 save_con 等。
 - suggestions：3~4 条建议行动，风格各异（善良的、狡猾的、冒险的）；需要检定的写上技能中文名。
-- advance：只能填场景资料里写明的下一个场景 id。
+- advance：只能填场景资料里写明的下一个场景 id。scene_end 只在【当前场景】写明“这一场结束时 scene_end 为 true”的场景使用，别的场景不要写。
 - combat：开战时写遭遇 id 字符串，例如 "combat":"tavern_ambush"。战斗中即兴行动的效果格式见【即兴行动规则】。
 - remember：本轮发生了某个角色会长久记住的事时写，每轮最多 2 条，每条不超过 40 字，从该角色的角度写关于玩家的事实。只记真正要紧的：承诺、谎言、秘密、恩情、冒犯、救命、亲密时刻、重大分歧。闲聊不要记。id 可用：${MEM_IDS.join(" ")}。
 - romance：恋爱推进，[{"id":"selene","to":"hint"}]。阶段 none → hint（暧昧）→ together（恋人）→ vowed（誓约），一次只能推进一格；门槛是赞同度 40 / 60 / 80，誓约还要先通过个人任务的考验。气氛真的到了才写，不是每次都要推进。分手写 "to":"none"。
@@ -1125,8 +1125,17 @@ const npcLines = () => NPC_NOTES.filter(([, from, , to]) => from <= state.act &&
   .map(([id, , t]) => `${PEOPLE[id].name}（${id}）：${t}`).join("\n");
 function nextLine(sc) {
   const ids = nextOf(sc);
-  if (!ids.length) return sc.endAct != null ? "下一个场景：无（这一场结束时 scene_end 为 true）" : "下一个场景：无";
-  return "可以 advance 到的场景 id：" + ids.map(id => `${id}「${SCENES[id].title}」${sc.gate?.[id] && !sc.gate[id]() ? "（条件还没满足，不能去）" : ""}`).join("、");
+  if (!ids.length) {
+    if (sc.endAct == null) return "下一个场景：无";
+    const needs = sc.endNeeds, conditions = [];
+    if (needs?.turns) conditions.push(`玩家在本场至少回应 ${needs.turns} 次`);
+    if (needs?.flags?.length) conditions.push(`写好 ${needs.flags.join("、")}`);
+    return "下一个场景：无（这一场结束时 scene_end 为 true" + (conditions.length ? `；必须先${conditions.join("，并")}` : "") + "）";
+  }
+  return "可以 advance 到的场景 id：" + ids.map(id => {
+    const missing = (sc.goals || []).filter(g => !state.flags[g.flag]).map(g => g.flag);
+    return `${id}「${SCENES[id].title}」${sc.gate?.[id] && !sc.gate[id]() ? `（条件还没满足，不能去${missing.length ? "；还缺 " + missing.join("、") : ""}）` : ""}`;
+  }).join("、");
 }
 // 第一幕：维克斯欠老鳗的债限期三天（按长休计）
 const DEBT_DAYS = 3;
@@ -1672,17 +1681,23 @@ function applyGM(d, mode) {
   // scene flow
   const sc = SCENES[state.scene];
   if (d.advance && canGo(sc, d.advance)) goScene(d.advance, !!d.location);
-  else if (d.scene_end === true && sc.endAct != null) { state.ended = true; state.pendingCheck = null; state.suggestions = []; }
+  else if (d.scene_end === true && sc.endAct != null) {
+    const need = sc.endNeeds;
+    const turns = state.log.filter(e => e.k === "you" && chKey(e) === curKey()).length;
+    if ((need?.flags || []).every(key => state.flags[key]) && turns >= (need?.turns || 0) && !state.pendingCheck) {
+      state.ended = true; state.suggestions = [];
+    } else console.warn("本场结束条件未满足，忽略 scene_end", state.scene);
+  }
 }
 // 能不能去这一场：必须是 next 里登记的，且满足 gate（例如灯塔要先拿到航海图和船）
 const canGo = (sc, id) => nextOf(sc).includes(id) && (!sc.gate?.[id] || sc.gate[id]());
-function goScene(id, keepLocation) {
+function goScene(id, keepLocation, rested = false) {
   state.scene = id;
   state.visits = { ...(state.visits || {}), [id]: (state.visits?.[id] || 1) + (state.log.some(e => e.s === id) ? 1 : 0) };
   const ns = SCENES[id];
   push("chapter", ns.title);
   if (!keepLocation) state.location = ns.loc;
-  if (id === "prologue_5") { const p = state.player; p.hp = p.hpMax; for (const c of Object.values(state.companions)) c.hp = c.hpMax; push("sys", "长休：全员生命恢复"); }
+  if (id === "prologue_5" && !rested) { const p = state.player; p.hp = p.hpMax; for (const c of Object.values(state.companions)) c.hp = c.hpMax; push("sys", "长休：全员生命恢复"); }
   const need = levelNeed(); // 里程碑升级：场景数据里的 level，第一幕按走完的地点数
   if (need > partyLevel()) levelUp(need);
   flashScene = !!ns.flash;
@@ -1937,8 +1952,10 @@ function restNight(partner) {
   const night = partner ? `【夜里】玩家和${PEOPLE[partner].name}共度一夜：按${PEOPLE[partner].name}的性格写这一夜的亲密与情意，到最亲密的那一步用一句暗示性的转场带过。` : "玩家独自睡下。";
   const after = news.length ? `夜里发生了：${news.join("；")}。要写出这件事的余波。` : "";
   if (sc.campNext) {
-    goScene(sc.campNext);
-    gm(`（${night}然后玩家沉入梦中，按新场景的锚点开始。${after}）`, partner ? `今晚，你和${PEOPLE[partner].name}在一起。` : "你在壁炉边睡去。");
+    // 入睡发生在旧场景，不能算作玩家对梦境开场的回应。
+    push("you", partner ? `今晚，你和${PEOPLE[partner].name}在一起。` : "你在壁炉边睡去。");
+    goScene(sc.campNext, false, true);
+    gm(`（${night}然后玩家沉入梦中，按新场景的锚点开始。${after}）`, null);
   } else {
     gm(`（${night}然后写第二天清晨：营地醒来，同伴们各自的样子${partner ? `；和${PEOPLE[partner].name}醒来时的画面可以写得亲昵，其他同伴可能察觉到什么` : ""}。${after}给出新一天的建议。）`, partner ? `今晚，你和${PEOPLE[partner].name}在一起。` : "你睡下了。");
   }
