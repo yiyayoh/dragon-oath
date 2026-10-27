@@ -36,8 +36,13 @@ async function readBody(req, limit) {
 async function readPrompt(req) {
   const data = await readBody(req, 512 * 1024);
   if (typeof data.prompt !== 'string' || !data.prompt.trim() || data.prompt.length > 200000) throw { http: 400, code: 'invalid_request' };
-  return data.prompt;
+  // 可选：玩家在游戏设置里选的模型名；不在账号目录里的由 narrate 退回默认模型
+  if (data.model !== undefined && (typeof data.model !== 'string' || !/^[A-Za-z0-9._-]{1,64}$/.test(data.model))) throw { http: 400, code: 'invalid_request' };
+  return { prompt: data.prompt, model: data.model };
 }
+const modelList = list => Array.isArray(list) ? list.filter(m => m && typeof m.model === 'string').slice(0, 20).map(m => ({
+  model: m.model.slice(0, 64), displayName: String(m.displayName || m.model).slice(0, 64), description: String(m.description || '').slice(0, 200), isDefault: !!m.isDefault,
+})) : null;
 
 // ---------- 硬盘存档：.dragon-oath-local/saves/{auto,slot1..3}.json，覆盖前把旧版本留进 backups/ ----------
 const SAVE_KEYS = new Set(['auto', 'slot1', 'slot2', 'slot3']);
@@ -99,10 +104,12 @@ export function createGameServer({ port = DEFAULT_PORT, getStatus = accountStatu
       const url = new URL(req.url, `http://127.0.0.1:${expected}`);
       if (url.pathname === '/__gpt/status' && req.method === 'GET') {
         const status = await getStatus();
+        const models = modelList(status.models);
         // Deliberate allowlist: account identity and credentials never cross into the page.
         return json(res, 200, {
           available: true, ready: !!status.ready, authenticated: !!status.authenticated,
           authType: status.authType || null, model: status.model || null, plan: status.plan || null,
+          ...(models ? { models } : {}),
           ...(status.error ? { error: status.error } : {}),
         });
       }
@@ -117,12 +124,12 @@ export function createGameServer({ port = DEFAULT_PORT, getStatus = accountStatu
         let heartbeat;
         const event = data => { if (!res.destroyed && !res.writableEnded) res.write(`data: ${JSON.stringify(data)}\n\n`); };
         try {
-          const prompt = await readPrompt(req);
+          const { prompt, model } = await readPrompt(req);
           if (controller.signal.aborted) return;
           res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', Connection: 'keep-alive' });
           res.flushHeaders();
           heartbeat = setInterval(() => { if (!res.destroyed) res.write(': waiting\n\n'); }, 12000);
-          const text = await narrate(prompt, { signal: controller.signal, onText: text => event({ type: 'text', text }), runtimeDir: path.join(root, '.dragon-oath-local', 'runtime') });
+          const text = await narrate(prompt, { signal: controller.signal, onText: text => event({ type: 'text', text }), runtimeDir: path.join(root, '.dragon-oath-local', 'runtime'), model });
           if (!controller.signal.aborted) event({ type: 'done', text });
         } catch (error) {
           const allowed = new Set(['chatgpt_auth', 'chatgpt_unavailable', 'rate_limited', 'network', 'refused', 'empty_completion', 'timeout']);

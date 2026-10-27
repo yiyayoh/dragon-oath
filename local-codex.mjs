@@ -133,10 +133,12 @@ class RpcClient {
       if (!/^[A-Za-z0-9_-]+$/.test(name)) throw new NarratorError('chatgpt_unavailable');
       this.mcpOverrides[`mcp_servers.${name}.enabled`] = false;
     }
-    const catalog = (await this.rpc('model/list', {})).data || [];
-    const selected = catalog.find(model => model.isDefault && !model.hidden) || catalog.find(model => !model.hidden);
+    const catalog = ((await this.rpc('model/list', {})).data || []).filter(model => !model.hidden && typeof model.model === 'string');
+    const selected = catalog.find(model => model.isDefault) || catalog[0];
     if (!selected) throw new NarratorError('chatgpt_unavailable');
-    return { available: true, ready: true, authenticated: true, authType: 'chatgpt', plan: account.planType || null, model: selected.model };
+    // 游戏可以自选模型（默认的最强模型很费额度）；这里只给模型名和说明，不含账号信息
+    const models = catalog.map(model => ({ model: model.model, displayName: model.displayName || model.model, description: model.description || '', isDefault: !!model.isDefault }));
+    return { available: true, ready: true, authenticated: true, authType: 'chatgpt', plan: account.planType || null, model: selected.model, models };
   }
 }
 
@@ -147,15 +149,17 @@ export async function accountStatus() {
   finally { client?.close(); }
 }
 
-export async function narrateWithChatGPT(prompt, { signal, onText, onItem, runtimeDir } = {}) {
+export async function narrateWithChatGPT(prompt, { signal, onText, onItem, runtimeDir, model } = {}) {
   const client = new RpcClient(signal);
   const work = runtimeDir || path.join(os.tmpdir(), 'dragon-oath-narrator');
   let timer;
   try {
     const status = await client.initialize();
     await mkdir(work, { recursive: true });
+    // 玩家选的模型在账号目录里才用，否则退回账号默认模型
+    const chosen = status.models.some(m => m.model === model) ? model : status.model;
     const started = await client.rpc('thread/start', {
-      model: status.model, cwd: work, ephemeral: true, environments: [], dynamicTools: [],
+      model: chosen, cwd: work, ephemeral: true, environments: [], dynamicTools: [],
       approvalPolicy: 'never', sandbox: 'read-only',
       baseInstructions: 'You are the text-only game narrator for the fantasy RPG Drunken Dragon Tavern: Dragon Oath. Follow the supplied game rules and output contract. Return only in-world Simplified Chinese narrative, then a line containing @@@, then the game-state JSON object. Never inspect files, execute commands, use tools, or act as a coding assistant. Do not announce analysis or write a preamble.',
       config: {

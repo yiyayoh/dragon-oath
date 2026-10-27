@@ -587,7 +587,7 @@ const PREF = "dragon-oath-pref";
 let state = null;
 let draft = null;
 let sample = null, sampleKnown = false, busy = false, memWait = false, ctl = null, lastAction = null;
-let pref = { tier: "default", api: "claude", base: "https://api.openai.com/v1", model: "gpt-4o", key: "", narr: "round" };
+let pref = { tier: "default", api: "claude", base: "https://api.openai.com/v1", model: "gpt-4o", key: "", narr: "round", gptModel: "", gptMemModel: "" };
 let prefSaved = false;
 try { const stored = localStorage.getItem(PREF); prefSaved = stored !== null; pref = Object.assign(pref, JSON.parse(stored || "{}")); } catch (e) {}
 let chatgpt = { known: false, checking: false, available: false, ready: false, authenticated: false, model: null, error: null };
@@ -1039,7 +1039,7 @@ async function writeChapter() {
   if (text.length > CHAPTER_SRC) text = entries.map(e => (LINE_TAG[e.k] || "") + e.t.slice(0, 300)).join("\n"); // 太长就每条截短
   if (text.length > CHAPTER_SRC) text = text.slice(0, CHAPTER_SRC / 2) + "\n……\n" + text.slice(-CHAPTER_SRC / 2);
   const st = state;
-  const out = await narrate(chapterPrompt(id, text), () => {}, new AbortController().signal);
+  const out = await narrate(chapterPrompt(id, text), () => {}, new AbortController().signal, { memory: true });
   if (st !== state) return;
   const body = str(splitReply(out)[0].replace(/^[#\s*「」【】]*纪要[:：]?/, "").trim(), 900);
   const m = memo();
@@ -1060,7 +1060,7 @@ async function summarize() {
   memBusy = true;
   const st = state, before = JSON.stringify(memo().people);
   try {
-    const text = await narrate(memoryPrompt(chunk), () => {}, new AbortController().signal);
+    const text = await narrate(memoryPrompt(chunk), () => {}, new AbortController().signal, { memory: true });
     if (st !== state) return;
     const a = text.indexOf("{"), b = text.lastIndexOf("}");
     const d = JSON.parse(text.slice(a, b + 1));
@@ -1105,9 +1105,10 @@ const LOCAL_GPT = /^(127\.0\.0\.1|localhost|\[::1\])$/.test(location.hostname);
 const useApi = () => pref.api === "openai" && !!pref.key && !!pref.model;
 const narratorReady = () => pref.api === "chatgpt" ? chatgpt.ready : useApi() || !!sample;
 const CHATGPT_ERRORS = ["chatgpt_auth", "chatgpt_unavailable", "rate_limited", "network", "refused", "empty_completion", "timeout"];
+const gptModelName = id => id && (chatgpt.models || []).find(m => m.model === id)?.displayName || "";
 function chatgptLabel() {
   if (chatgpt.checking || !chatgpt.known) return "正在检查本机 ChatGPT……";
-  if (chatgpt.ready) return `说书人：ChatGPT${chatgpt.model ? "（" + chatgpt.model + "）" : ""}，已连接。`;
+  if (chatgpt.ready) return `说书人：ChatGPT（${gptModelName(pref.gptModel) || chatgpt.model || "默认模型"}），已连接。`;
   if (chatgpt.error === "chatgpt_auth" || (chatgpt.available && !chatgpt.authenticated)) return ERR.chatgpt_auth;
   return ERR[chatgpt.error] || ERR.chatgpt_unavailable;
 }
@@ -1130,6 +1131,7 @@ async function refreshChatgptStatus() {
     chatgpt.authenticated = data.authenticated === true && data.authType === "chatgpt";
     chatgpt.ready = chatgpt.available && chatgpt.authenticated && data.ready === true;
     chatgpt.model = typeof data.model === "string" ? data.model : null;
+    chatgpt.models = Array.isArray(data.models) ? data.models.filter(m => m && typeof m.model === "string") : [];
     chatgpt.error = chatgpt.ready ? null : CHATGPT_ERRORS.includes(data.error) ? data.error : chatgpt.available && !chatgpt.authenticated ? "chatgpt_auth" : "chatgpt_unavailable";
     if (!prefSaved && chatgpt.ready && pref.api !== "chatgpt") {
       pref.api = "chatgpt";
@@ -1147,8 +1149,9 @@ function narratorLabel() {
   if (sample) return "AI 说书人已就位。第一次行动时会请你允许使用 Claude（消耗你自己的额度）。";
   return sampleKnown ? ERR.no_narrator : "正在召唤说书人……";
 }
-async function narrate(prompt, onText, signal) {
-  if (pref.api === "chatgpt") return chatgptNarrate(prompt, onText, signal);
+// opts.memory：后台整理记忆的调用，本机 ChatGPT 下可以用另一个更省额度的模型
+async function narrate(prompt, onText, signal, opts) {
+  if (pref.api === "chatgpt") return chatgptNarrate(prompt, onText, signal, (opts?.memory && pref.gptMemModel) || pref.gptModel);
   if (useApi()) return apiNarrate(prompt, onText, signal);
   if (sample) {
     const { text } = await sample(prompt, { cache: false, signal, modelTier: pref.tier, onText: ({ text }) => onText(text) });
@@ -1156,11 +1159,11 @@ async function narrate(prompt, onText, signal) {
   }
   throw { code: "no_narrator" };
 }
-async function chatgptNarrate(prompt, onText, signal) {
+async function chatgptNarrate(prompt, onText, signal, model) {
   let reader, text = "", complete = false;
   try {
     const res = await fetch("/__gpt/narrate", {
-      method: "POST", mode: "same-origin", credentials: "omit", signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt }),
+      method: "POST", mode: "same-origin", credentials: "omit", signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify(model ? { prompt, model } : { prompt }),
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
@@ -2622,6 +2625,24 @@ function openSettings() {
       const status = el("div", "label", chatgptLabel()); status.id = "chatgptStatus"; status.setAttribute("role", "status");
       const check = el("button", "btn small", chatgpt.checking ? "检查中……" : "重新检查"); check.type = "button"; check.id = "chatgptCheck"; check.disabled = chatgpt.checking; check.onclick = refreshChatgptStatus;
       s.append(status, check, el("div", "label", "请双击“开始游玩.cmd”，在自动打开的页面中游玩。账号登录在 Codex 中完成，游戏不保存账号凭据。"));
+      // 选模型：账号默认的往往是最强也最费额度的；后台整理记忆可以单独用更省的
+      const ms = chatgpt.models || [];
+      if (ms.length) {
+        const pickModel = (title, hint, key, sameLabel) => {
+          s.append(el("div", "label", title), el("div", "label", hint));
+          const g = el("div", "chips");
+          const opts = [["", sameLabel], ...ms.map(m => [m.model, m.displayName + (m.isDefault ? "（账号默认）" : ""), m.description])];
+          for (const [v, t, d] of opts) {
+            const b = el("button", "chip"); b.type = "button"; b.setAttribute("aria-pressed", String((pref[key] || "") === v));
+            b.append(el("b", null, t)); if (d) b.append(el("small", null, d));
+            b.onclick = () => { pref[key] = v; savePref(); closeModal(); openSettings(); renderChatgptStatus(); };
+            g.append(b);
+          }
+          s.append(g);
+        };
+        pickModel("说书人模型", "每一轮剧情都用它。越强文笔越好，但额度消耗越快。", "gptModel", "跟随账号默认");
+        pickModel("整理记忆用的模型", "后台写前情提要和章节纪要，用省额度的模型就够了。", "gptMemModel", "和说书人相同");
+      }
     }
     if (pref.api === "openai") {
       const mk = (label, key, type, ph) => {

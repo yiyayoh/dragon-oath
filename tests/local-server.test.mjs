@@ -97,6 +97,20 @@ test('status exposes readiness without account identity or credentials', async t
   assert.equal(response.headers['cache-control'], 'no-store');
 });
 
+test('status lists selectable models and narration passes the chosen model through', async t => {
+  let seen = 'unset';
+  const models = [{ model: 'fast-model', displayName: 'Fast', description: 'cheap', isDefault: false, secretField: 'x' }, { model: 'big-model', displayName: 'Big', description: 'costly', isDefault: true }];
+  const server = await startServer(t, { getStatus: () => ({ ...readyStatus(), models }), narrate: async (prompt, { model }) => { seen = model; return 'ok'; } });
+  const status = JSON.parse((await request(server, { pathname: '/__gpt/status' })).body);
+  assert.deepEqual(status.models, [{ model: 'fast-model', displayName: 'Fast', description: 'cheap', isDefault: false }, { model: 'big-model', displayName: 'Big', description: 'costly', isDefault: true }]);
+  await request(server, { method: 'POST', pathname: '/__gpt/narrate', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: 'hi', model: 'fast-model' }) });
+  assert.equal(seen, 'fast-model');
+  await post(server, 'hi');
+  assert.equal(seen, undefined);
+  const bad = await request(server, { method: 'POST', pathname: '/__gpt/narrate', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: 'hi', model: '../evil model' }) });
+  assert.equal(bad.status, 400);
+});
+
 test('narration rejects invalid JSON media types, shapes and prompt lengths', async t => {
   let calls = 0;
   const server = await startServer(t, { narrate: async () => { calls++; return 'unexpected'; } });
