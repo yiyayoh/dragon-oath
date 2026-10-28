@@ -169,6 +169,7 @@ GitHub Pages（`https://yiyayoh.github.io/dragon-oath/`）没有开启，用户�
 
 | 本次提交 | 10-28 | DS | 通读校对（分支 `ds-content`，只写报告）：读了 `SCENES` 66、`SIDE` 39、`CAMP_EVENTS` 93、`QUESTS`/`NPC_NOTES`/`EPILOGUES`/`TRIALS`/`INTEL`/`ENDINGS`/`COMPANIONS`，对照设定集；脚本核对标记/场景引用，没有发现不存在的键。报告 `docs/校对报告-DS.md` 共 46 条 + 6 条拿不准；优先 5 条：人质标记 `act1.martha_alive` 语义混用、`SIDE.martha_relic` 没有前置、老鳗已死后 `eel_deal` 仍出现、港卫军内鬼/酒馆眼线把谜底写进玩家可见的 goal。未改代码、测试或设定集；`tests/game-logic.test.mjs` 51 项全过。未推送，待 Claude 按报告修改 |
 | 本次提交 | 10-28 | Claude | 按 DS 的通读校对报告（`docs/校对报告-DS.md`，`14e9625`，46 条）修改，除“重复-4”（采珠人和潮裔孩子，玩法不同）外都改了：人质死活拆开判断（`hostageDead`/`marthaGone`/`tomGone`，提示词告诉说书人谁死了）；守誓人的遗物、酒馆里的眼线、鼠王的请求加前置条件；老鳗死了就没有“最后一笔”；任务日志显示给玩家的目标改用 `task`（内鬼、眼线、探子、主教的动机不再剧透），也不再显示标记名；关键场景看过后不再出旧的暧昧事件，维克斯、奈雅的关键场景不在恋人阶段出现；对手戏支持 `when`（达林的战斧要先拿到）；锚点里不在场的同伴、已死的老鳗、随机航程都写成条件句；尾声素材前后一致、莉丝不一定在；七人之誓要先救回被掳的同伴；神殿锚点指向试炼素材；设定集 9 处错字。新增 1 项测试，共 52 项 |
+| 本次提交 | 10-28 | Codex + Claude | 立绘第二批：`darin`、`oswald`、`sera`、`eve` 的 `neutral`（GPT 生成，Claude 审过、复制进主仓库），提示词和自评在 `docs/立绘-第二批.md`，原图在桌面 `dragon-oath-portraits-v5`。用户角色佐佐木琲世的立绘也画了（按用户要求去掉了刀），不进 `portraits/`，在桌面那个文件夹里，由用户在角色卡里用“更换立绘”换上 |
 
 **新增提交后，请在这张表末尾补一行。**
 
@@ -190,13 +191,14 @@ GitHub Pages（`https://yiyayoh.github.io/dragon-oath/`）没有开启，用户�
 原图在本地桌面：`dragon-oath-portraits-v2`（第一批 7 张）和 `dragon-oath-portraits-v3`（第二批 21 张，含实际提示词），都是 GPT 内置 imagegen 生成的 1024×1536 PNG。仓库里放的是压缩版：
 
 - `portraits/角色id_表情.webp`，768×1152，`cwebp -q 84 -resize 768 1152` 生成，每张约 70–190 KB，共 28 张约 3.2 MB。`portrait()` 只找 `.webp`。
-- 已有（33 张）：
+- 已有（37 张）：
   - `selene` `vex` `kassian` `borin`：`neutral` `smile` `angry` `sad` `tender` 五种表情齐全
   - `lyra`：只有 `neutral`
   - 奈雅：`naia_disguise.webp`（伪装）、`naia_true.webp`（真身）
+  - 第二批 NPC（10-28，`docs/立绘-第二批.md`）：`darin` 烬卫达林、`oswald` 奥斯瓦尔德、`sera` 瑟拉长老、`eve` 伊芙。几张头顶留白不足 10%，舞台上看不出问题
   - 第一批 NPC（10-28，`docs/立绘-第一批.md`）：`eel` 老鳗、`sath` 萨丝、`governor` 总督、`facemother` 千面母、`valdo` 主教。萨丝的戟尖、主教的法杖尖贴着画面上沿，舞台上看不出问题
   - NPC 默认立绘：`martha`（独臂，左袖别起）、`tom`、`hestia`（人形）、`hooded`（奈雅在序幕的兜帽伪装，左掌有印记）、`cultist`（狂信徒和烬火术士共用）
-- 还缺：`lyra` 和奈雅的表情差分；`hestia` 的龙形；龙化值 40/80 的变体立绘；第二、三幕 NPC（达林、奥斯瓦尔德、瑟拉、伊芙、烬王）和阿登。缺图显示占位剪影，缺表情退回 `neutral`。
+- 还缺：`lyra` 和奈雅的表情差分；`hestia` 的龙形；龙化值 40/80 的变体立绘；烬王、阿登、清醒后的达林。缺图显示占位剪影，缺表情退回 `neutral`。
 - Codex 对第二批的自评：差分保留了人物、衣服和姿势，但有细微纹理重绘；微笑和温柔的区别比较含蓄（尤其维克斯、博林）；小汤姆是半身构图，腿上的绷带没有入画；兜帽客遮脸后能否认出是奈雅比较主观。
 - 奈雅的两张形态图代码还没用到。序幕的“兜帽客”戴着兜帽，和伪装立绘（人类吟游诗人）不一样，所以没有套用；接入第一幕时要处理形态切换。
 - 玩家的立绘不放进 `portraits/`，存在各自的存档里（`state.player.portraitData`，400×600 JPEG）：创建角色时上传，游戏中在“角色”里点“更换立绘”。
