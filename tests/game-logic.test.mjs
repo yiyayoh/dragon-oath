@@ -922,3 +922,21 @@ test('DS 第三轮：勇气幻象八背景、真相秘密六同伴、老鳗链�
   assert.equal(result.step2Before, false); assert.equal(result.step2After, true);
   assert.equal(result.step3Before, false); assert.equal(result.step3After, true); assert.equal(result.step3Killed, false);
 });
+
+test('立绘：龙化 40 / 80 换变体图（排在表情前面），第二个梦里赫斯提雅用龙形；阿登能被点名', () => {
+  const run = game();
+  const result = run(`(() => {
+    state=newGame(freshDraft());state.act=2;const s=state.companions.selene;
+    const pick=(id,expr)=>{const im={};portrait(im,id,expr);return im.src;};
+    const plain=pick('selene','smile');s.draconic=45;const d40=pick('selene','smile');s.draconic=85;const d80=pick('selene','smile');
+    state.companions.naia.draconic=85;const naiaMasked=pick('naia','neutral');
+    state.scene='hestia_dream2';const dragon=pick('hestia');state.scene='hestia_dream1';const human=pick('hestia');
+    applyGM({speakers:['arden']});
+    return {plain,d40,d80,naiaMasked,dragon,human,arden:state.speakers[0],note:npcLines().includes('阿登')};
+  })()`);
+  assert.equal(result.plain, 'portraits/selene_smile.webp');
+  assert.equal(result.d40, 'portraits/selene_drac40.webp'); assert.equal(result.d80, 'portraits/selene_drac80.webp');
+  assert.equal(result.naiaMasked, 'portraits/naia_disguise.webp');
+  assert.equal(result.dragon, 'portraits/hestia_dragon.webp'); assert.equal(result.human, 'portraits/hestia_neutral.webp');
+  assert.equal(result.arden, 'arden'); assert.equal(result.note, true);
+});

@@ -269,6 +269,8 @@ h1, h2, h3 { text-wrap: balance; }
 
 .endcard { text-align: center; justify-items: center; }
 .endcard p { max-width: 54ch; color: var(--muted); }
+.lover-end { width: 100%; justify-items: center; }
+.lover-end img { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); }
 
 @media (max-width: 860px) {
   .create { grid-template-columns: 1fr; }
@@ -386,6 +388,7 @@ const PEOPLE = {
   eel: { name: "老鳗", title: "黑潮会首领", color: "#3f5c4a" },
   governor: { name: "艾德蒙总督", title: "灰帆港总督", color: "#3d4f7a" },
   sath: { name: "萨丝", title: "港卫军尉官", color: "#a07a3a" },
+  arden: { name: "阿登", title: "年轻斗士", color: "#7a4a3a" },
   facemother: { name: "千面母", title: "教团间谍头子", color: "#4b3f4f" },
   darin: { name: "达林", title: "烬卫，博林的哥哥", color: "#8a3a22" },
   oswald: { name: "奥斯瓦尔德", title: "莉拉的导师", color: "#5a4a6e" },
@@ -1846,6 +1849,10 @@ const failed = new Set();
 function portrait(img, id, expr) {
   if (id === "player" && state?.player?.portraitData) { img.src = state.player.portraitData; return; }
   const cands = [];
+  // 龙化值 80 / 40 的变体立绘（selene_drac80.webp 这样）排在表情前面：鳞片和角不会因为换了表情就消失；没有图就照旧
+  const drac = COMPANIONS[id] && state?.companions?.[id] ? dracOf(id) : 0;
+  if (drac >= 40 && (id !== "naia" || naiaTrue())) { if (drac >= 80) cands.push(`portraits/${id}_drac80.webp`); cands.push(`portraits/${id}_drac40.webp`); }
+  if (id === "hestia" && state?.scene === "hestia_dream2") cands.push("portraits/hestia_dragon.webp"); // 第二个梦里她以银龙现身
   if (id === "naia") { // 奈雅分伪装和真身两种样子，表情差分命名为 naia_true_smile.webp 这样
     const form = naiaTrue() ? "true" : "disguise";
     if (expr && expr !== "neutral") cands.push(`portraits/naia_${form}_${expr}.webp`);
@@ -2286,6 +2293,7 @@ const NPC_NOTES = [
   ["eve", 2, "伊芙，主教瓦尔多的妹妹，多年前逃离教团，隐居在潮裔中间。她能证明瓦尔多也是献祭幸存者的后代，以及他真正想要的是什么（第三幕说服主教的关键证词）。"],
   ["emberking", 3, "烬王，被封印千年的远古黑龙。苏醒后用通灵向每个印记持有者低语，针对各自的秘密开出条件。它傲慢、古老、说话像熔岩一样慢，把凡人看作燃料。"],
   ["valdo", 2, "主教瓦尔多，灰烬教团领袖，光头、灰色仪式纹身、燃烧的橙色眼睛。第二幕只在誓约神殿的高潮现身：带人杀入、抢走誓约之心、掳走一名同伴。他冷静、有说服力，把银龙的“守护”称作建立在尸骨上的谎言。"],
+  ["arden", 1, "阿登，卡西安死去的好友的儿子，地下斗兽场的年轻斗士。认定是卡西安毒死了他父亲，当众要求生死决斗；他的恨是冲着卡西安的，不是天生的恶人。真相（毒药是老鳗买的）揭开后可以成为盟友。"],
   ["facemother", 1, "千面母，灰烬教团的间谍头子、奈雅的养母，从不以同一张脸出现两次。第一幕里可以让她伪装成路人、贵妇、小贩和玩家说上几句话埋下伏笔（GM 不要透露身份），灯塔之夜主导伏击。"],
 ];
 const npcLines = () => NPC_NOTES.filter(([, from, , to]) => from <= state.act && (to == null || state.act <= to))
@@ -5336,6 +5344,14 @@ function openEnd() {
     }
     const ht = el("div", "kv"); ht.append(el("span", null, "赫斯提雅的信任"), el("b", null, sgn(state.hestiaTrust))); list.append(ht);
     s.append(list);
+    const end = state.flags["act3.ending"];
+    if (act === 3 && end) for (const id of lovers().filter(id => !state.companions[id].betrayed).sort((a, b) => (state.companions[b].romance === "vowed") - (state.companions[a].romance === "vowed"))) {
+      const card = el("div", "step lover-end"), im = el("img");
+      im.alt = `你和${PEOPLE[id].name}`; im.onerror = () => im.remove(); im.src = `portraits/ending_${id}.webp`;
+      card.append(im, el("div", "label", `你和${PEOPLE[id].name}${state.companions[id].romance === "vowed" ? " · 誓约" : ""}`));
+      const note = EPILOGUES[id]?.lover?.[end]; if (note) card.append(el("p", null, note));
+      s.append(card);
+    }
     if (nextSc) {
       const b = el("button", "btn gold", `进入${ACT_NAMES[nextSc.act]}`); b.type = "button";
       b.onclick = () => { if (busy) return; nextAct(); };
