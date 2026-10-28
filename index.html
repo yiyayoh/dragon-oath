@@ -852,6 +852,7 @@ const QUESTS = {
     test: "她以真面目问“你喜欢的是哪一张脸”时，回答“哪张都是你”或“你自己想用的那张”" },
 };
 /* 支线任务。at：能接的场景；状态写在 side.<id>：taken 接下、done 完成（程序发奖励）、failed 失败或放弃。
+   need（可选）：() => 布尔，满足才会出现，用来串 NPC 事件链（例如 need: () => state.flags["side.martha_relic"] === "done"）。
    hook 是接任务时的处境，goal 是怎么完成（给说书人看的）；reward 由代码发：gold、supplies、items、flags。 */
 const SIDE = {
   tom_leg: { name: "小汤姆的腿", act: 1, at: ["act1_hub", "act1_1"],
@@ -936,7 +937,7 @@ const SIDE = {
 for (const id of Object.keys(SIDE)) FLAG_KEYS[`side.${id}`] = ["taken", "done", "failed"];
 // 给说书人的支线：这一场能接的、已经接下的
 function sideLine() {
-  const can = Object.entries(SIDE).filter(([id, q]) => q.act === state.act && !state.flags[`side.${id}`] && q.at.includes(state.scene));
+  const can = Object.entries(SIDE).filter(([id, q]) => q.act === state.act && !state.flags[`side.${id}`] && q.at.includes(state.scene) && (!q.need || q.need()));
   const on = Object.entries(SIDE).filter(([id]) => state.flags[`side.${id}`] === "taken");
   return (can.length ? `\n可以接的支线（让找人帮忙的 NPC 自然地开口，玩家答应时写 side.<id>=taken）：${can.map(([id, q]) => `《${q.name}》（side.${id}）：${q.hook}`).join("；")}` : "") +
     (on.length ? `\n进行中的支线：${on.map(([id, q]) => `《${q.name}》（side.${id}）：${q.goal}；完成时写 side.${id}=done（程序发奖励：${q.rewardText}），做不成写 failed`).join("；")}` : "");
@@ -2484,7 +2485,7 @@ function applyGM(d, mode) {
     const sid = /^side\.(\w+)$/.exec(k)?.[1];
     if (sid) { // 支线：先接下才能完成；完成时代码发奖励
       const cur = state.flags[k];
-      if (cur === "done" || cur === "failed" || v === cur || (v !== "taken" && cur !== "taken")) continue;
+      if (cur === "done" || cur === "failed" || v === cur || (v !== "taken" && cur !== "taken") || (!cur && SIDE[sid].need && !SIDE[sid].need())) continue;
       state.flags[k] = v;
       if (v === "done") { const r = SIDE[sid].reward || {};
         if (r.gold) state.player.gold += r.gold;

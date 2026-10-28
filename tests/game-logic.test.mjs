@@ -566,3 +566,15 @@ test('烬王末路崩塌平台；主教生命过半开始献祭，3 回合后烬
   })()`);
   assert.deepEqual(result, { cp: true, started: true, ritual: true, bigger: true, fallen: true, collapsed: 1, partyMoved: true });
 });
+
+test('支线的前置条件：没满足时不出现、接不了', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};state=newGame(freshDraft());state.act=1;state.scene='act1_hub';
+    SIDE.chain_test={name:'测试链',act:1,at:['act1_hub'],need:()=>state.flags['side.tom_leg']==='done',hook:'钩子',goal:'目标',reward:{},rewardText:'无'};FLAG_KEYS['side.chain_test']=['taken','done','failed'];
+    const hidden=!buildPrompt('看').includes('测试链');applyGM({flags:{'side.chain_test':'taken'}});const blocked=state.flags['side.chain_test']??null;
+    state.flags['side.tom_leg']='done';const shown=buildPrompt('看').includes('测试链');applyGM({flags:{'side.chain_test':'taken'}});
+    return {hidden,blocked,shown,taken:state.flags['side.chain_test']};
+  })()`);
+  assert.deepEqual(result, { hidden: true, blocked: null, shown: true, taken: 'taken' });
+});
