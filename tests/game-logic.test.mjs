@@ -255,7 +255,7 @@ test('第二幕：第一幕结束接到出海，航程每晚一个海上事件�
   const result = run(`(() => {
     gm=()=>{};state=newGame(freshDraft());state.act=1;state.scene='act1_dawn';state.ended=true;closeModal=()=>{};render=()=>{};
     state.companions.selene.recruited=true;state.flags['act1.departure_ship']='seagull';
-    nextAct();const start={act:state.act,scene:state.scene,level:state.player.level};
+    nextAct();state.voyage=['act2_siren','act2_ghost','act2_storm'];const start={act:state.act,scene:state.scene,level:state.player.level};
     state.camp={};restNight(null);const sirenLine=state.log.find(e=>e.k==='sys'&&/海妖之歌/.test(e.t))?.t||'';const siren={scene:state.scene,saves:/=[0-9]+ (成功|失败)/.test(sirenLine)&&!/object/.test(sirenLine)};
     state.camp={};restNight(null);const ghost=state.scene;
     state.camp={};restNight(null);const storm={scene:state.scene,flag:state.flags['act2.storm'],clean:!/object|NaN/.test(state.log.filter(e=>e.k==='sys').pop().t)};
@@ -491,7 +491,7 @@ test('共鸣：营地里看过共鸣事件后解锁合体技；进入第二幕�
   const run = game();
   const result = run(`(() => {
     gm=()=>{};state=newGame(freshDraft());state.act=1;state.scene='act1_hub';const s=state.companions.selene;s.recruited=true;s.approval=45;
-    state.campSeen=['act1_home','selene_hint'];state.camp={plan:planNight(),done:[],talk:null};const planned=state.camp.plan.important;
+    state.campSeen=['act1_home','selene_scene','selene_hint'];state.camp={plan:planNight(),done:[],talk:null};const planned=state.camp.plan.important;
     talkTo('selene');const res=!!s.resonance;
     startCombat('docks_brawl');const c=state.combat,me=c.units.player,mate=c.units.selene;mate.zone=me.zone;
     const foe=Object.values(c.units).find(u=>u.side!=='party');c.res={move:1,action:true,bonus:true};comboStrike(me,mate,foe);const used=!!c.combos.selene;state.combat=null;
@@ -577,4 +577,96 @@ test('支线的前置条件：没满足时不出现、接不了', () => {
     return {hidden,blocked,shown,taken:state.flags['side.chain_test']};
   })()`);
   assert.deepEqual(result, { hidden: true, blocked: null, shown: true, taken: 'taken' });
+});
+
+test('航程：从五个海上事件里抽两个，暴风总是最后一夜；旧存档走过的事件排在前面；无风带由代码结算', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};const plans=[];
+    for(let i=0;i<40;i++){state=newGame(freshDraft());state.act=2;state.scene='act2_1';plans.push(voyagePlan());}
+    const ok=plans.every(p=>p.length===3&&p[2]==='act2_storm'&&new Set(p).size===3&&p.slice(0,2).every(id=>VOYAGE_POOL.includes(id)));
+    const kinds=new Set(plans.flatMap(p=>p.slice(0,2))).size;
+    state=newGame(freshDraft());state.act=2;state.scene='act2_1';state.voyage=['act2_doldrums','act2_castaway','act2_storm'];
+    const walk=[];for(let i=0;i<3;i++){state.camp={};restNight(null);walk.push(state.scene);}
+    const dold=state.flags['act2.doldrums'];applyGM({flags:{'act2.doldrums':'ok','act2.castaway':'saved'}});
+    state=newGame(freshDraft());state.act=2;state.scene='act2_ghost';push('you','旧档');const legacy=campNextOf(SCENES.act2_ghost);
+    return {ok,kinds,walk,dold,legacyFirst:state.voyage[0],legacy};
+  })()`);
+  assert.equal(result.ok, true); assert.ok(result.kinds >= 4, String(result.kinds));
+  assert.deepEqual(result.walk, ['act2_doldrums', 'act2_castaway', 'act2_storm']);
+  assert.ok(['ok', 'bad'].includes(result.dold));
+  assert.equal(result.legacyFirst, 'act2_ghost'); assert.notEqual(result.legacy, 'act2_ghost');
+});
+
+test('航程没抽到幽灵船时，赛勒涅个人任务的第二步在漂流者和纪念礁也能完成；救下漂流者潮裔声望 +10', () => {
+  const run = game();
+  const result = run(`(() => {
+    state=newGame(freshDraft());state.act=2;state.scene='act2_mist_memorial';const s=state.companions.selene;s.recruited=true;s.approval=30;
+    state.flags['quest.selene.diary']=true;const before=repOf('tideborn');
+    applyGM({flags:{'quest.selene.truth':true,'act2.castaway':'saved'}});
+    return {truth:state.flags['quest.selene.truth'],memorial:SCENES.act2_mist_memorial.anchor.includes('quest.selene.truth'),castaway:SCENES.act2_castaway.anchor.includes('quest.selene.truth'),rep:repOf('tideborn')-before};
+  })()`);
+  assert.deepEqual(result, { truth: true, memorial: true, castaway: true, rep: 10 });
+});
+
+test('恋爱关键场景：营地里跟着对方走开进入单独的场景，只有两人在场，结束后回到篝火边还能睡觉', () => {
+  const run = game();
+  const result = run(`(() => {
+    const calls=[];gm=(a,s)=>{if(s)push('you',s);calls.push(a);};state=newGame(freshDraft());state.act=1;state.scene='act1_hub';
+    const s=state.companions.selene;s.recruited=true;s.approval=45;state.companions.borin.recruited=true;
+    state.campSeen=['act1_home'];enterCamp();const planned=state.camp.plan.important;
+    talkTo('selene');const inside={scene:state.scene,camp:state.camp,present:present(),line:nextLine(SCENES[state.scene])};
+    applyGM({scene_end:true});const early=state.scene;
+    push('you','我接过剑');applyGM({romance:[{id:'selene',to:'hint'}],scene_end:true});
+    return {planned,inside,early,back:state.scene,romance:s.romance,camp:!!state.camp,done:state.camp?.done,talk:state.camp?.talk,seen:state.campSeen.includes('selene_scene')};
+  })()`);
+  assert.equal(result.planned, 'selene_scene');
+  assert.equal(result.inside.scene, 'love_selene'); assert.equal(result.inside.camp, null);
+  assert.deepEqual(result.inside.present, ['selene']); assert.match(result.inside.line, /插曲/);
+  assert.equal(result.early, 'love_selene');
+  assert.equal(result.back, 'act1_hub'); assert.equal(result.romance, 'hint');
+  assert.equal(result.camp, true); assert.deepEqual(result.done, ['selene']); assert.equal(result.talk, null); assert.equal(result.seen, true);
+});
+
+test('赫斯提雅每幕入梦一次：按信任值走向不同，醒来后写清晨；第三幕最后一夜梦完进入攻山', () => {
+  const run = game();
+  const result = run(`(() => {
+    const calls=[];gm=(a,s,m)=>{calls.push([a,m]);};state=newGame(freshDraft());state.act=1;state.scene='act1_hub';state.act1Day=1;state.day=1;
+    state.camp={};restNight(null);const first=state.scene;
+    state.camp={};restNight(null);const dreaming=state.scene;state.hestiaTrust=25;
+    const prompt=buildPrompt('你好');const high=prompt.includes(SCENES.hestia_dream1.trust.high);
+    applyGM({hestia_trust:5,scene_end:true});const notYet=state.scene;
+    push('you','我信你');const insp=state.player.inspiration;applyGM({scene_end:true});
+    const woke={scene:state.scene,insp:state.player.inspiration-insp,wake:state.pendingWake?.mode,trust:state.hestiaTrust};
+    state.pendingWake=null;state.camp={};restNight(null);const again=state.scene;
+    state=newGame(freshDraft());state.act=3;state.scene='act3_whisper';state.hestiaTrust=-30;state.camp={};restNight(null);
+    const d3={scene:state.scene,low:buildPrompt('x').includes(SCENES.hestia_dream3.trust.low)};push('you','不');applyGM({scene_end:true});
+    return {first,dreaming,high,notYet,woke,again,d3,climb:state.scene,next:!!state.pendingWake&&!state.pendingWake.mode};
+  })()`);
+  assert.equal(result.first, 'act1_hub'); assert.equal(result.dreaming, 'hestia_dream1'); assert.equal(result.high, true);
+  assert.equal(result.notYet, 'hestia_dream1');
+  assert.deepEqual(result.woke, { scene: 'act1_hub', insp: 1, wake: 'morning', trust: 30 });
+  assert.equal(result.again, 'act1_hub');
+  assert.deepEqual(result.d3, { scene: 'hestia_dream3', low: true });
+  assert.equal(result.climb, 'act3_climb'); assert.equal(result.next, true);
+});
+
+test('酒馆升级：花金币，说书人写不了；客房多一次短休、吧女分钱或添补给、情报站多一条消息、第三幕多一条攻山的路', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};state=newGame(freshDraft());state.act=1;state.scene='act1_hub';state.act1Day=state.day;state.player.gold=100;
+    applyGM({flags:{'tavern.rooms':true}});const forged=!!state.flags['tavern.rooms'];
+    const poor=upgradeTavern('intel');const a=upgradeTavern('rooms'),b=upgradeTavern('barmaid');const gold=state.player.gold;
+    state.camp={};restNight(null);const night={gold:state.player.gold-gold,short:state.shortRests};
+    let n=0;state.player.hp=1;while(shortRest())n++;
+    state.player.gold=200;upgradeTavern('intel');const intel=buildPrompt('x').includes('【情报站】');
+    state.scene='act1_docks';const away=buildPrompt('x').includes('【情报站】');
+    state.act=3;state.scene='act3_haven';const sup=state.supplies;state.camp={};restNight(null);const sup3=state.supplies-sup;
+    state.scene='act3_climb';applyGM({flags:{'act3.route':'tunnel'}});
+    return {forged,poor,a,b,spent:100-gold,night,shorts:n,intel,away,sup3,route:state.flags['act3.route']};
+  })()`);
+  assert.equal(result.forged, false); assert.equal(result.poor, false); assert.equal(result.a, true); assert.equal(result.b, true);
+  assert.equal(result.spent, 100); assert.deepEqual(result.night, { gold: 8, short: -1 });
+  assert.equal(result.shorts, 3); assert.equal(result.intel, true); assert.equal(result.away, false);
+  assert.equal(result.sup3, 1); assert.equal(result.route, 'tunnel');
 });

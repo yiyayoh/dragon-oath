@@ -492,6 +492,69 @@ const SCENES = {
     next: null, level: 2, camp: false, alone: true, dream: true, endAct: 0, after: "act1_1", endNeeds: { flags: ["prologue.hestia_answer"], turns: 1 },
   },
 
+  /* 插曲：从营地或长休进入的单独小场景，结束（scene_end）后回到原来的地方（enterInterlude / leaveInterlude）。
+     with：只有这位同伴在场；trust：赫斯提雅的梦按信任值走向不同（dreamLine） */
+  love_selene: {
+    title: "月下练剑", loc: "月光下 · 只有你们两个", bg: "linear-gradient(160deg,#9aa8bd,#2e3646 55%,#10131a)", interlude: true, with: "selene", camp: false, endNeeds: { turns: 2 },
+    anchor: "（单独相处的场景，从营地进入。）夜深，赛勒涅睡不着，独自在月光下练剑——在酒馆的后院、船的甲板或者岛上的空地，按玩家现在所在的地方写。只有你们两个人。她发现你在看，没有赶你走，递给你一把备用的剑：“想学吗？骑士的礼节，先从怎么握剑开始。”素材：她纠正你的姿势时手指碰到你的手腕，又很快收回去；她教你骑士礼（单膝、剑尖朝下、报上名字和誓言）；你逗她或者认真学，她第一次在你面前笑出来，笑完自己愣住；“誓言不是枷锁，是我选择站立的地方。”她慢热，不会一晚就说喜欢，但会记住今晚（用 remember）。若她发现过你撒谎，收剑时她会问“你会对我说谎吗”，这是一道坎。可以用 romance 推进一格，也可以只是走近一步（approval）。对话 2~4 轮后，她收剑回去休息，写 scene_end: true，程序会把玩家带回篝火边。",
+    next: null,
+  },
+  love_vex: {
+    title: "屋顶烟火", loc: "高处 · 只有你们两个", bg: "linear-gradient(160deg,#6b4f7a,#251a30 55%,#0c0910)", interlude: true, with: "vex", camp: false, endNeeds: { turns: 2 },
+    anchor: "（单独相处的场景，从营地进入。）维克斯拉你爬上高处——灰帆港的屋顶（第一幕、第三幕），或者船的桅杆瞭望台、岛上的岩顶（第二幕）。他不知从哪弄来一捆烟火（第一幕是港口节庆剩下的，第二幕是船上的信号焰火，第三幕是从着火的仓库里抢出来的最后几支），点着了往天上放。素材：他像平时一样贫嘴、调情，烟火亮起来的时候突然安静；他承认从来没有人等过他——小时候在码头等父母回来，后来是莉丝在等他，可他总是迟到；“你……会等我吗？我是说，如果我又跑了。”真心话说完他会立刻用玩笑掩饰。他的考验是你愿不愿意为他和老鳗翻脸，这里可以提起，不急着做。若玩家回应了他的真心，可以用 romance 推进一格。2~4 轮后（烟火放完、楼下有人喊），写 scene_end: true，程序会把玩家带回篝火边。",
+    next: null,
+  },
+  love_kassian: {
+    title: "海边篝火", loc: "海边 · 只有你们两个", bg: "linear-gradient(160deg,#a0603a,#3a2318 55%,#120b08)", interlude: true, with: "kassian", camp: false, endNeeds: { turns: 2 },
+    anchor: "（单独相处的场景，从营地进入。）卡西安在海边另生了一小堆篝火（第一幕是沉船湾的沙滩，第二幕是船泊岸边的礁石滩，第三幕是港口防波堤下），只叫了你一个人。他看见你身上还没好的伤，不由分说地替你包扎——角斗士的手很稳，动作意外地轻。素材：他教你唱水手的潮歌（他母亲是渔妇，那首歌讲出海的人总会回来）；他说起斗兽场里第一次没下杀手的那天；“我这双手杀过太多人。现在我想用它们护住点什么。”他会先问你疼不疼，再问你怕不怕。他的考验是你在能轻易杀死一个投降的敌人时选择放过，这里可以聊起，不要替玩家做。可以用 romance 推进一格。2~4 轮后（篝火烧完），写 scene_end: true，程序会把玩家带回营地。",
+    next: null,
+  },
+  love_borin: {
+    title: "屋顶醉谈", loc: "屋顶 · 只有你们两个", bg: "linear-gradient(160deg,#7a5a32,#2b2014 55%,#0e0a06)", interlude: true, with: "borin", camp: false, endNeeds: { turns: 2 },
+    anchor: "（单独相处的场景，从营地进入。）博林抱着一桶酒爬上屋顶（醉龙酒馆的屋顶；第二幕是船的顶舱或岛上的岩顶），硬拉你上去陪他喝，他喝得比平时都凶。素材：他说起哥哥达林——小时候达林替他挨揍、教他打铁、最后为了掩护他断后；喝到后来，他第一次在人前哭，哭完又骂自己没出息；他问你“你说，我是不是只会躲在酒桶后面”。这一场可以开出他的“戒酒”小线：玩家可以陪他把剩下的酒倒掉（他会难受，但会记住），也可以接受他本来的样子、陪他喝完（他会觉得被理解）。两种都能推进关系，不要评判对错，用 remember 记下玩家怎么选。可以用 romance 推进一格。2~4 轮后（天边发白，或者他靠着烟囱睡着了打呼），写 scene_end: true，程序会把玩家带回篝火边。",
+    next: null,
+  },
+  love_lyra: {
+    title: "深夜研究", loc: "灯下 · 只有你们两个", bg: "linear-gradient(160deg,#6a4f8a,#241a33 55%,#0c0912)", interlude: true, with: "lyra", camp: false, endNeeds: { turns: 2 },
+    anchor: "（单独相处的场景，从营地进入。）莉拉那里还亮着灯（酒馆的阁楼、船舱或者帐篷），桌上摊满笔记、龙血样本和她画的印记纹路图。她叫你过来“当个样本”：想比对你们两人的印记。素材：她握着你的手腕描你掌心的纹路，一边嘴硬一边讲她的理论（印记是活的，像龙的心跳）；你们斗嘴，她嫌你“理论基础太差”；两人的印记靠近时会一起发光，她的脸跟着红了；夜深了，她讲着讲着不小心靠在你肩上睡着——你可以叫醒她、把她抱到床上，或者就这么坐着到天亮。她的考验是看到你不会把她当工具，这里可以埋下伏笔。可以用 romance 推进一格。2~4 轮后，写 scene_end: true，程序会把玩家带回营地。",
+    next: null,
+  },
+  love_naia: {
+    title: "哪一张脸", loc: "无人处 · 只有你们两个", bg: "linear-gradient(160deg,#4f6a6a,#1b2626 55%,#090d0d)", interlude: true, with: "naia", camp: false, endNeeds: { turns: 2 },
+    anchor: "（单独相处的场景，从营地进入。）奈雅约你到没人的地方（码头尽头、船尾、礁石后面）。她一张张地换脸给你看：米拉的脸、教团给她的脸、几张你没见过的脸——最后，她第一次以真面目站在你面前（她自己都不太确定这是不是“真的”）。她问：“你喜欢的是哪一张脸？”素材：她习惯了被当成工具和面具，害怕你喜欢的只是某个伪装；回答“哪张都是你”或“你自己想用的那张”能打动她，选某一张伪装会让她失落（但不是关系的终点）；她可以在任何性别的形象之间切换，按玩家的偏好和她自己的意愿来，不要强迫；她可能会问起你的名字对你意味着什么。若玩家的回答打动了她，可以用 romance 推进一格。2~4 轮后，写 scene_end: true，程序会把玩家带回营地。",
+    next: null,
+  },
+  hestia_dream1: {
+    title: "银雾里的旧事", loc: "梦境 · 银雾", bg: "linear-gradient(160deg,#8fa2b6,#2f3a47 55%,#11161c)", interlude: true, alone: true, dream: true, camp: false, endNeeds: { turns: 1 },
+    anchor: "（长休时的梦，只有玩家一个人。）赫斯提雅第二次入梦。银雾里，她带你看一段千年前的记忆：她和烬王在烬冠山上空撕咬，她用最后的力气立下誓约，把烬王封进山腹，七道银光从她身上散开。她知道你们这几天在灰帆港做了什么（按最近剧情挑一两件说），会评价。问起那个骑士姑娘（赛勒涅）时，她的目光停留得有点久（洞悉 DC 15 能察觉，但看不出原因）。按下面【这一次梦的走向】写她的态度。玩家可以追问代价、守誓人、神殿，她只回答一部分。根据玩家的回应用 hestia_trust 调整信任（−15~+15）。1~3 轮后玩家醒来，写 scene_end: true，程序会接着写醒来后的清晨。",
+    trust: {
+      high: "她信任你，语气像老祖母：主动给一条有用的提示（和玩家当前目标有关、锚点或支线里已经有的消息，例如守誓人的钥匙、哪条船靠得住、谁在盯着酒馆），叮嘱你小心身边的眼睛。临别时她把一缕银光放进你掌心——醒来时你会精神格外好（程序给 1 点灵感）。",
+      mid: "她还在观察你：温和但有所保留，反问你为什么还走在这条路上；提示只给一半，像在出题。",
+      low: "之前你拒绝过、质问过她，她冷淡而疲惫：不再劝你，只让你看一个画面——如果你们失败，灰帆港会在龙焰里烧成什么样子；然后问你：“你还要拒绝我吗？”",
+    },
+    next: null,
+  },
+  hestia_dream2: {
+    title: "龙骨之下", loc: "梦境 · 雾里的龙", bg: "linear-gradient(160deg,#9fb0c0,#33404d 55%,#12171d)", interlude: true, alone: true, dream: true, camp: false, endNeeds: { turns: 1 },
+    anchor: "（长休时的梦，只有玩家一个人。）赫斯提雅入梦，这一次她以巨大的银龙现身：鳞片开裂、光芒黯淡，伏在雾里，一只巨大的眼睛看着你。她知道你们上了岛。若 act2.murals 为 true（看过骨骼岛的壁画：封印靠献祭维持），玩家很可能会质问她，她不否认“封印需要代价”，只说“这一次不必是一村人”。不要提前说出“容器”和她想借宿主重生——那是神殿里的启示。她会提起誓约神殿的三重试炼（勇气、真相、牺牲），按走向决定说多少。根据玩家的回应用 hestia_trust 调整信任（−15~+15）。1~3 轮后玩家醒来，写 scene_end: true，程序会接着写醒来后的清晨。",
+    trust: {
+      high: "她坦白一部分：千年前她也付过代价，她累了；她告诉你神殿只在退潮时浮出，真相之厅里每个人都要说出一个秘密，让你提前想好。临别时她说：“到了神殿，你会知道我是什么。到那时，别恨我。”你醒来时精神格外好（程序给 1 点灵感）。",
+      mid: "她像在谈条件：问你想要什么——力量、同伴平安、港口得救——暗示她都能给，只要你最后肯听她一次。",
+      low: "她不再装作慈祥：直说你们离不开她的力量，掌心的印记就是证据；她让你的掌心烫得发疼，又松开，叹了口气：“我不是你的敌人。烬王才是。”",
+    },
+    next: null,
+  },
+  hestia_dream3: {
+    title: "最后的梦", loc: "梦境 · 将熄的银光", bg: "linear-gradient(160deg,#a7a9b8,#36384a 55%,#121219)", interlude: true, alone: true, dream: true, camp: false, endNeeds: { turns: 1 },
+    anchor: "（长休时的梦，只有玩家一个人。）赫斯提雅最后一次入梦。她已经很虚弱，老妇人和银龙的样子交替闪现。神殿里的启示你已经知道了，她也不再隐瞒：她要一具愿意的身体（玩家，或者一位同伴），借它重生，把烬王再封千年。她不强求，但会把代价说清楚：誓约之心在她手里（act2.heart=hestia）时她底气更足；被销毁或被教团抢走时她更急迫。玩家可以答应、谈条件、拒绝，或者告诉她别的办法（龙蛋、七人共同承担誓约……）。按下面【这一次梦的走向】写她的态度。根据玩家的回应用 hestia_trust 调整信任（−15~+15）。1~3 轮后玩家醒来，写 scene_end: true，程序会接着往下写。",
+    trust: {
+      high: "她像在和老朋友道别：谢谢你一路走到这里，说出她千年里的孤独；就算你拒绝当容器她也尊重，并告诉你烬王的弱点——它坠落之后，心口会暴露出来，那时才是做最后决定的时候。你醒来时精神格外好（程序给 1 点灵感）。",
+      mid: "她冷静地讲条件：给出她的提议，也承认别的路也许走得通，只是她不信凡人做得到。",
+      low: "她几乎在恳求，又压着怒意：你们一路都在拒绝她，可现在只剩她能救这片海；她警告你，若你选了别的路又失败了，港口的每一个死者都算在你头上。",
+    },
+    next: null,
+  },
+
   /* 第一幕：灰帆港。开场 → 港口（枢纽）⇄ 五个地点，任意顺序；拿到航海图和船后去灯塔 → 黎明 */
   act1_1: {
     camp: false, title: "灰帆港的早晨", loc: "醉龙酒馆 · 清晨", bg: "linear-gradient(160deg,#6d6a5e,#2a2621 60%,#13110e)",
@@ -499,8 +562,8 @@ const SCENES = {
     next: "act1_hub", recruit: ["naia"], meet: ["naia"], act: 1,
   },
   act1_hub: {
-    title: "灰帆港", loc: "灰帆港 · 醉龙酒馆", bg: "linear-gradient(160deg,#4f5a63,#1f252b 60%,#0e1114)", campFree: true, hub: true, jail: true,
-    anchor: "醉龙酒馆是队伍的据点；在这里可以和玛莎、小汤姆、米拉说话，打听消息，商量下一步。本幕目标：拿到航海图和一艘船。航海图封在酒馆地窖的“龙息”酒桶底下，要先从总督府金库拿回守誓人的钥匙（act1.key 有值）；拿到钥匙后回到酒馆，下地窖打开暗格取出航海图时写 act1.chart=opened（没有钥匙打不开，硬撬也不行）。港口各处可以按任意顺序去，玩家说要去哪里时，把 advance 设为对应的场景 id：黑潮码头 act1_docks（老鳗、维克斯的债、斗兽场）；旧学院废塔 act1_tower（第七道银光落在那里，有人看见教团在围塔）；沉船湾 act1_wreck（银龙的尸体搁浅在那里）；总督府 act1_manor（守誓人的钥匙锁在金库里；三天后的晚上有月光舞会，需要请柬）；下水道迷宫 act1_sewers（教团在港口底下的据点）；鱼市与灯笼街 act1_market（买东西、打听消息，有人在找人帮忙）。每个地点里面还有几处小场景，到了那里再走。两条路线：潜进金库时顺手替老鳗偷出总督的走私账本，换“黑鳗号”和维克斯债务减半；或者帮港卫军尉官萨丝搜集总督通教的证据，揭发后合法取回钥匙、借到“海鸥号”。两条路互斥，也可以都不选，自己偷一艘船。航海图和船都到手后（act1.chart 和 act1.ship 都有值），教团会在当晚动手：把 advance 设为 act1_lighthouse。在酒馆里睡觉不消耗补给（写 camp: true）；每睡一晚就是一天，维克斯的债有期限。",
+    title: "灰帆港", loc: "灰帆港 · 醉龙酒馆", bg: "linear-gradient(160deg,#4f5a63,#1f252b 60%,#0e1114)", campFree: true, hub: true, jail: true, tavern: true,
+    anchor: "醉龙酒馆是队伍的据点；在这里可以和玛莎、小汤姆、米拉说话，打听消息，商量下一步。本幕目标：拿到航海图和一艘船。航海图封在酒馆地窖的“龙息”酒桶底下，要先从总督府金库拿回守誓人的钥匙（act1.key 有值）；拿到钥匙后回到酒馆，下地窖打开暗格取出航海图时写 act1.chart=opened（没有钥匙打不开，硬撬也不行）。港口各处可以按任意顺序去，玩家说要去哪里时，把 advance 设为对应的场景 id：黑潮码头 act1_docks（老鳗、维克斯的债、斗兽场）；旧学院废塔 act1_tower（第七道银光落在那里，有人看见教团在围塔）；沉船湾 act1_wreck（银龙的尸体搁浅在那里）；总督府 act1_manor（守誓人的钥匙锁在金库里；三天后的晚上有月光舞会，需要请柬）；下水道迷宫 act1_sewers（教团在港口底下的据点）；鱼市与灯笼街 act1_market（买东西、打听消息，有人在找人帮忙）。每个地点里面还有几处小场景，到了那里再走。两条路线：潜进金库时顺手替老鳗偷出总督的走私账本，换“黑鳗号”和维克斯债务减半；或者帮港卫军尉官萨丝搜集总督通教的证据，揭发后合法取回钥匙、借到“海鸥号”。两条路互斥，也可以都不选，自己偷一艘船。航海图和船都到手后（act1.chart 和 act1.ship 都有值），教团会在当晚动手：把 advance 设为 act1_lighthouse。在酒馆里睡觉不消耗补给（写 camp: true）；每睡一晚就是一天，维克斯的债有期限。玛莎的酒馆可以花金币升级（修缮客房、请吧女、开地下情报站；玩家在界面上选，程序结算，升级过的写在世界标记 tavern.* 里），描写酒馆时要体现出来。",
     next: ["act1_docks", "act1_tower", "act1_wreck", "act1_manor", "act1_sewers", "act1_market", "act1_lighthouse"], recruit: ["naia", "vex"], meet: ["naia", "vex"], act: 1,
     // 维克斯的债有了结果之后，他会来酒馆找队伍，可以在这里劝他入队
     meetIf: { vex: () => !!(state.flags["act1.lise"] || state.flags["act1.vex_debt"]) },
@@ -595,20 +658,37 @@ const SCENES = {
 
   /* 第二幕：龙骨群岛。航程（每睡一晚一个海上事件）→ 群岛（枢纽）⇄ 三座岛，任意顺序 → 誓约神殿 → 尾声 */
   act2_1: {
-    title: "出海", loc: "雾海 · 船上", bg: "linear-gradient(160deg,#55687a,#1d2731 60%,#0b1015)", act: 2, campFree: true, campNext: "act2_siren", level: 6,
-    anchor: "船驶出灰帆港，进入雾海。按 act1.departure_ship 写船（black_eel 黑鳗号、seagull 海鸥号、stolen 偷来的船、fishing 民用渔船——渔船又小又破，同伴挤在一起，航程更危险）。航海图上的墨线在雾里会自己微微发光。同伴们各自适应海上的日子：谁晕船、谁在船头发呆、谁和水手赌钱。若维克斯还带着龙蛋（quest.vex.egg 为 true 且 quest.vex 不是 sold），那颗“宝石”开始发热；卡西安的神术或莉拉的火焰可以替它保温，每保温一次写 act2.egg_warmed（在现有次数上加 1，最多 3 次）。去龙骨群岛要三天三夜。天黑后玩家扎营（写 camp: true），睡下后程序会进入海上的第一夜。不要自己写 advance。",
-    next: "act2_siren",
+    title: "出海", loc: "雾海 · 船上", bg: "linear-gradient(160deg,#55687a,#1d2731 60%,#0b1015)", act: 2, campFree: true, campNext: "act2_siren", voyage: true, level: 6,
+    anchor: "船驶出灰帆港，进入雾海。按 act1.departure_ship 写船（black_eel 黑鳗号、seagull 海鸥号、stolen 偷来的船、fishing 民用渔船——渔船又小又破，同伴挤在一起，航程更危险）。航海图上的墨线在雾里会自己微微发光。同伴们各自适应海上的日子：谁晕船、谁在船头发呆、谁和水手赌钱。若维克斯还带着龙蛋（quest.vex.egg 为 true 且 quest.vex 不是 sold），那颗“宝石”开始发热；卡西安的神术或莉拉的火焰可以替它保温，每保温一次写 act2.egg_warmed（在现有次数上加 1，最多 3 次）。去龙骨群岛要三天三夜，每一夜海上会发生什么由程序安排。天黑后玩家扎营（写 camp: true），睡下后程序会进入海上的第一夜。不要自己写 advance。",
+    next: null,
   },
   act2_siren: {
-    title: "海妖之歌", loc: "雾海 · 第一夜", bg: "linear-gradient(160deg,#3d5470,#141d2a 60%,#080b11)", act: 2, campFree: true, campNext: "act2_ghost",
+    title: "海妖之歌", loc: "雾海 · 夜里", bg: "linear-gradient(160deg,#3d5470,#141d2a 60%,#080b11)", act: 2, campFree: true, campNext: "act2_storm", voyage: true,
     saves: { ab: "wis", dc: 14, text: "海妖之歌", fail: "梦游着走向船边" },
     anchor: "午夜，雾里传来海妖的歌声。程序已经替全队掷了感知豁免（结果在最近的系统记录里）：失败的人像梦游一样走向船舷，要被拉回来。玩家可以去拉住某个人——如果是恋人或暧昧对象，这是一个特别的亲密时刻（在海风里抱住对方、对方醒来时的眼神）。玩家自己失败的话，由豁免成功的同伴来拉他，按赞同度最高的人写。可以用 romance 推进。海妖不现身，天亮前歌声停了。之后玩家扎营睡觉（写 camp: true），程序会进入下一夜。",
-    next: "act2_ghost",
+    next: null,
   },
   act2_ghost: {
-    title: "幽灵船", loc: "雾海 · 第二夜", bg: "linear-gradient(160deg,#4b5a5f,#182023 60%,#090c0d)", act: 2, campFree: true, campNext: "act2_storm",
-    anchor: "第二夜，一艘挂着破烂晨星旗的帆船从雾里漂来：百年前晨星骑士团的船。船长室里坐着一位亡灵骑士。若赛勒涅在队，亡灵骑士认出她的纹章，向她忏悔：百年前骑士团为加固封印，献祭了雾隐岛附近的一整个渔村，幸存者的复仇让骑士团覆灭——这是赛勒涅个人任务的第二步（她赞同 ≥ 20 时她愿意听完并和你谈，写 quest.selene.truth=true；不到 20 她会把自己关进船舱，只说“以后再说”）。之后可以让亡灵安息（宗教 DC 15，写 act2.ghost_ship=laid），或者被亡灵当作“背誓者”攻击：动手时在 JSON 写 combat 为 ghost_ship，打完写 act2.ghost_ship=fought；也可以划开距离逃走（写 act2.ghost_ship=fled）。之后玩家扎营睡觉（写 camp: true），程序会进入下一夜。",
-    next: "act2_storm", encounters: ["ghost_ship"],
+    title: "幽灵船", loc: "雾海 · 夜里", bg: "linear-gradient(160deg,#4b5a5f,#182023 60%,#090c0d)", act: 2, campFree: true, campNext: "act2_storm", voyage: true,
+    anchor: "这一夜，一艘挂着破烂晨星旗的帆船从雾里漂来：百年前晨星骑士团的船。船长室里坐着一位亡灵骑士。若赛勒涅在队，亡灵骑士认出她的纹章，向她忏悔：百年前骑士团为加固封印，献祭了雾隐岛附近的一整个渔村，幸存者的复仇让骑士团覆灭——这是赛勒涅个人任务的第二步（她赞同 ≥ 20 时她愿意听完并和你谈，写 quest.selene.truth=true；不到 20 她会把自己关进船舱，只说“以后再说”）。之后可以让亡灵安息（宗教 DC 15，写 act2.ghost_ship=laid），或者被亡灵当作“背誓者”攻击：动手时在 JSON 写 combat 为 ghost_ship，打完写 act2.ghost_ship=fought；也可以划开距离逃走（写 act2.ghost_ship=fled）。之后玩家扎营睡觉（写 camp: true），程序会进入下一夜。",
+    next: null, encounters: ["ghost_ship"],
+  },
+  // 航程的另外三个海上事件：每次出海从五个里抽两个，暴风总是最后一夜（voyagePlan）
+  act2_doldrums: {
+    title: "无风带", loc: "雾海 · 死水", bg: "linear-gradient(160deg,#7a7d70,#2c2d27 60%,#10110e)", act: 2, campFree: true, campNext: "act2_storm", voyage: true,
+    roll: { skills: ["survival", "nature"], dc: 14, flag: "act2.doldrums", ok: "ok", bad: "bad", text: "熬过无风带", okText: "成功，找到了一股细细的风", badText: "失败，船在死水里困了一整天", lose: 1 },
+    anchor: "风停了。雾像凝固的牛奶贴在海面上，帆耷拉着，水手说这是雾海的“死水”，有船在这里困到所有人渴死。程序已经按队里最会看天的人掷了生存/自然检定（结果在最近的系统记录里，写好了 act2.doldrums：ok 傍晚找到了一股风，bad 困了一整天、补给少了 1 份）。按结果写：雾里闷热难耐、淡水发臭、人的脾气变坏——同伴之间很容易吵起来（按【同伴之间】的关系值挑最不和的两个人起冲突，玩家可以劝架、站队或者看热闹；用 relation 记下结果）。若是 bad，还要写缺水的难受，有人偷偷把自己那份水让给别人（挑最在乎玩家或某个同伴的人）。航海图上的银线在死水里微微颤动（感知 DC 13 看出银线指着一股暗流，可以写成转机）。之后玩家扎营睡觉（写 camp: true），程序会进入下一夜。",
+    next: null,
+  },
+  act2_castaway: {
+    title: "漂流者", loc: "雾海 · 船上", bg: "linear-gradient(160deg,#5f7378,#20292b 60%,#0b0f10)", act: 2, campFree: true, campNext: "act2_storm", voyage: true,
+    anchor: "雾里漂来一只破独木舟，上面趴着一个快渴死的潮裔少年“汐”（十四五岁，脖子上挂着鲸骨风铃），他是雾隐岛的人，追鱼群时被暗流卷走，在海上漂了三天。他醒来看见陌生人会拼命挣扎，看见赛勒涅的晨星纹章更是吓得发抖——潮裔的孩子从小听着“晨星骑士献祭了我们的村子”长大。可以做的：给他水和吃的、让他平静下来（医疗 DC 12 或说服 DC 13）；听他讲雾隐岛的规矩（上岸要先报上来意；瑟拉长老独眼，只信行动不信话；潮裔恨银龙也恨骑士）。若赛勒涅在队、quest.selene.diary 为 true 而 quest.selene.truth 还没写：少年讲的那个故事——百年前骑士团为加固封印献祭了雾隐岛附近一整个渔村，幸存者的复仇让骑士团覆灭——正好对上了她日记里没读懂的地方，这就是她个人任务的第二步（她赞同 ≥ 20 时愿意听完并和你谈，写 quest.selene.truth=true；不到 20 她会走开，只说“以后再说”）。怎么处置少年写 act2.castaway：saved 带他一起去群岛、送他回雾隐岛（潮裔会记住，声望由程序算），left 给点水放他自己划走。之后玩家扎营睡觉（写 camp: true），程序会进入下一夜。",
+    next: null,
+  },
+  act2_whales: {
+    title: "银鲸", loc: "雾海 · 夜里", bg: "linear-gradient(160deg,#8ea4b8,#2b3a4a 55%,#0d1319)", act: 2, campFree: true, campNext: "act2_storm", voyage: true,
+    anchor: "午夜，船边的海水亮了起来：一群发着银光的巨鲸从雾下游过，最大的那头比船还长，背上有像龙鳞一样的纹路。所有人掌心的印记同时发烫——它们是赫斯提雅的血在海里留下的回响（老水手说银鲸只为“龙选中的人”浮上来）。素材：最大的那头鲸浮到船边，一只眼睛看着玩家；玩家可以伸手触碰它（龙化值 +5，用 draconic 字段），会看见一个碎片般的画面：千年前一头银龙在这片海的上空哀鸣；同伴们各有反应（莉拉兴奋地想取样，赛勒涅跪下祈祷，博林说这辈子值了，维克斯盘算鲸油能卖多少钱被众人瞪，卡西安轻声唱起潮歌，奈雅看着鲸群出神：它们不需要伪装），只写在场的人。这是安静、美的一夜，适合和恋人或暧昧对象并肩站在船舷边（可以用 romance 推进）。天亮前鲸群沉入深处。之后玩家扎营睡觉（写 camp: true），程序会进入下一夜。",
+    next: null,
   },
   act2_storm: {
     title: "暴风", loc: "雾海 · 第三夜", bg: "linear-gradient(160deg,#3a4552,#111820 60%,#06090c)", act: 2, camp: false,
@@ -655,7 +735,7 @@ const SCENES = {
   },
   act2_mist_memorial: {
     title: "纪念礁", loc: "雾隐岛 · 纪念礁", bg: "linear-gradient(160deg,#5a6a70,#20282b 60%,#0b0e10)", act: 2,
-    anchor: "岛的另一头，一片插满木桩的礁石：每根木桩代表一个被献祭的村民，很多桩子上没有名字（名字已经没人记得了——骨骼岛的壁画上刻着它们，支线）。潮裔每到大潮之夜会来这里唱一首没有歌词的歌。礁石后面有一间离群的小屋，住着一个不是潮裔的女人：她是伊芙，主教瓦尔多的妹妹，多年前逃离教团隐居在这里（洞悉 DC 15 看出她不是潮裔；赢得潮裔信任后长老也会引见）。她会说出哥哥也是献祭幸存者的后代、他真正想要的是什么（写 act2.eve=true；这是第三幕说服主教的关键），也可能托你带一封信给哥哥（支线）。赛勒涅在纪念礁前可以选择当众向潮裔下跪认罪（赛勒涅个人任务的走向会因此不同；潮裔对队伍的态度会软化）。离开时 advance：act2_mist 或 act2_hub。",
+    anchor: "岛的另一头，一片插满木桩的礁石：每根木桩代表一个被献祭的村民，很多桩子上没有名字（名字已经没人记得了——骨骼岛的壁画上刻着它们，支线）。潮裔每到大潮之夜会来这里唱一首没有歌词的歌。礁石后面有一间离群的小屋，住着一个不是潮裔的女人：她是伊芙，主教瓦尔多的妹妹，多年前逃离教团隐居在这里（洞悉 DC 15 看出她不是潮裔；赢得潮裔信任后长老也会引见）。她会说出哥哥也是献祭幸存者的后代、他真正想要的是什么（写 act2.eve=true；这是第三幕说服主教的关键），也可能托你带一封信给哥哥（支线）。赛勒涅在纪念礁前可以选择当众向潮裔下跪认罪（赛勒涅个人任务的走向会因此不同；潮裔对队伍的态度会软化）。若赛勒涅在队、quest.selene.diary 为 true 而 quest.selene.truth 还没写（航程里没遇到幽灵船，或者当时没谈成）：纪念礁最老的一根木桩上钉着一块锈蚀的晨星铭牌，是百年前一位骑士偷偷回来留下的忏悔——读懂它（历史 DC 12，或者由瑟拉长老、伊芙讲出当年的事），赛勒涅就明白了日记里的真相：骑士团为加固封印献祭了这里的渔村，幸存者的复仇让骑士团覆灭。这是她个人任务的第二步（她赞同 ≥ 20 时写 quest.selene.truth=true）。离开时 advance：act2_mist 或 act2_hub。",
     next: ["act2_mist", "act2_hub"],
   },
   act2_temple: {
@@ -703,8 +783,8 @@ const SCENES = {
     next: ["act3_haven"], encounters: ["harbor_wyrmling"],
   },
   act3_haven: {
-    title: "避难所", loc: "灰帆港 · 醉龙酒馆", bg: "linear-gradient(160deg,#5a4433,#211812 60%,#0d0907)", act: 3, hub: true, campFree: true, jail: true,
-    anchor: "醉龙酒馆成了避难所：大堂里躺满伤员，玛莎（若还活着）在分发绷带和热汤，小汤姆跑前跑后，地窖里挤着孩子。这里是第三幕的据点（睡觉写 camp: true，不耗补给）。外面的港口还在烧，各处有人求助（支线，见下面列出的“可以接的支线”）。能去的地方：战争会议 act3_council（召集盟友、定攻山的计划）；被围的街巷 act3_streets（巷战、救人、找补给）。定下计划、准备好之后，去开战争会议。",
+    title: "避难所", loc: "灰帆港 · 醉龙酒馆", bg: "linear-gradient(160deg,#5a4433,#211812 60%,#0d0907)", act: 3, hub: true, campFree: true, jail: true, tavern: true,
+    anchor: "醉龙酒馆成了避难所：大堂里躺满伤员，玛莎（若还活着）在分发绷带和热汤，小汤姆跑前跑后，地窖里挤着孩子。这里是第三幕的据点（睡觉写 camp: true，不耗补给）。外面的港口还在烧，各处有人求助（支线，见下面列出的“可以接的支线”）。第一幕对酒馆的升级在这里看得出来（世界标记 tavern.*）：修缮过客房（tavern.rooms）的话，伤员有床有被，楼上还能腾出安静的房间；请过吧女（tavern.barmaid）的话，她带着难民熬汤、分粮、四处搜罗；开过地下情报站（tavern.intel）的话，地窖成了指挥所，跑腿的孩子们带回港口各处和烬冠山的消息。没升级过的就是挤、乱、缺人手，玛莎一个人忙不过来。这一幕还可以继续升级。能去的地方：战争会议 act3_council（召集盟友、定攻山的计划）；被围的街巷 act3_streets（巷战、救人、找补给）。定下计划、准备好之后，去开战争会议。",
     next: ["act3_council", "act3_streets"],
   },
   act3_streets: {
@@ -725,7 +805,7 @@ const SCENES = {
   },
   act3_climb: {
     title: "攻上烬冠山", loc: "烬冠山 · 山脚", bg: "linear-gradient(160deg,#5a2a1a,#1f0d08 60%,#0b0403)", act: 3, camp: false, level: 11,
-    anchor: "黎明前，队伍和盟友在烬冠山脚下集结，山顶的祖坛冒着一道直冲天空的黑烟。去祖坛有三条路，由玩家选，写 act3.route，然后 advance 到对应的路：charge 正面冲锋 act3_charge（需要至少 2 方盟友）；tunnel 熔岩隧道潜入 act3_tunnel（需要奈雅做了双面间谍 quest.naia=double，或者序幕放过的鼠王带路 prologue.rat_king=spared）；wings 龙翼飞跃 act3_wings（玩家龙化值 ≥ 80）。条件不满足的路程序不会接受。盟友的首领会在出发前各说一句话。",
+    anchor: "黎明前，队伍和盟友在烬冠山脚下集结，山顶的祖坛冒着一道直冲天空的黑烟。去祖坛有三条路，由玩家选，写 act3.route，然后 advance 到对应的路：charge 正面冲锋 act3_charge（需要至少 2 方盟友）；tunnel 熔岩隧道潜入 act3_tunnel（需要奈雅做了双面间谍 quest.naia=double，或者序幕放过的鼠王带路 prologue.rat_king=spared，或者酒馆的地下情报站摸清了隧道 tavern.intel=true）；wings 龙翼飞跃 act3_wings（玩家龙化值 ≥ 80）。条件不满足的路程序不会接受。盟友的首领会在出发前各说一句话。",
     next: ["act3_charge", "act3_tunnel", "act3_wings"],
     gate: { act3_charge: () => state.flags["act3.route"] === "charge", act3_tunnel: () => state.flags["act3.route"] === "tunnel", act3_wings: () => state.flags["act3.route"] === "wings" },
   },
@@ -766,7 +846,81 @@ const actGoals = () => Object.values(SCENES).find(sc => sc.act === state.act && 
 const GOAL_VALUES = { opened: "从龙息酒桶底的暗格取出", stolen: "偷来的", legal: "合法取回", given: "潮裔长老交出", taken: "武力夺取", blackmail: "勒索总督", eel: "从老鳗那里拿到", black_eel: "黑鳗号", seagull: "海鸥号" };
 // 第一幕的地点，走完的越多等级越高（第二幕的三座岛同理，见 levelNeed）
 const ACT1_LOCS = Object.keys(SCENES).filter(id => SCENES[id].loc1);
+// 第二幕航程：五个海上事件里抽两个，暴风总是最后一夜（它在天亮时把船送到群岛）。旧存档已经走过的事件排在前面
+const VOYAGE_POOL = ["act2_siren", "act2_ghost", "act2_doldrums", "act2_castaway", "act2_whales"];
+function voyagePlan() {
+  const seen = VOYAGE_POOL.filter(id => state.log.some(e => e.s === id)), rest = VOYAGE_POOL.filter(id => !seen.includes(id));
+  for (let i = rest.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [rest[i], rest[j]] = [rest[j], rest[i]]; }
+  return [...seen, ...rest].slice(0, 2).concat("act2_storm");
+}
+// 睡醒后去哪一场：航程按抽好的顺序，其他场景看 campNext
+function campNextOf(sc) {
+  if (!sc.voyage) return sc.campNext || null;
+  const v = (state.voyage ||= voyagePlan()), i = v.indexOf(state.scene);
+  return i >= 0 ? v[i + 1] || null : state.scene === "act2_1" ? v[0] : "act2_storm";
+}
+// 由代码写的标记，说书人写了会被丢弃
+const CODE_FLAGS = new Set(["act2.taken", "act3.ending", "act3.ritual", "tavern.rooms", "tavern.barmaid", "tavern.intel", ...Object.values(SCENES).map(sc => sc.roll?.flag).filter(Boolean)]);
+// 赫斯提雅每幕入梦一次（序幕的第一个梦之外）：第一幕第二晚起、第二幕上过一座岛之后、第三幕第一次在避难所睡下或者最后一夜
+const DREAMS = { 1: "hestia_dream1", 2: "hestia_dream2", 3: "hestia_dream3" };
+function dreamDue(sc, nextId) {
+  const a = state.act;
+  if (!DREAMS[a] || (state.dreams || []).includes(a) || sc.alone || sc.interlude) return null;
+  if (nextId && !(a === 3 && state.scene === "act3_whisper")) return null; // 航程、梦境之前的夜晚有自己的事
+  if (a === 1 && state.day < (state.act1Day ?? 0) + 2) return null;
+  if (a === 2 && !ACT2_LOCS.some(id => state.log.some(e => e.s === id))) return null;
+  return DREAMS[a];
+}
+const dreamLine = sc => sc.trust ? `\n【这一次梦的走向】（赫斯提雅信任 ${state.hestiaTrust}，程序按信任选定）${state.hestiaTrust >= 20 ? sc.trust.high : state.hestiaTrust <= -20 ? sc.trust.low : sc.trust.mid}` : "";
 const ACT2_LOCS = Object.keys(SCENES).filter(id => SCENES[id].loc2);
+// 酒馆升级（设定集“玛莎”）：花金币，效果由代码给；第三幕酒馆成了避难所，同样用得上
+const TAVERN = {
+  rooms: { name: "修缮客房", cost: 60, desc: "补好漏雨的屋顶、换新床。在酒馆睡一晚，第二天可以多短休一次（共 3 次）；第三幕伤员有床躺" },
+  barmaid: { name: "请个吧女", cost: 40, desc: "玛莎腾出手来。第一幕每在酒馆睡一晚分到 8 金币；第三幕她带着难民熬汤搜罗，每晚补给 +1" },
+  intel: { name: "地下情报站", cost: 120, desc: "地窖里养一群跑腿的眼线。在酒馆时说书人多一条港口的消息；第三幕摸清熔岩隧道，攻山多一条路" },
+};
+const INTEL = {
+  1: ["总督府的巡逻每到三更换岗，换岗时金库外的走廊会空出一小段时间", "金鳗号的货舱夜里有动静，像是关着人；老鳗最近在码头加派了人手", "港卫军尉官萨丝在私下打听总督的账目，她缺一个信得过的外人跑腿",
+    "教团的执事每隔两晚从鱼市旁的排水口进出下水道", "旧学院废塔那边夜里有人举着火把转悠，像在找什么东西", "沉船湾的拾荒人在龙尸上撬鳞片卖钱，学院的老学者跟他们吵了好几天"],
+  3: ["教团在烬冠山正面的山道上布了三道防线，最上面一道有黑龙幼体守着", "山脚的废矿里有一条熔岩隧道通到山腹，情报站的人已经摸清了怎么走", "主教在祖坛四周立了石柱，靠它们回复力量，推倒石柱能削弱他",
+    "难民里混进了教团的探子，在打听印记持有者住哪个房间", "黑潮会还有几艘船在外海观望，老鳗在等一个合适的价钱", "港卫军的箭快用完了，萨丝在到处找会修弩的人"],
+};
+const tavernHas = k => !!state.flags["tavern." + k];
+const tavernKeeper = () => state.flags["act1.martha_alive"] === false ? "小汤姆" : "玛莎";
+function upgradeTavern(k) {
+  const t = TAVERN[k]; if (!t || tavernHas(k) || state.player.gold < t.cost) return false;
+  state.player.gold -= t.cost; state.flags["tavern." + k] = true;
+  push("sys", `酒馆升级：${t.name}（−${t.cost} 金币）`, { cls: "appr-up" }); return true;
+}
+// 在酒馆睡一晚：客房多一次短休，吧女分钱或者添补给
+function tavernNight() {
+  const out = [];
+  if (tavernHas("rooms")) { state.shortRests = -1; out.push("客房修好了，睡得踏实：今天可以多歇一次脚"); }
+  if (tavernHas("barmaid")) {
+    if (state.act === 3) { state.supplies = (state.supplies || 0) + 1; out.push(`吧女带着难民熬汤、四处搜罗：补给 +1（现在 ${state.supplies}）`); }
+    else { state.player.gold += 8; out.push("吧女把客人招呼得很好，酒馆进账分你 8 金币"); }
+  }
+  return out;
+}
+const intelLine = sc => (sc.tavern || state.scene === "act3_council") && tavernHas("intel") && INTEL[state.act]
+  ? `\n【情报站】今天地窖情报站带回来的消息（找个自然的时机，由${tavernKeeper()}、吧女或者跑腿的孩子转告；可以展开写，但别替玩家行动）：${INTEL[state.act][state.day % INTEL[state.act].length]}` : "";
+function openTavern() {
+  modal("醉龙酒馆", s => {
+    const draw = () => {
+      s.querySelectorAll(".shop").forEach(x => x.remove());
+      const box = el("div", "step shop");
+      box.append(el("div", "label", `金币 ${state.player.gold} · 和${tavernKeeper()}商量怎么修整酒馆`));
+      for (const [k, t] of Object.entries(TAVERN)) {
+        const r = el("div", "kv"), tx = el("span"); tx.append(el("b", null, t.name), el("div", "meta", t.desc));
+        const b = el("button", "btn small", tavernHas(k) ? "已经办好" : `${t.cost} 金币`); b.type = "button";
+        b.disabled = tavernHas(k) || state.player.gold < t.cost; b.onclick = () => { upgradeTavern(k); save(); renderPlay(); draw(); };
+        r.append(tx, b); box.append(r);
+      }
+      s.append(box);
+    };
+    draw();
+  });
+}
 
 const FLAG_KEYS = {
   "prologue.betrayed_companion": "id", "prologue.tom_saved": "bool", "prologue.talked_hooded": "bool", "prologue.saw_gem": "bool",
@@ -783,7 +937,8 @@ const FLAG_KEYS = {
   "act1.naia_seen": "bool", "act1.naia_exposed": "bool", "act1.naia_fate": ["recruited", "imprisoned", "killed"],
   "act1.hostage": ["martha", "tom"], "act1.martha_alive": "bool", "act1.ship_intact": "bool", "act1.departure_ship": ["black_eel", "seagull", "stolen", "fishing"],
   // 第二幕。storm 由代码结算；egg_warmed 是计数（每次最多 +1）；taken 是神殿里被主教掳走的同伴（代码写）
-  "act2.storm": ["light", "heavy"], "act2.ghost_ship": ["laid", "fought", "fled"], "act2.egg_warmed": "count",
+  "act2.storm": ["light", "heavy"], "act2.doldrums": ["ok", "bad"], "act2.castaway": ["saved", "left"],
+  "tavern.rooms": "bool", "tavern.barmaid": "bool", "tavern.intel": "bool", "act2.ghost_ship": ["laid", "fought", "fled"], "act2.egg_warmed": "count",
   "act2.murals": "bool", "act2.ritual_plan": "bool", "act2.darin": ["killed", "woke", "left"],
   "act2.tideborn": ["ally", "neutral", "enemy"], "act2.temple_key": ["given", "stolen", "taken"], "act2.eve": "bool",
   "act2.trial_courage": "bool", "act2.trial_truth": "bool", "act2.sacrifice": ["item", "memory", "draconic"],
@@ -800,7 +955,7 @@ const FACTIONS = {
   watch: { name: "港卫军", base: f => (f["act1.sath_trust"] ? 25 : 0) + (f["act1.governor"] === "exposed" ? 15 : 0) + (f["side.watch_mole"] === "done" ? 10 : 0) + (f["act1.ship"] === "stolen" ? -10 : 0) + (f["act3.saved_first"] === "manor" ? 15 : 0) },
   tide: { name: "黑潮会", base: f => (({ deal: 20, ally: 40, enemy: -40 })[f["act1.eel"]] || 0) + (f["quest.kassian"] === "killed_eel" ? -30 : f["quest.kassian"] === "exposed" ? -15 : 0) + (f["side.arena_champion"] === "done" ? 5 : 0) + (f["act3.saved_first"] === "docks" ? 15 : 0) },
   academy: { name: "旧学院", base: f => (f["quest.lyra"] === "turned" ? 30 : 0) + (f["side.lost_apprentice"] === "done" ? 15 : 0) + (f["side.ward_stones"] === "done" ? 25 : 0) + (f["act1.lyra_notes"] === "burned" ? 5 : 0) + (f["act3.saved_first"] === "academy" ? 15 : 0) },
-  tideborn: { name: "潮裔", base: f => (({ ally: 40, enemy: -50 })[f["act2.tideborn"]] || 0) + (f["side.tideborn_child"] === "done" ? 15 : 0) + (f["side.knight_sword"] === "done" ? 20 : 0) + (f["side.lost_names"] === "done" ? 15 : 0) + (f["side.ember_prisoners"] === "done" ? 10 : 0) },
+  tideborn: { name: "潮裔", base: f => (({ ally: 40, enemy: -50 })[f["act2.tideborn"]] || 0) + (f["side.tideborn_child"] === "done" ? 15 : 0) + (f["side.knight_sword"] === "done" ? 20 : 0) + (f["side.lost_names"] === "done" ? 15 : 0) + (f["side.ember_prisoners"] === "done" ? 10 : 0) + (f["act2.castaway"] === "saved" ? 10 : 0) },
   cult: { name: "灰烬教团", base: f => -30 + (f["act1.deacon"] === "informant" ? 10 : f["act1.deacon"] === "tortured" ? -10 : 0) + (f["quest.lyra"] === "joined" ? 20 : 0) + (f["quest.naia"] === "returned" ? 30 : f["quest.naia"] === "double" ? 10 : 0) + (f["act3.valdo"] === "convinced" ? 10 : f["act3.valdo"] === "killed" ? -20 : 0) },
 };
 const repOf = id => clamp(FACTIONS[id].base(state.flags) + (state.repDelta?.[id] || 0), -100, 100);
@@ -1658,6 +1813,7 @@ function tidyLog(s) {
   if (naia.fate === "imprisoned" && naia.left) { naia.jailed = true; naia.left = false; }
   const chart = s.flags?.["act1.chart"]; if (chart && chart !== "opened" && !s.flags["act1.key"]) s.flags["act1.key"] = chart; // 旧存档：航海图原本直接锁在总督府
   s.act ||= 0;
+  delete s.pendingWake; // 读档时不补写醒来的那一段
   s.log.forEach(e => delete e.live); s.log = s.log.filter(e => e.t || e.k === "chapter");
   const byTitle = Object.fromEntries(Object.entries(SCENES).map(([id, sc]) => [sc.title, id]));
   let cur = Object.keys(SCENES)[0];
@@ -1720,6 +1876,7 @@ async function readImport(file) {
 // 在场的同伴：序幕里酒馆的人都在；之后是入队的同伴，加上这一场能遇到的人（meet）和能救回的人（rescue）
 function present() {
   const sc = SCENES[state.scene];
+  if (sc.with) return party().includes(sc.with) ? [sc.with] : [];
   if (sc.alone) return [];
   if (!state.act) return Object.keys(COMPANIONS).filter(id => {
     const c = state.companions[id];
@@ -1869,7 +2026,7 @@ const SYSTEM = `你是奇幻跑团游戏《醉龙酒馆：龙誓》的游戏主�
 - check：需要检定时写 {"skill":"技能键","dc":15,"who":"player","reason":"一句话难点","advantage":false,"disadvantage":false}，此时 suggestions 写 []。who 可以是 player 或已加入的同伴 id。
 - 技能键：athletics 运动、acrobatics 杂技、sleight 巧手、stealth 隐匿、arcana 奥秘、history 历史、investigation 调查、nature 自然、religion 宗教、animal 驯兽、insight 洞悉、medicine 医疗、perception 察觉、survival 求生、deception 欺瞒、intimidation 威吓、performance 表演、persuasion 说服；也可用属性 str dex con int wis cha、攻击 attack、豁免 save_con 等。
 - suggestions：3~4 条建议行动，风格各异（善良的、狡猾的、冒险的）；需要检定的写上技能中文名。
-- advance：只能填场景资料里写明的下一个场景 id。scene_end 只在【当前场景】写明“这一场结束时 scene_end 为 true”的场景使用，别的场景不要写。
+- advance：只能填场景资料里写明的下一个场景 id。scene_end 只在【当前场景】写明“这一场结束时 scene_end 为 true”的场景、或者写明是“插曲”的场景（单独相处、梦）使用，别的场景不要写。
 - combat：开战时写遭遇 id 字符串，例如 "combat":"tavern_ambush"。战斗中即兴行动的效果格式见【即兴行动规则】。
 - remember：本轮发生了某个角色会长久记住的事时写，每轮最多 2 条，每条不超过 40 字，从该角色的角度写关于玩家的事实。只记真正要紧的：承诺、谎言、秘密、恩情、冒犯、救命、亲密时刻、重大分歧。闲聊不要记。id 可用：${MEM_IDS.join(" ")}。
 - romance：恋爱推进，[{"id":"selene","to":"hint"}]。阶段 none → hint（暧昧）→ together（恋人）→ vowed（誓约），一次只能推进一格；门槛是赞同度 40 / 60 / 80，誓约还要先通过个人任务的考验。气氛真的到了才写，不是每次都要推进。分手写 "to":"none"。
@@ -2023,6 +2180,7 @@ function openSplit() {
   });
 }
 function nextLine(sc) {
+  if (sc.interlude) return `下一个场景：无（这是一段插曲：结束时写 scene_end: true，程序会把玩家带回原来的地方${sc.endNeeds?.turns ? `；玩家在本场至少回应 ${sc.endNeeds.turns} 次之后才能结束` : ""}）`;
   const ids = nextOf(sc);
   if (!ids.length) {
     if (sc.endAct == null) return "下一个场景：无";
@@ -2057,7 +2215,7 @@ function buildPrompt(action, mode) {
   const pres = present();
   const encs = (sc.encounters || []).filter(id => !state.fought?.[id]), done = (sc.encounters || []).filter(id => state.fought?.[id]);
   return SYSTEM + rulesBlock() +
-    `\n\n【当前场景】${state.scene}「${sc.title}」，地点：${state.location}\n场景锚点（GM 可见）：${sc.anchor}\n${nextLine(sc)}${splitLine(sc)}${sideLine()}` +
+    `\n\n【当前场景】${state.scene}「${sc.title}」，地点：${state.location}\n场景锚点（GM 可见）：${sc.anchor}${dreamLine(sc)}${intelLine(sc)}\n${nextLine(sc)}${splitLine(sc)}${sideLine()}` +
     (state.combat ? combatBrief(mode) : state.camp ? campBrief() : encs.length || done.length ? (encs.length ? `\n可开战的遭遇：${encs.map(id => id + "（" + ENCOUNTERS[id].brief + "）").join("；")}` : "") + (done.length ? `\n这一场已经打完的遭遇（不能再写 combat）：${done.join("、")}。玩家再要动手，就用检定或叙述处理，不要写成一直对峙` : "") : "") +
     `\n\n【玩家角色】${p.name}，${p.gender}，${p.level} 级${RACES[p.race].name}${CLASSES[p.cls].name}，背景：${BACKGROUNDS[p.bg].name}（灵感条件：${BACKGROUNDS[p.bg].insp}）。外貌：${p.appearance}` +
     `\n属性：${AB_KEYS.map(k => AB[k] + p.abilities[k] + "(" + sgn(mod(p.abilities[k])) + ")").join(" ")}；熟练技能：${profs}` +
@@ -2457,6 +2615,7 @@ async function gm(action, shown, mode) {
     if ((state.pendingCombat || state.pendingAdvance) && !state.combat && splitPending()) openSplit();
     else if (state.pendingCombat && !state.combat) { const id = state.pendingCombat; state.pendingCombat = null; startCombat(id); }
     else if (state.pendingCamp) { state.pendingCamp = false; enterCamp(); }
+    else if (state.pendingWake) { const w = state.pendingWake; state.pendingWake = null; gm(w.prompt, null, w.mode); } // 从梦里醒来：接着写清晨或下一夜
     else if (mode === "improv" && state.combat && !state.pendingCheck && !lastAction) { state.combat.improv = false; state.combat.res.action = false; afterAct(); }
     if (state.pendingCheck) openDice();
     else if (state.levelNote && !state.combat && !state.pendingCombat && !state.pendingAdvance) openLevelUp();
@@ -2505,8 +2664,8 @@ function applyGM(d, mode) {
     if (k === "act2.sacrifice" && v === "draconic") { if (state.player.draconic < 20 || state.flags[k]) continue; addDraconic("player", -20, notes); }
     if (k === "act2.heart" && (state.flags[k] || v === "cult" || v === "destroyed" && state.flags["act2.tideborn"] !== "ally")) continue; // 抢走由代码写；销毁要潮裔是盟友
     if (k === "act2.heart" && v === "player") addDraconic("player", 30, notes);
-    if (k === "act2.taken" || k === "act2.storm" || k === "act3.ending" || k === "act3.ritual") continue; // 由代码结算
-    if (k === "act3.route" && !({ charge: () => allies().length >= 2, tunnel: () => state.flags["quest.naia"] === "double" || state.flags["prologue.rat_king"] === "spared", wings: () => state.player.draconic >= 80 })[v]?.()) { console.warn("这条路的条件不满足", v); continue; }
+    if (CODE_FLAGS.has(k)) continue; // 由代码结算
+    if (k === "act3.route" && !({ charge: () => allies().length >= 2, tunnel: () => state.flags["quest.naia"] === "double" || state.flags["prologue.rat_king"] === "spared" || !!state.flags["tavern.intel"], wings: () => state.player.draconic >= 80 })[v]?.()) { console.warn("这条路的条件不满足", v); continue; }
     if (k === "act3.valdo" && v === "convinced" && !((state.flags["act2.eve"] || state.flags["side.eve_letter"] === "done") && state.flags["quest.selene.diary"])) continue; // 说服主教要有证据
     if (rule === "bool") state.flags[k] = !!v;
     else if (rule === "id") { if (v === false || COMPANIONS[v]) state.flags[k] = v; }
@@ -2632,6 +2791,11 @@ function applyGM(d, mode) {
   const sc = SCENES[state.scene];
   if (d.advance && canGo(sc, d.advance) && splitPending()) { state.pendingAdvance = d.advance; state.suggestions = []; }
   else if (d.advance && canGo(sc, d.advance)) goScene(d.advance, !!d.location);
+  else if (d.scene_end === true && sc.interlude) {
+    const turns = state.log.filter(e => e.k === "you" && chKey(e) === curKey()).length;
+    if (turns >= (sc.endNeeds?.turns || 0) && !state.pendingCheck) leaveInterlude();
+    else console.warn("插曲还不能结束", state.scene);
+  }
   else if (d.scene_end === true && sc.endAct != null) {
     const need = sc.endNeeds;
     const turns = state.log.filter(e => e.k === "you" && chKey(e) === curKey()).length;
@@ -2656,6 +2820,29 @@ function goScene(id, keepLocation, rested = false) {
   if (ns.enter) SCENE_ENTER[ns.enter]?.();
   flashScene = !!ns.flash;
 }
+// 插曲：从营地或长休进入一个单独的小场景，scene_end 后回到原来的地方。back：camp 记着营地（回来继续），next 睡醒后去的场景，morning 回来后写清晨
+function enterInterlude(id, back) {
+  state.interlude = { from: state.scene, location: state.location, camp: state.camp, ...back };
+  state.camp = null; state.suggestions = [];
+  goScene(id);
+}
+function leaveInterlude() {
+  const it = state.interlude, sc = SCENES[state.scene]; state.interlude = null;
+  if (sc.dream && state.hestiaTrust >= 20 && state.player.inspiration < 4) { state.player.inspiration++; push("sys", "赫斯提雅的祝福：醒来时精神格外好，获得 1 点灵感", { cls: "appr-up" }); }
+  if (it.next) {
+    goScene(it.next, false, true);
+    state.pendingWake = { prompt: `（玩家从梦里醒来，然后到了下一夜，按新场景的锚点开始。${it.after || ""}）` };
+    return;
+  }
+  state.scene = it.from; state.location = it.location;
+  state.visits = { ...(state.visits || {}), [it.from]: (state.visits?.[it.from] || 1) + 1 }; // 回来之后算新的一章
+  push("chapter", it.camp ? `营地 · 第 ${state.day} 夜` : SCENES[it.from].title);
+  if (it.camp) {
+    state.camp = { ...it.camp, talk: null, event: null, done: [...new Set([...(it.camp.done || []), it.who].filter(Boolean))] };
+    push("sys", "你们回到了篝火边");
+  }
+  if (it.morning) state.pendingWake = { prompt: wakePrompt(it.morning.partner, it.morning.after, true), mode: "morning" };
+}
 // saves：全队各掷一次属性豁免；roll：由队里最擅长的人掷一次技能检定，结果写进标记
 function sceneRolls(sc) {
   const who = ["player", ...party()], name = id => id === "player" ? state.player.name : PEOPLE[id].name;
@@ -2667,8 +2854,8 @@ function sceneRolls(sc) {
     const r = sc.roll, best = who.flatMap(id => r.skills.map(k => ({ id, k, b: bonusFor(id, k).total }))).sort((a, b) => b.b - a.b)[0];
     const [d, rs] = d20x(false, state.flags["act1.departure_ship"] === "fishing"), total = d + best.b, ok = d === 20 || (d !== 1 && total >= r.dc);
     state.flags[r.flag] = ok ? r.ok : r.bad;
-    let t = `${r.text} · ${name(best.id)}的${SKILLS[best.k][0]}检定：d20(${rs.join("/")})${sgn(best.b)} = ${total} 对 DC ${r.dc}${rs.length > 1 ? "（渔船，劣势）" : ""}，${ok ? "成功，船只受了点轻伤" : "失败，船受了重创"}`;
-    if (!ok) { const lost = Math.min(2, state.supplies || 0); state.supplies = (state.supplies || 0) - lost; if (lost) t += `，补给被卷走 ${lost} 份`; }
+    let t = `${r.text} · ${name(best.id)}的${SKILLS[best.k][0]}检定：d20(${rs.join("/")})${sgn(best.b)} = ${total} 对 DC ${r.dc}${rs.length > 1 ? "（渔船，劣势）" : ""}，${ok ? r.okText || "成功，船只受了点轻伤" : r.badText || "失败，船受了重创"}`;
+    if (!ok) { const lost = Math.min(r.lose ?? 2, state.supplies || 0); state.supplies = (state.supplies || 0) - lost; if (lost) t += `，补给被卷走 ${lost} 份`; }
     push("sys", t, { cls: ok ? "appr-up" : "appr-down" });
   }
 }
@@ -2758,6 +2945,7 @@ function nextAct() {
   if (state.act === 3) state.journal.push({ quest: "第三幕：烬冠", note: "回到被围的灰帆港，召集盟友，攻上烬冠山，在主教唤醒烬王之前赶到祖坛。" });
   if (state.act === 2) {
     state.supplies = Math.max(state.supplies || 0, 4); // 出海带足补给
+    state.voyage = voyagePlan();
     state.journal.push({ quest: "第二幕：龙骨群岛", note: "穿过雾海去龙骨群岛，找到沉在海底的誓约神殿。神殿的钥匙在雾隐岛的潮裔手里。" });
   }
   push("chapter", ACT_NAMES[state.act]);
@@ -2799,6 +2987,13 @@ function canCamp() {
 const CAMP_EVENTS = [
   { id: "first_night", group: true, kind: "main", title: "壁炉边的第一夜", when: () => state.scene === "prologue_4",
     seed: "袭击过后的深夜，酒馆一片狼藉，大家围着壁炉坐着，谁都睡不着。每个人掌心的印记还在隐隐发烫。有人想聊那只银色的眼睛和看到的记忆碎片，有人只想喝一杯，有人在包扎伤口。这是大家第一次以“同伴”的身份坐在一起。" },
+  // 恋爱的关键场景：不在篝火边聊，而是跟着对方走开，进入单独的小场景（scene，见 SCENES 的 love_*）
+  { id: "selene_scene", who: "selene", kind: "romance", scene: "love_selene", title: "月下练剑", when: c => c.approval >= 40 && ["none", "hint"].includes(c.romance), seed: "（单独的场景：月下练剑）" },
+  { id: "vex_scene", who: "vex", kind: "romance", scene: "love_vex", title: "屋顶烟火", when: c => c.approval >= 55 && ["hint", "together"].includes(c.romance), seed: "（单独的场景：屋顶烟火）" },
+  { id: "kassian_scene", who: "kassian", kind: "romance", scene: "love_kassian", title: "海边篝火", when: c => c.approval >= 40 && ["none", "hint"].includes(c.romance), seed: "（单独的场景：海边篝火）" },
+  { id: "borin_scene", who: "borin", kind: "romance", scene: "love_borin", title: "屋顶醉谈", when: c => c.approval >= 40 && ["none", "hint"].includes(c.romance), seed: "（单独的场景：屋顶醉谈）" },
+  { id: "lyra_scene", who: "lyra", kind: "romance", scene: "love_lyra", title: "深夜研究", when: c => c.approval >= 40 && ["none", "hint"].includes(c.romance), seed: "（单独的场景：深夜研究）" },
+  { id: "naia_scene", who: "naia", kind: "romance", scene: "love_naia", title: "哪一张脸", when: c => naiaTrue() && c.approval >= 50 && c.romance !== "vowed", seed: "（单独的场景：哪一张脸）" },
   { id: "selene_friend", who: "selene", kind: "friend", when: c => c.approval >= 20,
     seed: "赛勒涅独自擦拭一枚磨旧的骑士徽章。素材：晨星骑士团一夜之间消亡、她等了百年的召唤终于来了；她不习惯被人关心，但会认真回答认真的问题。" },
   { id: "selene_hint", who: "selene", kind: "romance", when: c => c.approval >= 40 && c.romance === "none",
@@ -3019,6 +3214,13 @@ function talkTo(target) {
   let ev = null;
   if (target.startsWith("event:")) ev = eventFor(target.slice(6));
   else if (k.plan.important && eventFor(k.plan.important)?.who === target) ev = eventFor(k.plan.important);
+  if (ev?.scene) { // 恋爱的关键场景：离开篝火，进入单独的小场景，结束后回来
+    state.campSeen = [...(state.campSeen || []), ev.id];
+    if (k.plan.important === ev.id) k.plan.important = null;
+    enterInterlude(ev.scene, { who: ev.who });
+    gm(`（我跟着${PEOPLE[ev.who].name}离开了篝火。按新场景的锚点开始：只有我们两个人。描写这一刻，给出 3~4 条建议。）`, `你跟着${PEOPLE[ev.who].name}走开了。`);
+    return;
+  }
   k.talk = target; k.event = ev?.id || null;
   if (ev) {
     state.campSeen = [...(state.campSeen || []), ev.id];
@@ -3077,18 +3279,32 @@ function restNight(partner) {
     news.push("维克斯的债到期了：老鳗把莉丝卖到了外海，维克斯赞同度 −30");
   }
   updateDebtJournal();
+  const perks = sc.tavern ? tavernNight() : [];
   push("sys", "长休：全员生命恢复", { cls: "appr-up" });
+  for (const n of perks) push("sys", n, { cls: "appr-up" });
   for (const n of news) push("sys", n, { cls: "appr-down" });
   const night = partner ? `【夜里】玩家和${PEOPLE[partner].name}共度一夜：按${PEOPLE[partner].name}的性格写这一夜的亲密与情意，到最亲密的那一步用一句暗示性的转场带过。` : "玩家独自睡下。";
   const after = news.length ? `夜里发生了：${news.join("；")}。要写出这件事的余波。` : "";
-  if (sc.campNext) {
+  const nextId = campNextOf(sc), dream = dreamDue(sc, nextId);
+  const sleepLine = partner ? `今晚，你和${PEOPLE[partner].name}在一起。` : state.act >= 2 && sc.voyage ? "你在船舱里睡去。" : "你睡去了。";
+  if (dream) {
+    // 赫斯提雅入梦：梦是一段插曲，醒来后回到原来的地方写清晨（或者进入 campNext 那一场）
+    push("you", sleepLine);
+    state.dreams = [...(state.dreams || []), state.act];
+    enterInterlude(dream, nextId ? { next: nextId, after } : { morning: { partner, after } });
+    gm(`（${night}然后玩家沉入梦中：赫斯提雅入梦，按新场景的锚点开始。夜里别的事等醒来再写。）`, null);
+  } else if (nextId) {
     // 入睡发生在旧场景，不能算作玩家对梦境开场的回应。
     push("you", partner ? `今晚，你和${PEOPLE[partner].name}在一起。` : state.act >= 2 ? "你在船舱里睡去。" : "你在壁炉边睡去。");
-    goScene(sc.campNext, false, true);
-    gm(`（${night}${SCENES[sc.campNext].dream ? "然后玩家沉入梦中" : "然后到了下一夜"}，按新场景的锚点开始。${after}）`, null);
+    goScene(nextId, false, true);
+    gm(`（${night}${SCENES[nextId].dream ? "然后玩家沉入梦中" : "然后到了下一夜"}，按新场景的锚点开始。${after}）`, null);
   } else {
-    gm(`（${night}直接写第二天清晨醒来后：同伴们各自的样子${partner ? `；和${PEOPLE[partner].name}醒来时的画面可以写得亲昵，其他同伴可能察觉到什么` : ""}。${after}给出新一天的建议。不要再次写入睡或 camp: true。）`, partner ? `今晚，你和${PEOPLE[partner].name}在一起。` : "你睡下了。", "morning");
+    gm(wakePrompt(partner, after, false, night), partner ? `今晚，你和${PEOPLE[partner].name}在一起。` : "你睡下了。", "morning");
   }
+}
+// 第二天清晨的提示：dreamt 是刚从赫斯提雅的梦里醒来
+function wakePrompt(partner, after, dreamt, night = "") {
+  return `（${night}${dreamt ? "玩家从梦里醒来。" : ""}直接写第二天清晨醒来后：同伴们各自的样子${partner ? `；和${PEOPLE[partner].name}醒来时的画面可以写得亲昵，其他同伴可能察觉到什么` : ""}${dreamt ? "；玩家可能还记着梦里的事，同伴可能看出他睡得不安稳" : ""}。${after || ""}给出新一天的建议。不要再次写入睡或 camp: true。）`;
 }
 function renderCamp(box) {
   const k = state.camp, wrap = el("div", "combat");
@@ -3102,9 +3318,9 @@ function renderCamp(box) {
     top.append(el("span", null, PEOPLE[id].name + (has ? " ！" : "")), el("span", "zt", [relLabel(c.approval), ROMANCE[c.romance]?.name].filter(Boolean).join(" · ")));
     const im = el("img", "camp-face"); portrait(im, id, isLover(id) ? "tender" : "neutral");
     card.append(top, im);
-    if (has) card.append(el("div", "cd", "好像有话想对你说"));
+    if (has) card.append(el("div", "cd", imp.scene ? `想单独和你待一会儿（${imp.title}）` : "好像有话想对你说"));
     else if (k.done.includes(id)) card.append(el("div", "zt", "今晚已经聊过"));
-    const b = el("button", "btn small", has ? "过去看看" : "过去聊聊"); b.type = "button"; b.disabled = busy; b.onclick = () => talkTo(id);
+    const b = el("button", "btn small", has ? (imp.scene ? "跟着去" : "过去看看") : "过去聊聊"); b.type = "button"; b.disabled = busy; b.onclick = () => talkTo(id);
     card.append(b); grid.append(card);
   }
   wrap.append(grid);
@@ -4255,6 +4471,7 @@ function renderPlay() {
   }
   if (state.pendingFinal && !busy) { opts.textContent = ""; optBtn("★", "做出最终抉择……", openFinal); }
   if (SHOPS[state.scene] && !camp && !cb && !busy && !state.pendingFinal) optBtn("¤", `逛逛${SHOPS[state.scene].name}`, openShop);
+  if (sc.tavern && !camp && !cb && !busy && !state.pendingFinal) optBtn("⌂", `和${tavernKeeper()}商量修整酒馆（${Object.keys(TAVERN).filter(tavernHas).length}/${Object.keys(TAVERN).length}）`, openTavern);
   if (!camp && !cb && !busy && !state.pendingCheck && SCENES[state.scene].camp !== false && (state.shortRests || 0) < 2 && hurtParty().length) optBtn("☕", `短暂歇脚（短休，恢复一半伤势；今天还能歇 ${2 - (state.shortRests || 0)} 次）`, () => { shortRest(); save(); renderPlay(); });
   if (!camp && !cb && !busy && canCamp()) optBtn("⛺", sc.campFree ? (state.act === 2 ? "在船舱里歇下，度过这一夜" : "在壁炉边歇下，度过这一夜") : `扎营休息（消耗 1 份补给，剩 ${state.supplies ?? 0}）`, enterCamp);
   if (state.pendingAsi && !cb && !busy) {
