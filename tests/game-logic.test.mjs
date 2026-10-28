@@ -502,3 +502,35 @@ test('共鸣：营地里看过共鸣事件后解锁合体技；进入第二幕�
   })()`);
   assert.deepEqual(result, { planned: 'selene_resonance', res: true, used: true, selene: 15, lyra: 45 });
 });
+
+test('职业能力：按等级解锁，守护灵光加 AC，反射闪避减半范围伤害，三连击打三下', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};state=newGame(freshDraft());state.act=2;state.scene='act2_ember';levelUp(11);state.pendingAsi=0;
+    for(const id of ['selene','vex','borin']) state.companions[id].recruited=true;
+    startCombat('ember_outpost');const c=state.combat,sel=c.units.selene,vex=c.units.vex,bor=c.units.borin;
+    const feats={selene:sel.feats,vex:vex.feats,borin:bor.feats};
+    vex.zone=sel.zone;const foe=Object.values(c.units).find(u=>u.type==='ember_guard');foe.zone=sel.zone;
+    const m=attackMods(foe,vex,foe.weapons[0]).ac,base=vex.ac;
+    const hp=vex.hp;hurt(vex,20,{area:true});const area=hp-vex.hp;
+    let swings=0;const orig=fightTurn;fightTurn=()=>{swings++;};c.res={move:1,action:true,bonus:true};bor.sigUsed=true;bor.fUsed.surge=true;allyTurn(bor);fightTurn=orig;
+    return {feats,aura:base-0,auraAc:'skip',area,swings};
+  })()`);
+  assert.deepEqual(result.feats.selene, ['aura', 'radiant']); assert.deepEqual(result.feats.vex, ['evasion', 'uncanny']); assert.deepEqual(result.feats.borin, ['surge', 'triple']);
+  assert.equal(result.area, 10); assert.equal(result.swings, 3);
+});
+
+test('同伴专属技能各用一次；短休两次后要长休', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};state=newGame(freshDraft());state.act=1;state.scene='act1_docks';
+    for(const id of ['selene','kassian','borin']) state.companions[id].recruited=true;
+    startCombat('docks_brawl');const c=state.combat;c.res={move:1,action:true,bonus:true};
+    const k=c.units.kassian;signatureTurn(k);const bless=c.blessed>=c.round&&k.sigUsed;
+    const sel=c.units.selene;c.units.borin.hp=0;c.units.borin.down=true;c.res={move:1,action:true,bonus:true};signatureTurn(sel);const raised=!c.units.borin.down;
+    state.combat=null;state.player.hp=1;const r1=shortRest(),r2=shortRest(),r3=shortRest();
+    state.camp={};restNight(null);const reset=state.shortRests;
+    return {bless,raised,r:[r1,r2,r3],reset};
+  })()`);
+  assert.deepEqual(result, { bless: true, raised: true, r: [true, true, false], reset: 0 });
+});

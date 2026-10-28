@@ -50,6 +50,12 @@ globalThis.simulate = function(id, level, scene, away = [], allyFlags = {}) {
   Object.assign(state.flags, allyFlags); // 第三幕的盟友由标记算出
   // 印记：第二幕起同伴各 +15 龙化，玩家按常见进度给一点（第二幕 20、第三幕 40）
   if (state.act >= 2) { for (const c of Object.values(state.companions)) c.draconic = 15 * (state.act - 1); state.player.draconic = 20 * (state.act - 1); }
+  // 装备：按一路拿到的战利品估——第二幕全队护甲 +1、玩家武器 +1；第三幕全队护甲 +2、饰品命中 +1
+  if (state.act >= 2) {
+    const ids = ['player', 'selene', 'kassian', 'borin'];
+    for (const id of ids) { const a = state.act >= 3 ? '龙鳞甲' : '加固皮甲'; state.player.inventory.push(a); equip(id, 'armor', a); if (state.act >= 3) { state.player.inventory.push('精准指环'); equip(id, 'trinket1', '精准指环'); } }
+    state.player.inventory.push('精钢长剑'); equip('player', 'melee', '精钢长剑');
+  }
   if (away.length) state.split = { scene, away, text: '' }; // 灯塔之夜分头行动：去码头的人不参战
   simDown = 0; simDownFirst = 0; simCultistFirst = 0;
   startCombat(id);
