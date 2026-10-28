@@ -6,14 +6,10 @@
 
 ## 在哪里做（重要）
 
-在单独的 worktree 和分支里做，不要动主工作区（Claude 同时在主工作区改代码）：
-
-```bash
-git worktree add D:\Codex\dragon-oath-ds -b ds-content main
-```
+工作区已经建好：`D:\Codex\dragon-oath-ds`，分支 `ds-content`（是主仓库的 git worktree，和主仓库共用一个仓库）。就在这里做，不要动主工作区 `D:\Codex\dragon-oath`（Claude 同时在那里改代码）。
 
 - 只改 `index.html` 里下面说的三个数据块，以及在 `tests/game-logic.test.mjs` 末尾加测试。不改任何函数、不改其他数据。
-- 做完提交到 `ds-content` 分支，**推送前先问用户**。不要合并进 `main`：由 Claude 审过再合并。
+- 做完**只在本地提交**到 `ds-content` 分支，**不要推送**，也不需要 GitHub 账号：工作树和主仓库是同一个仓库，Claude 在本地就能看到你的提交，审过后由他合并进 `main`、问过用户再推送。
 - 不要碰用户的存档：`.dragon-oath-local/`、浏览器存档、8787 端口。
 
 ## 写作要求（BG3 风格）
