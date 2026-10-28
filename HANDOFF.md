@@ -26,7 +26,7 @@ GitHub Pages（`https://yiyayoh.github.io/dragon-oath/`）没有开启，用户�
 ## 用户已经做出的决定
 
 - 回复用户用**简体中文**。
-- 10-28：用户自己玩会用 **6.1 Terra 或 DeepSeek API**（DeepSeek 走设置里的“OpenAI 兼容 API”，接口地址填 DeepSeek 的）。测试为了省额度：整理记忆一律用 6-Luna；只验代码的部分说书人也可以用 Luna；看说书人配合和估时长的部分用 Terra。DeepSeek API 能不能在浏览器里直接连上（跨域）、能不能守住“正文 + @@@ + JSON”的格式，还没人试过。
+- 10-28：用户自己玩会用 **6.1 Terra 或 DeepSeek API**（DeepSeek 走设置里的“OpenAI 兼容 API”，接口地址填 DeepSeek 的）。测试为了省额度：整理记忆一律用 6-Luna；只验代码的部分说书人也可以用 Luna；看说书人配合和估时长的部分用 Terra。用户 10-28 说之前试过一次 DeepSeek API，能用；长时间游玩时格式是否一直稳定还没系统测过。
 - 主要在**本机 ChatGPT 入口**玩；新功能优先保证这个入口好用。用户 10-27 在 `开始游玩.cmd` 的页面里把说书人接口都试过，可以用。
 - **claude.ai 页面只用 Claude 额度**（`sample` 能力），不需要接 GPT 账号或 API。
 - 战斗用**区域制**，不做网格地图。
