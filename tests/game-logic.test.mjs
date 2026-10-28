@@ -534,3 +534,18 @@ test('同伴专属技能各用一次；短休两次后要长休', () => {
   })()`);
   assert.deepEqual(result, { bless: true, raised: true, r: [true, true, false], reset: 0 });
 });
+
+test('阵营声望：关键选择算底数，说书人小幅增减；影响价格、不卖、第三幕盟友、烬冠加冕', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};state=newGame(freshDraft());state.act=1;state.scene='act1_market';
+    const start={watch:repOf('watch'),cult:repOf('cult')};
+    state.flags['act1.sath_trust']=true;applyGM({reputation:[{id:'watch',delta:40},{id:'nope',delta:5}]});const watch=repOf('watch');
+    const price=priceOf('治疗药水',SHOPS.act1_market);
+    state.flags['act1.eel']='enemy';state.repDelta.tide=-20;const shut=shopShut(SHOPS.act1_docks_casino);state.player.gold=999;const bought=buy('强效治疗药水',SHOPS.act1_docks_casino);
+    state.act=3;const al=allies().map(a=>a.id);
+    const crown=ENDINGS.crown.text.includes('教团的信徒不承认你');state.repDelta.cult=40;const crown2=ENDINGS.crown.text.includes('主教瓦尔多亲自');
+    return {start,watch,price,shut,bought,al,crown,crown2};
+  })()`);
+  assert.deepEqual(result, { start: { watch: 0, cult: -30 }, watch: 40, price: 23, shut: true, bought: false, al: ['watch'], crown: true, crown2: true });
+});

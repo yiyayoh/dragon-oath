@@ -793,6 +793,19 @@ const FLAG_KEYS = {
   "act3.valdo": ["convinced", "killed", "captured", "fled"], "act3.ending": ["hestia", "egg", "seven", "mortal", "dragon", "crown", "fall"],
 };
 
+/* 阵营声望（设定集“世界状态与后果追踪”），−100 到 +100。
+   声望 = 关键选择推算出的底数（base，看标记）+ 说书人日常的增减（state.repDelta，reputation 字段，每次最多 ±15）。
+   这样旧存档不用迁移，关键选择也一定算数。影响：商店价格、第三幕的盟友（≥ 20 才会来）、烬冠加冕结局的仪式。 */
+const FACTIONS = {
+  watch: { name: "港卫军", base: f => (f["act1.sath_trust"] ? 25 : 0) + (f["act1.governor"] === "exposed" ? 15 : 0) + (f["side.watch_mole"] === "done" ? 10 : 0) + (f["act1.ship"] === "stolen" ? -10 : 0) + (f["act3.saved_first"] === "manor" ? 15 : 0) },
+  tide: { name: "黑潮会", base: f => (({ deal: 20, ally: 40, enemy: -40 })[f["act1.eel"]] || 0) + (f["quest.kassian"] === "killed_eel" ? -30 : f["quest.kassian"] === "exposed" ? -15 : 0) + (f["side.arena_champion"] === "done" ? 5 : 0) + (f["act3.saved_first"] === "docks" ? 15 : 0) },
+  academy: { name: "旧学院", base: f => (f["quest.lyra"] === "turned" ? 30 : 0) + (f["side.lost_apprentice"] === "done" ? 15 : 0) + (f["side.ward_stones"] === "done" ? 25 : 0) + (f["act1.lyra_notes"] === "burned" ? 5 : 0) + (f["act3.saved_first"] === "academy" ? 15 : 0) },
+  tideborn: { name: "潮裔", base: f => (({ ally: 40, enemy: -50 })[f["act2.tideborn"]] || 0) + (f["side.tideborn_child"] === "done" ? 15 : 0) + (f["side.knight_sword"] === "done" ? 20 : 0) + (f["side.lost_names"] === "done" ? 15 : 0) + (f["side.ember_prisoners"] === "done" ? 10 : 0) },
+  cult: { name: "灰烬教团", base: f => -30 + (f["act1.deacon"] === "informant" ? 10 : f["act1.deacon"] === "tortured" ? -10 : 0) + (f["quest.lyra"] === "joined" ? 20 : 0) + (f["quest.naia"] === "returned" ? 30 : f["quest.naia"] === "double" ? 10 : 0) + (f["act3.valdo"] === "convinced" ? 10 : f["act3.valdo"] === "killed" ? -20 : 0) },
+};
+const repOf = id => clamp(FACTIONS[id].base(state.flags) + (state.repDelta?.[id] || 0), -100, 100);
+const repLabel = v => v >= 50 ? "敬重" : v >= 20 ? "友好" : v > -20 ? "中立" : v > -50 ? "敌视" : "仇恨";
+const repLine = () => Object.keys(FACTIONS).map(id => `${FACTIONS[id].name} ${sgn(repOf(id))}（${repLabel(repOf(id))}）`).join("、");
 /* 同伴的个人任务（设定集各同伴的“个人任务”）。每一步由一个标记完成，按顺序推进；act 是最早哪一幕能做。
    第一步之后要赞同度 ≥ 20 才肯往下谈，≤ −20 拒绝个人任务。choice 是最后的抉择，on 是代码负责的后果；
    test 是恋爱的“考验”，过了才能立誓约（quest.id.tested）。第一步有的直接用剧情里现成的标记。 */
@@ -1048,15 +1061,18 @@ const gearLine = ref => { const g = gearOf(ref); const l = Object.keys(SLOTS).fi
 function useHeal(it, u) { const [c, d, plus] = it.use.heal; return heal(u, roll(c, d) + plus); }
 // 商店：每个场景一家，goods 是卖的东西，mult 是价格倍数（黑市贵一点）
 const SHOPS = {
-  act1_market: { name: "鱼市的杂货摊", goods: ["治疗药水", "火焰炸弹", "加固皮甲", "精钢长剑", "精制长弓", "手弩", "猎鹰羽饰", "矮人战斧"], supplies: 5 },
-  act1_docks_casino: { name: "赌场后门的黑市", goods: ["强效治疗药水", "黑潮弯刀", "精准指环", "力量护腕", "火焰炸弹"], mult: 1.25 },
+  act1_market: { name: "鱼市的杂货摊", faction: "watch", goods: ["治疗药水", "火焰炸弹", "加固皮甲", "精钢长剑", "精制长弓", "手弩", "猎鹰羽饰", "矮人战斧"], supplies: 5 },
+  act1_docks_casino: { name: "赌场后门的黑市", faction: "tide", goods: ["强效治疗药水", "黑潮弯刀", "精准指环", "力量护腕", "火焰炸弹"], mult: 1.25 },
   act2_hub: { name: "船上的补给箱", goods: ["治疗药水", "强效治疗药水", "火焰炸弹"], supplies: 6 },
-  act2_mist: { name: "潮裔的以物易物", goods: ["鲨齿项链", "潮汐三叉戟", "治疗药水", "强效治疗药水"] },
-  act3_haven: { name: "避难所的黑市", goods: ["强效治疗药水", "火焰炸弹", "银弦长弓", "精准指环", "力量护腕", "龙骨刃"], supplies: 8, mult: 1.25 },
+  act2_mist: { name: "潮裔的以物易物", faction: "tideborn", goods: ["鲨齿项链", "潮汐三叉戟", "治疗药水", "强效治疗药水"] },
+  act3_haven: { name: "避难所的黑市", faction: "tide", goods: ["强效治疗药水", "火焰炸弹", "银弦长弓", "精准指环", "力量护腕", "龙骨刃"], supplies: 8, mult: 1.25 },
 };
-const priceOf = (name, shop) => Math.ceil((ITEMS[name]?.price || 0) * (shop?.mult || 1));
+// 声望影响价格：敬重 8 折、友好 9 折、敌视贵 25%，仇恨不卖
+const repMult = shop => { if (!shop?.faction) return 1; const v = repOf(shop.faction); return v >= 50 ? 0.8 : v >= 20 ? 0.9 : v <= -20 ? 1.25 : 1; };
+const shopShut = shop => !!shop?.faction && repOf(shop.faction) <= -50;
+const priceOf = (name, shop) => Math.ceil((ITEMS[name]?.price || 0) * (shop?.mult || 1) * repMult(shop));
 function buy(name, shop) {
-  const cost = priceOf(name, shop); if (!shop.goods.includes(name) || state.player.gold < cost) return false;
+  const cost = priceOf(name, shop); if (!shop.goods.includes(name) || state.player.gold < cost || shopShut(shop)) return false;
   state.player.gold -= cost; state.player.inventory.push(name); push("sys", `买下${name}（−${cost} 金币）`); return true;
 }
 function sell(name) {
@@ -1070,7 +1086,8 @@ function openShop() {
     const draw = () => {
       s.querySelectorAll(".shop").forEach(x => x.remove());
       const box = el("div", "step shop");
-      box.append(el("div", "label", `金币 ${state.player.gold}${shop.supplies ? ` · 补给 ${state.supplies ?? 0}` : ""}`));
+      box.append(el("div", "label", `金币 ${state.player.gold}${shop.supplies ? ` · 补给 ${state.supplies ?? 0}` : ""}${shop.faction ? ` · ${FACTIONS[shop.faction].name}声望 ${sgn(repOf(shop.faction))}（${repLabel(repOf(shop.faction))}${repMult(shop) < 1 ? "，打折" : repMult(shop) > 1 ? "，加价" : ""}）` : ""}`));
+      if (shopShut(shop)) { box.append(el("p", "recap", `${FACTIONS[shop.faction].name}的人认出了你们，摊主把货收了起来：“不卖。”`)); s.append(box); return; }
       const row = (label, desc, btn, fn, off) => { const r = el("div", "kv"); const t = el("span"); t.append(el("b", null, label), el("div", "meta", desc)); const b = el("button", "btn small", btn); b.type = "button"; b.disabled = off; b.onclick = () => { fn(); save(); renderPlay(); draw(); }; r.append(t, b); box.append(r); };
       if (shop.supplies) row("补给", "扎营时消耗一份", `${shop.supplies} 金币`, () => buySupplies(shop), state.player.gold < shop.supplies);
       for (const n of shop.goods) row(n, ITEMS[n].desc, `${priceOf(n, shop)} 金币`, () => buy(n, shop), state.player.gold < priceOf(n, shop));
@@ -1843,7 +1860,7 @@ const SYSTEM = `你是奇幻跑团游戏《醉龙酒馆：龙誓》的游戏主�
 - 当玩家的举动符合其背景的“灵感条件”时，可给 inspiration: 1。
 
 【输出格式】先写叙述正文（纯文本，可分段，不要标题、不要 Markdown）。然后单独一行写 @@@ 。然后写一个 JSON 对象（不要代码块），没有变化的字段可以省略：
-{"location":"简短地点","speakers":["borin"],"expressions":{"borin":"smile"},"check":null,"approval":[{"id":"selene","delta":3,"reason":"你保护了小汤姆"}],"flags":{},"hp":[{"id":"player","delta":-2}],"gold":0,"items_add":[],"items_remove":[],"draconic":0,"inspiration":0,"recruit":[],"hestia_trust":0,"journal":[{"quest":"任务名","note":"一句话进展"}],"remember":[{"id":"vex","note":"你答应帮他救回妹妹"}],"romance":[],"relation":[],"advance":null,"scene_end":false,"suggestions":[{"text":"建议行动","check":"说服"}]}
+{"location":"简短地点","speakers":["borin"],"expressions":{"borin":"smile"},"check":null,"approval":[{"id":"selene","delta":3,"reason":"你保护了小汤姆"}],"flags":{},"hp":[{"id":"player","delta":-2}],"gold":0,"items_add":[],"items_remove":[],"draconic":0,"inspiration":0,"recruit":[],"hestia_trust":0,"journal":[{"quest":"任务名","note":"一句话进展"}],"remember":[{"id":"vex","note":"你答应帮他救回妹妹"}],"romance":[],"relation":[],"reputation":[],"advance":null,"scene_end":false,"suggestions":[{"text":"建议行动","check":"说服"}]}
 - speakers：本轮主要说话或被聚焦的角色 id（最多 3 个，第一个最重要）。可用 id：${Object.keys(PEOPLE).join(" ")}。
 - expressions：可选，表情取 neutral smile angry sad tender。
 - check：需要检定时写 {"skill":"技能键","dc":15,"who":"player","reason":"一句话难点","advantage":false,"disadvantage":false}，此时 suggestions 写 []。who 可以是 player 或已加入的同伴 id。
@@ -1856,6 +1873,7 @@ const SYSTEM = `你是奇幻跑团游戏《醉龙酒馆：龙誓》的游戏主�
 - caught_lie：玩家被同伴发现撒谎时写，["selene"]。
 - consent：玩家已有恋人又和别人走近时，现任表态：[{"id":"现任","for":"新对象","ok":true}]，不接受写 false。
 - relation：同伴之间关系变化，[{"a":"selene","b":"vex","delta":3}]，每次最多 ±10。
+- reputation：阵营声望变化，[{"id":"watch","delta":5,"reason":"帮港卫军抓了小偷"}]，每次最多 ±15、每轮最多 2 条。阵营 id：${Object.entries(FACTIONS).map(([k, f]) => k + " " + f.name).join("、")}。关键抉择（合作、为敌、揭发、背叛）程序已经按标记算进去了，不要重复加；这里只写日常的、小的态度变化。
 - supplies：营地补给变化（拿到干粮、被偷等），最多 ±3。
 - camp：玩家想扎营、休息、睡觉时写 true，程序会打开营地；不要自己写睡觉的过程。
 - flags 只能用以下键：${Object.keys(FLAG_KEYS).join("、")}。`;
@@ -2043,7 +2061,7 @@ function buildPrompt(action, mode) {
     `\nHP ${p.hp}/${p.hpMax}，AC ${acTotal("player")}，金币 ${p.gold}，灵感 ${p.inspiration}，龙化值 ${p.draconic}${marksOf("player").length ? "（印记能力：" + marksOf("player").map(m => m.name).join("、") + "）" : ""}，装备：${gearLine("player")}，行囊：${p.inventory.join("、") || "无"}` +
     `\n\n【在场同伴】\n${pres.length ? pres.map(companionBrief).join("\n") : "（无，玩家独自一人）"}` +
     `\n\n【NPC】\n${npcLines()}` +
-    `\n\n【世界标记】${JSON.stringify(state.flags)}；赫斯提雅信任 ${state.hestiaTrust}；第 ${state.day} 天，营地补给 ${state.supplies ?? 0}${debtLine()}${allyLine()}` +
+    `\n\n【世界标记】${JSON.stringify(state.flags)}；赫斯提雅信任 ${state.hestiaTrust}；第 ${state.day} 天，营地补给 ${state.supplies ?? 0}${debtLine()}${allyLine()}${state.act ? "；阵营声望：" + repLine() : ""}` +
     (Object.entries(state.rel || {}).some(([, v]) => v) ? `\n【同伴之间】${Object.entries(state.rel).filter(([, v]) => v).map(([k, v]) => k.split("_").map(id => PEOPLE[id].name).join("×") + " " + sgn(v)).join("，")}` : "") +
     (chapters ? `\n\n【往事】（已经结束的各章纪要）\n${chapters}` : "") +
     `\n\n【前情提要】${m.summary || (chapters ? "（往事之后的事都在下面的最近剧情里）" : "（还没有，更早的剧情都在下面的最近剧情里）")}` +
@@ -2652,11 +2670,11 @@ function sceneRolls(sc) {
 }
 // 第三幕的盟友：按之前的选择算，不交给说书人决定
 const ALLIES = [
-  { id: "watch", name: "港卫军（萨丝）", why: "和萨丝合作过或揭发了总督", ok: () => !!state.flags["act1.sath_trust"] || state.flags["act1.governor"] === "exposed" },
+  { id: "watch", name: "港卫军（萨丝）", why: "港卫军声望 ≥ 20（和萨丝合作、揭发总督、抓出内鬼、先救总督府）", ok: () => repOf("watch") >= 20 },
   { id: "governor", name: "总督的私兵", why: "握着总督的把柄或和他结了盟", ok: () => ["blackmailed", "ally"].includes(state.flags["act1.governor"]) },
-  { id: "tide", name: "黑潮会船队（老鳗）", why: "和老鳗做过交易、没杀他", ok: () => ["deal", "ally"].includes(state.flags["act1.eel"]) && state.flags["quest.kassian"] !== "killed_eel" },
-  { id: "academy", name: "学院残部", why: "说服奥斯瓦尔德反水，或者帮学院保住了结界石", ok: () => state.flags["quest.lyra"] === "turned" || state.flags["side.ward_stones"] === "done" },
-  { id: "tideborn", name: "潮裔", why: "赢得了潮裔的信任，或者把亡灵骑士的剑交给了他们", ok: () => state.flags["act2.tideborn"] === "ally" || state.flags["act2.tideborn"] !== "enemy" && state.flags["side.knight_sword"] === "done" },
+  { id: "tide", name: "黑潮会船队（老鳗）", why: "黑潮会声望 ≥ 20（和老鳗做过交易或谈成最后一笔、先救码头）", ok: () => repOf("tide") >= 20 && state.flags["quest.kassian"] !== "killed_eel" },
+  { id: "academy", name: "学院残部", why: "旧学院声望 ≥ 20（说服奥斯瓦尔德反水、保住结界石、救回学徒、先救学院）", ok: () => repOf("academy") >= 20 },
+  { id: "tideborn", name: "潮裔", why: "潮裔声望 ≥ 20（赢得长老信任、交还骑士的剑、找回孩子和名字）", ok: () => repOf("tideborn") >= 20 },
   { id: "darin", name: "达林", why: "唤醒了达林", ok: () => state.flags["act2.darin"] === "woke" },
   { id: "rat", name: "鼠王和它的鼠群", why: "序幕里放过了鼠王", ok: () => state.flags["prologue.rat_king"] === "spared" },
 ];
@@ -2673,7 +2691,7 @@ const ENDINGS = {
   mortal: { name: "凡人之世", act: "打碎誓约，以凡人之力斩龙", text: "印记全部消失。盟军与你们七人合力屠龙，世上再也没有龙了。",
     need: () => [state.flags["act2.heart"] === "destroyed" ? "" : "誓约之心已经销毁", allies().length >= 3 ? "" : "最终战有 ≥ 3 方盟友"].filter(Boolean) },
   dragon: { name: "新龙王", act: "吸收全部七片印记", text: "你化作银黑双色的巨龙，吞噬了烬王，从此统治雾海。", need: () => [state.player.draconic >= 80 ? "" : "龙化值 ≥ 80"].filter(Boolean) },
-  crown: { name: "烬冠加冕", act: "向烬王屈膝", text: "烬王苏醒，你成了它在人间的代言人。灰帆港化为灰烬。", need: () => [] },
+  crown: { name: "烬冠加冕", act: "向烬王屈膝", get text() { return "烬王苏醒，你成了它在人间的代言人。灰帆港化为灰烬。" + (repOf("cult") >= 0 ? "主教瓦尔多亲自为你戴上烬冠，教团的信徒跪了一地。" : "教团的信徒不承认你，烬王只把你当作一件趁手的工具。"); }, need: () => [] },
   fall: { name: "港口陷落", act: "", text: "你们没能拦住烬王。灰帆港在龙焰里烧了一夜，幸存者挤上船逃往外海。", need: () => ["只在最终战失败时发生"] },
 };
 function openFinal() {
@@ -2953,6 +2971,11 @@ function applyBonds(d, notes) {
     c.consent = { ...(c.consent || {}), [x.for]: ok };
     if (ok) { if (state.companions[x.for].secret && lovers().filter(o => o !== x.for).every(o => state.companions[o].consent?.[x.for] === true)) state.companions[x.for].secret = false; notes.push([`${PEOPLE[l].name}接受了你和${PEOPLE[x.for].name}的关系`, "up"]); }
     else { c.approval = clamp(c.approval - 15, -100, 100); notes.push([`${PEOPLE[l].name}不接受你和${PEOPLE[x.for].name}的关系 −15`, "down"]); }
+  }
+  for (const x of (Array.isArray(d.reputation) ? d.reputation : []).slice(0, 2)) {
+    const delta = num(x?.delta, 15); if (!FACTIONS[x?.id] || !delta) continue;
+    const before = repOf(x.id); state.repDelta = { ...(state.repDelta || {}), [x.id]: (state.repDelta?.[x.id] || 0) + delta };
+    notes.push([`${FACTIONS[x.id].name}声望 ${sgn(repOf(x.id) - before)}${x.reason ? "（" + str(x.reason, 20) + "）" : ""}`, delta > 0 ? "up" : "down"]);
   }
   for (const x of (Array.isArray(d.relation) ? d.relation : []).slice(0, 3)) {
     if (!COMPANIONS[x?.a] || !COMPANIONS[x?.b] || x.a === x.b) continue;
@@ -4362,6 +4385,10 @@ function openJournal() {
         t.append(el("b", null, `《${q.name}》 · ${PEOPLE[id].name}`), ul, el("div", "meta", next));
         d.append(t); s.append(d);
       }
+    }
+    if (state.act) {
+      s.append(el("div", "label", "阵营声望"));
+      for (const id of Object.keys(FACTIONS)) { const v = repOf(id), r = el("div", "kv"); r.append(el("span", null, FACTIONS[id].name), el("b", null, `${repLabel(v)} ${sgn(v)}`)); s.append(r); }
     }
     const sides = Object.entries(SIDE).filter(([id]) => state.flags[`side.${id}`]);
     if (sides.length) {
