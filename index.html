@@ -563,7 +563,7 @@ const SCENES = {
   },
   act1_manor_vault: {
     title: "总督府金库", loc: "总督府 · 地下金库", bg: "linear-gradient(160deg,#4a4030,#1b1710 60%,#0b0906)", act: 1, camp: false,
-    anchor: "总督府地下的金库：两道铁门、一条巡逻走廊、一个上了三重锁的保险室。偷钥匙：隐匿 DC 14（从舞会溜下来的话 DC 12）+ 巧手 DC 15（保险室），成功写 act1.key=stolen；同一个保险室里有总督的走私账本（老鳗要的），拿走时在 items_add 里写“总督的走私账本”。保险室里还有总督和教团往来的密信（萨丝要的证据，拿去给她可以揭发总督）。钥匙到手不等于航海图到手：航海图要回酒馆地窖才能取出，这里不要写 act1.chart。失败触发守卫：动手时在 JSON 写 combat 为 manor_guards，或者逃跑。离开时 advance：act1_manor 或 act1_hub。",
+    anchor: "总督府地下的金库：两道铁门、一条巡逻走廊、一个上了三重锁的保险室。偷钥匙：隐匿 DC 14（从舞会溜下来的话 DC 12）+ 巧手 DC 15（保险室），成功写 act1.key=stolen；同一个保险室里有总督的走私账本（老鳗要的），拿走时在 items_add 里写“总督的走私账本”。保险室的丝绒盒里还有一把银刃匕首（拿走写 items_add“银刃匕首”）。保险室里还有总督和教团往来的密信（萨丝要的证据，拿去给她可以揭发总督）。钥匙到手不等于航海图到手：航海图要回酒馆地窖才能取出，这里不要写 act1.chart。失败触发守卫：动手时在 JSON 写 combat 为 manor_guards，或者逃跑。离开时 advance：act1_manor 或 act1_hub。",
     next: ["act1_manor", "act1_hub"], encounters: ["manor_guards"], act: 1,
   },
   act1_sewers: {
@@ -970,6 +970,117 @@ function growth(kitKey, lvl) {
   return { pb: profBonus(lvl), cantrip: k.weapons.some(w => w.cantrip) ? cantripDice(lvl) : 0, sneak: k.feat === "sneak" ? Math.ceil(lvl / 2) : 0,
     uses: featUses(k, lvl), extra: !!k.extra && lvl >= 5, fireball: !!k.fireball && lvl >= 5 };
 }
+/* 物品表。行囊（state.player.inventory）里放名字；名字在这张表里的是真物品，不在的只是杂物。
+   slot：melee 近战武器、ranged 远程武器、armor 护甲、trinket 饰品（每人两件）；use：消耗品。
+   武器：d 伤害骰，ab 属性（fin 取力量和敏捷高的），bonus 命中和伤害都加，extra 额外伤害骰（fire 对火焰免疫的敌人无效）。
+   护甲和饰品是在原有数值上的加成：ac、hit、dmg、save（所有豁免）、init（先攻）。
+   price 是商店的价格（卖出一半）；rare 的东西只能从战利品、支线奖励和商店里来，说书人写 items_add 不算数。 */
+const ITEMS = {
+  // 武器
+  "精钢长剑": { slot: "melee", d: 8, ab: "str", bonus: 1, price: 60, desc: "港口铁匠打的好剑，比制式的锋利" },
+  "黑潮弯刀": { slot: "melee", d: 6, ab: "fin", bonus: 1, price: 50, rare: true, desc: "黑潮会打手爱用的弯刀，轻巧" },
+  "矮人战斧": { slot: "melee", d: 10, ab: "str", bonus: 1, price: 80, desc: "铁炉堡的老手艺，沉" },
+  "银刃匕首": { slot: "melee", d: 4, ab: "fin", bonus: 2, price: 90, rare: true, desc: "总督藏品，刃口镀银" },
+  "老海狗的鱼叉": { slot: "melee", d: 8, ab: "fin", bonus: 1, price: 40, rare: true, desc: "老拾荒人儿子留下的鱼叉" },
+  "晨星长剑": { slot: "melee", d: 8, ab: "str", bonus: 2, extra: { cnt: 1, d: 6, n: "晨星光辉" }, price: 300, rare: true, desc: "幽灵船上骑士团长的佩剑，命中时额外 1d6 光耀伤害" },
+  "黑曜石巨斧": { slot: "melee", d: 12, ab: "str", bonus: 1, extra: { cnt: 1, d: 6, n: "烬火", fire: true }, price: 260, rare: true, desc: "烬卫的斧子，额外 1d6 火焰伤害" },
+  "潮汐三叉戟": { slot: "melee", d: 8, ab: "fin", bonus: 2, price: 220, rare: true, desc: "潮裔战士首领的三叉戟" },
+  "龙骨刃": { slot: "melee", d: 8, ab: "fin", bonus: 2, extra: { cnt: 1, d: 8, n: "龙骨" }, price: 400, rare: true, desc: "用上古龙骨磨成的刀，额外 1d8 伤害" },
+  "手弩": { slot: "ranged", d: 6, ab: "dex", bonus: 1, price: 50, desc: "小巧，能藏在袖子里" },
+  "精制长弓": { slot: "ranged", d: 8, ab: "dex", bonus: 1, price: 70, desc: "猎人公会的长弓" },
+  "银弦长弓": { slot: "ranged", d: 8, ab: "dex", bonus: 2, price: 240, rare: true, desc: "弓弦是银丝绞成的" },
+  "龙鳞弩": { slot: "ranged", d: 10, ab: "dex", bonus: 2, extra: { cnt: 1, d: 6, n: "酸蚀" }, price: 420, rare: true, desc: "幼龙鳞片做弩臂，额外 1d6 酸蚀伤害" },
+  // 护甲（在原本的 AC 上加）
+  "加固皮甲": { slot: "armor", ac: 1, price: 50, desc: "缝了铁片的皮甲，AC +1" },
+  "港卫军胸甲": { slot: "armor", ac: 1, save: 1, price: 90, rare: true, desc: "港卫军的制式胸甲，AC +1，豁免 +1" },
+  "龙鳞甲": { slot: "armor", ac: 2, price: 280, rare: true, desc: "银龙的鳞片缀成，AC +2" },
+  "晨星骑士铠": { slot: "armor", ac: 2, save: 1, price: 320, rare: true, desc: "百年前骑士团的铠甲，AC +2，豁免 +1" },
+  "烬卫板甲": { slot: "armor", ac: 3, price: 450, rare: true, desc: "烬卫士兵的板甲，烧得发黑，AC +3" },
+  // 饰品
+  "玛莎的护身符": { slot: "trinket", save: 1, price: 0, rare: true, desc: "玛莎年轻时的护身符，豁免 +1" },
+  "守誓人徽记": { slot: "trinket", ac: 1, save: 1, price: 0, rare: true, desc: "最后一位守誓人的徽记，AC +1，豁免 +1" },
+  "海燕吊坠": { slot: "trinket", init: 2, price: 40, rare: true, desc: "溺死水手的吊坠，先攻 +2" },
+  "猎鹰羽饰": { slot: "trinket", init: 3, price: 60, desc: "先攻 +3" },
+  "力量护腕": { slot: "trinket", dmg: 1, price: 80, desc: "斗场冠军的护腕，伤害 +1" },
+  "精准指环": { slot: "trinket", hit: 1, price: 120, desc: "命中 +1" },
+  "鲨齿项链": { slot: "trinket", save: 1, init: 1, price: 70, desc: "潮裔的护身符，豁免 +1，先攻 +1" },
+  "烬火戒指": { slot: "trinket", ac: 1, dmg: 1, price: 200, rare: true, desc: "达林手上的戒指，AC +1，伤害 +1" },
+  "龙之心坠": { slot: "trinket", hit: 1, dmg: 2, price: 500, rare: true, desc: "主教胸前的坠子，命中 +1，伤害 +2" },
+  // 消耗品：heal 治疗（战斗中是附赠动作）；blast 扔向一个区域（动作），敏捷豁免减半
+  "治疗药水": { use: { heal: [2, 4, 2] }, price: 25, desc: "恢复 2d4+2 生命" },
+  "强效治疗药水": { use: { heal: [4, 4, 4] }, price: 60, desc: "恢复 4d4+4 生命" },
+  "银龙血药剂": { use: { heal: [6, 6, 6] }, price: 150, rare: true, desc: "恢复 6d6+6 生命" },
+  "火焰炸弹": { use: { blast: { dice: 3, dc: 13, n: "火焰炸弹" } }, price: 30, desc: "扔向一个区域：3d6 火焰伤害，敏捷 DC 13 减半（同伴也会被炸）" },
+  "学徒的火焰卷轴": { use: { blast: { dice: 8, dc: 15, n: "火焰卷轴" } }, price: 150, rare: true, desc: "一次性的火球术：8d6 火焰伤害，敏捷 DC 15 减半" },
+};
+const SLOTS = { melee: "近战武器", ranged: "远程武器", armor: "护甲", trinket1: "饰品", trinket2: "饰品" };
+const slotOf = it => it?.slot === "trinket" ? ["trinket1", "trinket2"] : it?.slot ? [it.slot] : [];
+// 每个人的装备：state.gear[ref][slot] = 物品名
+const gearOf = ref => { state.gear ||= {}; return (state.gear[ref] ||= {}); };
+function gearBonus(ref) {
+  const b = { ac: 0, hit: 0, dmg: 0, save: 0, init: 0 };
+  for (const n of Object.values(gearOf(ref))) { const it = ITEMS[n]; if (it) for (const k of Object.keys(b)) b[k] += it[k] || 0; }
+  return b;
+}
+const acTotal = ref => (ref === "player" ? state.player.ac : COMPANIONS[ref].ac) + gearBonus(ref).ac;
+// 装备一件行囊里的东西；原来那件放回行囊
+function equip(ref, slot, name) {
+  const inv = state.player.inventory, g = gearOf(ref), it = ITEMS[name];
+  if (!it || !slotOf(it).includes(slot) || !inv.includes(name)) return false;
+  inv.splice(inv.indexOf(name), 1);
+  if (g[slot]) inv.push(g[slot]);
+  g[slot] = name; return true;
+}
+function unequip(ref, slot) { const g = gearOf(ref); if (!g[slot]) return false; state.player.inventory.push(g[slot]); delete g[slot]; return true; }
+// 把装备套到职业自带的武器上：近战换掉第一把近战武器，远程换掉第一把非戏法的远程武器（没有就加一把）
+function gearWeapons(ref, base, ab, pb) {
+  const g = gearOf(ref), b = gearBonus(ref), out = base.map(w => ({ ...w, hit: w.hit + b.hit, plus: w.cantrip ? w.plus : w.plus + b.dmg }));
+  for (const slot of ["melee", "ranged"]) {
+    const it = ITEMS[g[slot]]; if (!it) continue;
+    const m = it.ab === "fin" ? Math.max(mod(ab.str), mod(ab.dex)) : mod(ab[it.ab]);
+    const w = { n: g[slot], cnt: 1, d: it.d, plus: m + it.bonus + b.dmg, hit: m + pb + it.bonus + b.hit, ranged: slot === "ranged", extra: it.extra || null };
+    const i = out.findIndex(x => slot === "ranged" ? x.ranged && !x.cantrip : !x.ranged);
+    if (i >= 0) out[i] = w; else out.push(w);
+  }
+  return out;
+}
+const gearLine = ref => { const g = gearOf(ref); const l = Object.keys(SLOTS).filter(k => g[k]).map(k => g[k]); return l.length ? l.join("、") : "职业自带的"; };
+function useHeal(it, u) { const [c, d, plus] = it.use.heal; return heal(u, roll(c, d) + plus); }
+// 商店：每个场景一家，goods 是卖的东西，mult 是价格倍数（黑市贵一点）
+const SHOPS = {
+  act1_market: { name: "鱼市的杂货摊", goods: ["治疗药水", "火焰炸弹", "加固皮甲", "精钢长剑", "精制长弓", "手弩", "猎鹰羽饰", "矮人战斧"], supplies: 5 },
+  act1_docks_casino: { name: "赌场后门的黑市", goods: ["强效治疗药水", "黑潮弯刀", "精准指环", "力量护腕", "火焰炸弹"], mult: 1.25 },
+  act2_hub: { name: "船上的补给箱", goods: ["治疗药水", "强效治疗药水", "火焰炸弹"], supplies: 6 },
+  act2_mist: { name: "潮裔的以物易物", goods: ["鲨齿项链", "潮汐三叉戟", "治疗药水", "强效治疗药水"] },
+  act3_haven: { name: "避难所的黑市", goods: ["强效治疗药水", "火焰炸弹", "银弦长弓", "精准指环", "力量护腕", "龙骨刃"], supplies: 8, mult: 1.25 },
+};
+const priceOf = (name, shop) => Math.ceil((ITEMS[name]?.price || 0) * (shop?.mult || 1));
+function buy(name, shop) {
+  const cost = priceOf(name, shop); if (!shop.goods.includes(name) || state.player.gold < cost) return false;
+  state.player.gold -= cost; state.player.inventory.push(name); push("sys", `买下${name}（−${cost} 金币）`); return true;
+}
+function sell(name) {
+  const inv = state.player.inventory, it = ITEMS[name]; if (!it?.price || !inv.includes(name)) return false;
+  const got = Math.floor(it.price / 2); inv.splice(inv.indexOf(name), 1); state.player.gold += got; push("sys", `卖掉${name}（+${got} 金币）`); return true;
+}
+function buySupplies(shop) { if (!shop.supplies || state.player.gold < shop.supplies) return false; state.player.gold -= shop.supplies; state.supplies = (state.supplies || 0) + 1; push("sys", `买了一份补给（−${shop.supplies} 金币）`); return true; }
+function openShop() {
+  const shop = SHOPS[state.scene]; if (!shop) return;
+  modal(shop.name, s => {
+    const draw = () => {
+      s.querySelectorAll(".shop").forEach(x => x.remove());
+      const box = el("div", "step shop");
+      box.append(el("div", "label", `金币 ${state.player.gold}${shop.supplies ? ` · 补给 ${state.supplies ?? 0}` : ""}`));
+      const row = (label, desc, btn, fn, off) => { const r = el("div", "kv"); const t = el("span"); t.append(el("b", null, label), el("div", "meta", desc)); const b = el("button", "btn small", btn); b.type = "button"; b.disabled = off; b.onclick = () => { fn(); save(); renderPlay(); draw(); }; r.append(t, b); box.append(r); };
+      if (shop.supplies) row("补给", "扎营时消耗一份", `${shop.supplies} 金币`, () => buySupplies(shop), state.player.gold < shop.supplies);
+      for (const n of shop.goods) row(n, ITEMS[n].desc, `${priceOf(n, shop)} 金币`, () => buy(n, shop), state.player.gold < priceOf(n, shop));
+      const sellable = [...new Set(state.player.inventory.filter(n => ITEMS[n]?.price))];
+      if (sellable.length) { box.append(el("div", "label", "卖掉行囊里的东西（半价）")); for (const n of sellable) row(n, ITEMS[n].desc, `卖 ${Math.floor(ITEMS[n].price / 2)}`, () => sell(n), false); }
+      s.append(box);
+    };
+    draw();
+  });
+}
 const FIREBALL = { name: "火球术", dice: 8, desc: "动作，每场一次：炸向一个区域，里面的所有人（包括同伴）受 8d6 火焰伤害，敏捷豁免成功减半" };
 // 数值取自设定集“普通敌人”表；atk：cnt d 面骰 + plus，命中加值 hit
 const ENEMIES = {
@@ -1291,6 +1402,18 @@ const ENCOUNTERS = {
     stops: { fuse: "灯室的导火线" },
   },
 };
+// 每场遭遇打赢后的战利品（代码发，只发一次）
+const LOOT = {
+  tavern_ambush: { gold: 10, items: ["治疗药水"] }, rat_king: { items: ["猎鹰羽饰"] },
+  docks_brawl: { gold: 30, items: ["手弩"] }, docks_ship: { gold: 60, items: ["黑潮弯刀", "治疗药水"] }, arena_bout: { items: ["力量护腕"] },
+  tower_spies: { gold: 20, items: ["治疗药水"] }, wreck_drowned: { gold: 25, items: ["海燕吊坠"] },
+  manor_guards: { gold: 40, items: ["港卫军胸甲"] }, sewers_cult: { gold: 30, items: ["火焰炸弹", "治疗药水"] },
+  lighthouse: { gold: 50, items: ["强效治疗药水"] },
+  ghost_ship: { items: ["晨星长剑", "晨星骑士铠"] }, bone_wyrms: { items: ["龙鳞甲"] }, ember_outpost: { gold: 80, items: ["黑曜石巨斧", "强效治疗药水"] },
+  darin_forge: { items: ["烬火戒指"] }, mist_kraken: { items: ["潮汐三叉戟"] }, temple_raid: { gold: 100, items: ["银弦长弓", "强效治疗药水"] },
+  harbor_wyrmling: { items: ["龙鳞弩", "强效治疗药水"] }, ember_slope: { gold: 80, items: ["烬卫板甲"] }, valdo_altar: { items: ["龙之心坠"] },
+};
+for (const [id, l] of Object.entries(LOOT)) ENCOUNTERS[id].loot = l;
 
 /* =========================================================
    工具
@@ -1549,8 +1672,8 @@ function bonusFor(who, key) {
     return { total: best + pb, parts: [["属性", best], ["熟练", pb]], label: "攻击" };
   }
   if (key.startsWith("save_")) {
-    const a = key.slice(5); const m = mod(ab[a]);
-    return { total: m, parts: [[AB[a], m]], label: AB[a] + "豁免" };
+    const a = key.slice(5); const m = mod(ab[a]), gs = gearBonus(who).save;
+    return { total: m + gs, parts: gs ? [[AB[a], m], ["装备", gs]] : [[AB[a], m]], label: AB[a] + "豁免" };
   }
   if (AB[key]) { const m = mod(ab[key]); return { total: m, parts: [[AB[key], m]], label: AB[key] }; }
   const [name, a] = SKILLS[key];
@@ -1849,7 +1972,7 @@ function buildPrompt(action, mode) {
     (state.combat ? combatBrief(mode) : state.camp ? campBrief() : encs.length || done.length ? (encs.length ? `\n可开战的遭遇：${encs.map(id => id + "（" + ENCOUNTERS[id].brief + "）").join("；")}` : "") + (done.length ? `\n这一场已经打完的遭遇（不能再写 combat）：${done.join("、")}。玩家再要动手，就用检定或叙述处理，不要写成一直对峙` : "") : "") +
     `\n\n【玩家角色】${p.name}，${p.gender}，${p.level} 级${RACES[p.race].name}${CLASSES[p.cls].name}，背景：${BACKGROUNDS[p.bg].name}（灵感条件：${BACKGROUNDS[p.bg].insp}）。外貌：${p.appearance}` +
     `\n属性：${AB_KEYS.map(k => AB[k] + p.abilities[k] + "(" + sgn(mod(p.abilities[k])) + ")").join(" ")}；熟练技能：${profs}` +
-    `\nHP ${p.hp}/${p.hpMax}，AC ${p.ac}，金币 ${p.gold}，灵感 ${p.inspiration}，龙化值 ${p.draconic}，物品：${p.inventory.join("、") || "无"}` +
+    `\nHP ${p.hp}/${p.hpMax}，AC ${acTotal("player")}，金币 ${p.gold}，灵感 ${p.inspiration}，龙化值 ${p.draconic}，装备：${gearLine("player")}，行囊：${p.inventory.join("、") || "无"}` +
     `\n\n【在场同伴】\n${pres.length ? pres.map(companionBrief).join("\n") : "（无，玩家独自一人）"}` +
     `\n\n【NPC】\n${npcLines()}` +
     `\n\n【世界标记】${JSON.stringify(state.flags)}；赫斯提雅信任 ${state.hestiaTrust}；第 ${state.day} 天，营地补给 ${state.supplies ?? 0}${debtLine()}${allyLine()}` +
@@ -2352,7 +2475,9 @@ function applyGM(d, mode) {
     const i = state.player.inventory.indexOf(String(r)); if (i >= 0) { state.player.inventory.splice(i, 1); notes.push(["失去：" + r, "down"]); }
   }
   for (const a of (Array.isArray(d.items_add) ? d.items_add : []).slice(0, 3)) {
-    const s = str(a, 20).trim(); if (s && !state.player.inventory.includes(s)) { state.player.inventory.push(s); notes.push(["获得：" + s, "up"]); }
+    const s = str(a, 20).trim(); if (!s || state.player.inventory.includes(s)) continue;
+    if (ITEMS[s]?.rare && !SCENES[state.scene].anchor.includes(s)) { console.warn("说书人给的稀有物品被丢弃", s); continue; } // 稀有物品只从战利品、奖励、商店来
+    state.player.inventory.push(s); notes.push(["获得：" + s, "up"]);
   }
   // draconic, inspiration
   const dr = num(d.draconic, 15);
@@ -3004,8 +3129,8 @@ function partyUnit(ref, zone) {
   const s = isP ? state.player : state.companions[ref];
   return {
     id: ref, ref, side: "party", pid: ref, name: whoName(ref), zone, dexMod: mod(ab.dex),
-    hp: Math.max(1, s.hp), max: s.hpMax, ac: isP ? s.ac : COMPANIONS[ref].ac, level: lvl,
-    weapons: kit.weapons.map(w => ({ n: w.n, cnt: w.cantrip ? g.cantrip : 1, d: w.d, plus: w.cantrip ? 0 : mod(ab[w.ab]), hit: mod(ab[w.ab]) + g.pb, ranged: !!w.ranged, mock: !!w.mock })),
+    hp: Math.max(1, s.hp), max: s.hpMax, ac: acTotal(ref), level: lvl, initBonus: gearBonus(ref).init,
+    weapons: gearWeapons(ref, kit.weapons.map(w => ({ n: w.n, cnt: w.cantrip ? g.cantrip : 1, d: w.d, plus: w.cantrip ? 0 : mod(ab[w.ab]), hit: mod(ab[w.ab]) + g.pb, ranged: !!w.ranged, mock: !!w.mock, cantrip: !!w.cantrip })), ab, g.pb),
     feat: kit.feat, uses: g.uses, healMod: kit.healAb ? mod(ab[kit.healAb]) : 0,
     sneakDice: g.sneak, extra: g.extra, fireball: g.fireball ? 1 : 0, spellDc: 8 + g.pb + mod(ab.int),
     cond: {}, saves: { s: 0, f: 0 },
@@ -3035,7 +3160,7 @@ function startCombat(id) {
   for (const [type, n, zone] of E.foes) for (let i = 0; i < n; i++) { const u = foeUnit(type, zone, "enemy"); c.units[u.id] = u; }
   for (const u of cbList()) if (u.type && ENEMIES[u.type].shift) disguise(u);
   if (E.final) c.allies = allies().map(a => a.name);
-  for (const u of cbList()) u.init = rollD20() + u.dexMod;
+  for (const u of cbList()) u.init = rollD20() + u.dexMod + (u.initBonus || 0);
   sortOrder();
   state.suggestions = []; state.pendingCheck = null; pick = null;
   push("chapter", "战斗 · " + E.title);
@@ -3134,6 +3259,7 @@ function attack(a, t, w, o = {}) {
   if (t.cond.marked === a.id) { n += roll(k, 6); extra.push(FEATS[a.feat]?.name || "印记"); }
   if (o.smite && !w.ranged && a.uses > 0) { a.uses--; n += roll(2 * k, 8); extra.push("至圣斩"); }
   if (w.mock) { t.cond.mocked = true; extra.push("对方下次攻击劣势"); }
+  if (w.extra && !(w.extra.fire && ENEMIES[t.type]?.immune === "fire")) { n += roll(w.extra.cnt * k, w.extra.d); extra.push(w.extra.n); }
   n = Math.max(1, n);
   const r = hurt(t, n, { crit, spare: o.spare && !w.ranged });
   clog(head + (crit ? "暴击！" : "命中，") + `${n} 点伤害` + (extra.length ? "（" + extra.join("、") + "）" : "") + (r ? "。" + r : ""), crit ? "crit" : "hit");
@@ -3284,6 +3410,8 @@ function allyTurn(u) {
     const t = mates.find(v => v.down) || mates.find(v => !v.down && v.hp <= v.max * .35);
     if (t) { u.uses--; c.res.bonus = false; clog(`${u.name} 念出治疗之语：` + heal(t, Math.max(1, roll(1, 4) + u.healMod)), "up"); }
   }
+  const potion = c.res.bonus && u.hp <= u.max * .3 && ["强效治疗药水", "治疗药水"].find(n => state.player.inventory.includes(n));
+  if (potion) { c.res.bonus = false; state.player.inventory.splice(state.player.inventory.indexOf(potion), 1); clog(`${u.name} 从行囊里摸出${potion}灌下：` + useHeal(ITEMS[potion], u), "up"); }
   if (c.res.bonus && u.feat === "second_wind" && u.uses > 0 && u.hp <= u.max / 2) { u.uses--; c.res.bonus = false; clog(`${u.name} 使出回气：` + heal(u, roll(1, 10) + u.level), "up"); }
   if (c.res.bonus) { const t = mates.find(v => v.down && v.zone === u.zone); if (t) { c.res.bonus = false; raise(u, t); } }
   if (c.zones[u.zone].burning && c.res.move > 0) {
@@ -3405,6 +3533,12 @@ function endCombat(r) {
   }
   parts.push("我方：" + us.filter(u => u.side === "party").map(u => `${u.name} ${u.dead ? "阵亡" : u.down ? "倒地" : u.hp + "/" + u.max}`).join("，") + "。");
   if (fuse.length) parts.push(fuse.join(""));
+  const loot = ENCOUNTERS[c.id].loot;
+  if (loot && (r === "victory" || r === "talked" || r === "final") && !state.fought?.[c.id]) { // 战利品：打赢才有，只发一次
+    if (loot.gold) state.player.gold += loot.gold;
+    state.player.inventory.push(...(loot.items || []));
+    parts.push(`战利品：${[loot.gold ? loot.gold + " 金币" : "", ...(loot.items || [])].filter(Boolean).join("、")}。`);
+  }
   const summary = parts.join("");
   state.fought = state.fought || {};
   if (r !== "escaped") state.fought[c.id] = r; // 撤离的遭遇之后还能再打
@@ -3510,16 +3644,18 @@ function doPick(u) {
   });
 }
 function castFireball(zi) {
+  const item = pick?.item, bl = item && ITEMS[item].use.blast;
   act((c, me) => {
-    c.res.action = false; me.fireball--;
-    const n = roll(FIREBALL.dice, 6), z = c.zones[zi], hit = [];
+    c.res.action = false;
+    if (bl) state.player.inventory.splice(state.player.inventory.indexOf(item), 1); else me.fireball--;
+    const dc = bl ? bl.dc : me.spellDc, n = roll(bl ? bl.dice : FIREBALL.dice, 6), z = c.zones[zi], hit = [];
     for (const v of cbList()) {
       if (v.zone !== zi || v.dead || v.out) continue;
-      const save = rollD20() + (v.dexMod || 0) >= me.spellDc, dmg = save ? Math.floor(n / 2) : n;
+      const save = rollD20() + (v.dexMod || 0) >= dc, dmg = save ? Math.floor(n / 2) : n;
       const r = hurt(v, dmg, { fire: true });
       hit.push(`${v.name} ${dmg}${save ? "（闪开一半）" : ""}${r ? "，" + r : ""}`);
     }
-    clog(`${me.name} 把一团火球砸进${z.n}，${n} 点火焰伤害（豁免 DC ${me.spellDc}）` + (hit.length ? "：" + hit.join("；") : "，但那里空无一人"), "crit");
+    clog(`${me.name} 把${bl ? bl.n : "一团火球"}砸进${z.n}，${n} 点火焰伤害（豁免 DC ${dc}）` + (hit.length ? "：" + hit.join("；") : "，但那里空无一人"), "crit");
   });
 }
 function playerEnd() { if (!myTurn()) return; pick = null; nextTurn(); advanceCombat(); }
@@ -3560,7 +3696,7 @@ function renderCombat(box) {
     if (turn && !pick && r.move > 0 && !me.cond.prone && !me.cond.restrained && c.zones[me.zone].adj.includes(zi)) {
       const b = el("button", "btn small", "移动到这里"); b.type = "button"; b.onclick = () => act((c, me) => { c.res.move--; moveUnit(me, zi, c.res.free); }); zb.append(b);
     }
-    if (turn && pick?.kind === "fireball") { const b = el("button", "btn small gold", "火球砸向这里"); b.type = "button"; b.onclick = () => castFireball(zi); zb.append(b); }
+    if (turn && pick?.kind === "fireball") { const b = el("button", "btn small gold", pick.item ? "扔到这里" : "火球砸向这里"); b.type = "button"; b.onclick = () => castFireball(zi); zb.append(b); }
     zs.append(zb);
   });
   wrap.append(zs);
@@ -3576,7 +3712,7 @@ function renderCombat(box) {
   const acts = el("div", "cb-acts");
   const add = (label, fn, cls, title) => { const b = el("button", "btn small" + (cls ? " " + cls : ""), label); b.type = "button"; b.onclick = fn; if (title) b.title = title; acts.append(b); return b; };
   if (pick) {
-    acts.append(el("span", "label", pick.kind === "fireball" ? "火球术：点一个区域里的“火球砸向这里”（同伴也会被烧到）" : `${pick.label}：点一个高亮的目标`));
+    acts.append(el("span", "label", pick.kind === "fireball" ? `${pick.label}：点一个区域里的“${pick.item ? "扔到这里" : "火球砸向这里"}”（同伴也会被烧到）` : `${pick.label}：点一个高亮的目标`));
     add("取消", () => setPick(null));
   } else if (turn) {
     const feat = FEATS[me.feat];
@@ -3589,6 +3725,7 @@ function renderCombat(box) {
     if (r.action && !r.attackOnly) {
       if (me.feat === "missile" && me.uses > 0) add("魔法飞弹", () => setPick({ kind: "missile", label: "魔法飞弹" }), null, feat.desc);
       if (me.fireball) add("火球术", () => setPick({ kind: "fireball", label: "火球术" }), null, FIREBALL.desc);
+      for (const n of [...new Set(state.player.inventory)].filter(n => ITEMS[n]?.use?.blast)) add(`扔${n}`, () => setPick({ kind: "fireball", item: n, label: n }), null, ITEMS[n].desc);
       if (cbList().some(v => v.guise && ACTIVE(v))) add("识破伪装", () => act((c, me) => { c.res.action = false; trySpot(me); }), null, `用掉动作在人群里找伪装的敌人：察觉 DC ${SPOT_DC}`);
       add("冲刺", () => act((c, me) => { c.res.action = false; c.res.move++; clog(`${me.name} 冲刺`); }), null, "本回合多移动一次");
       add("闪避", () => act((c, me) => { c.res.action = false; me.cond.dodge = true; clog(`${me.name} 摆出防守架势`); }), null, "直到你下回合开始，攻击你的人有劣势");
@@ -3599,7 +3736,7 @@ function renderCombat(box) {
       if ((me.feat === "mark" || me.feat === "hex") && me.uses > 0) add(feat.name, () => setPick({ kind: "mark", label: feat.name }), null, feat.desc);
       if (me.feat === "heal" && me.uses > 0) add("治疗之语", () => setPick({ kind: "heal", label: "治疗之语" }), null, feat.desc);
       if (me.feat === "sneak") add("灵巧移动", () => act((c, me) => { c.res.bonus = false; c.res.move++; c.res.free = true; clog(`${me.name} 身形一闪，准备脱离`); }), null, "多移动一次，本回合移动不引发借机攻击");
-      if (state.player.inventory.includes("治疗药水")) add("喝治疗药水", () => act((c, me) => { c.res.bonus = false; state.player.inventory.splice(state.player.inventory.indexOf("治疗药水"), 1); clog(`${me.name} 灌下治疗药水：` + heal(me, roll(2, 4) + 2), "up"); }), null, "恢复 2d4+2");
+      for (const n of [...new Set(state.player.inventory)].filter(n => ITEMS[n]?.use?.heal)) add(`喝${n}`, () => act((c, me) => { c.res.bonus = false; state.player.inventory.splice(state.player.inventory.indexOf(n), 1); clog(`${me.name} 灌下${n}：` + useHeal(ITEMS[n], me), "up"); }), null, ITEMS[n].desc);
       for (const t of cbList().filter(v => v.side === "party" && v.down && !v.dead && v.zone === me.zone)) add(`扶起${t.name}`, () => act((c, me) => { c.res.bonus = false; raise(me, t); }));
     }
     if (me.cond.prone && r.move > 0) add("起身", () => act((c, me) => { c.res.move--; delete me.cond.prone; clog(`${me.name} 站了起来`); }), null, "消耗本回合的移动");
@@ -3859,6 +3996,7 @@ function renderPlay() {
     optBtn("⚑", state.pendingCombat ? "开战前先分派队伍：谁去" + sc.split.place + "？" : state.pendingAdvance ? "离开前先分派队伍：谁去" + sc.split.place + "？" : `分派队伍：谁跟你走，谁去${sc.split.place}（${sc.split.job}）`, openSplit);
   }
   if (state.pendingFinal && !busy) { opts.textContent = ""; optBtn("★", "做出最终抉择……", openFinal); }
+  if (SHOPS[state.scene] && !camp && !cb && !busy && !state.pendingFinal) optBtn("¤", `逛逛${SHOPS[state.scene].name}`, openShop);
   if (!camp && !cb && !busy && canCamp()) optBtn("⛺", sc.campFree ? (state.act === 2 ? "在船舱里歇下，度过这一夜" : "在壁炉边歇下，度过这一夜") : `扎营休息（消耗 1 份补给，剩 ${state.supplies ?? 0}）`, enterCamp);
   if (state.pendingAsi && !cb && !busy) {
     const b = el("button", "opt"); b.type = "button";
@@ -3921,14 +4059,14 @@ function openSheet(focus) {
         const p = state.player;
         info.append(el("div", "label", `${p.gender} · ${RACES[p.race].name}${CLASSES[p.cls].name} · ${BACKGROUNDS[p.bg].name} · ${p.level} 级`));
         info.append(el("div", null, p.appearance));
-        for (const [k, v] of [["生命", `${p.hp} / ${p.hpMax}`], ["AC", p.ac], ["熟练加值", sgn(profBonus(p.level))], ["金币", p.gold], ["灵感", `${p.inspiration} / 4`], ["龙化值", `${p.draconic} / 100`]]) { const r = el("div", "kv"); r.append(el("span", null, k), el("b", null, String(v))); info.append(r); }
+        for (const [k, v] of [["生命", `${p.hp} / ${p.hpMax}`], ["AC", acTotal("player")], ["熟练加值", sgn(profBonus(p.level))], ["金币", p.gold], ["灵感", `${p.inspiration} / 4`], ["龙化值", `${p.draconic} / 100`]]) { const r = el("div", "kv"); r.append(el("span", null, k), el("b", null, String(v))); info.append(r); }
         info.append(el("div", "label", "种族特性：" + RACES[p.race].trait));
         info.append(el("div", "label", "灵感条件：" + BACKGROUNDS[p.bg].insp));
       } else {
         const c = COMPANIONS[cur], sc = state.companions[cur];
         info.append(el("div", "label", `${c.race}${c.cls} · ${sc.recruited ? "已加入" : sc.taken ? "被教团带走" : "未加入"}`));
         info.append(el("div", null, c.personality));
-        for (const [k, v] of [["等级", partyLevel()], ["生命", `${sc.hp} / ${sc.hpMax}`], ["AC", c.ac]]) { const r = el("div", "kv"); r.append(el("span", null, k), el("b", null, String(v))); info.append(r); }
+        for (const [k, v] of [["等级", partyLevel()], ["生命", `${sc.hp} / ${sc.hpMax}`], ["AC", acTotal(cur)]]) { const r = el("div", "kv"); r.append(el("span", null, k), el("b", null, String(v))); info.append(r); }
         const ap = el("div", "appr");
         ap.append(el("span", null, "赞同度"));
         const bar = el("div", "apbar"); const i = el("i");
@@ -3950,8 +4088,31 @@ function openSheet(focus) {
         const r = el("span", prof ? "pr" : ""); r.append(el("span", null, SKILLS[k][0] + (prof ? " ●" : "")), el("span", null, sgn(b.total))); sk.append(r);
       }
       body.append(sk);
-      if (isP) { body.append(el("div", "label", "行囊")); const l = el("div", "skills-list"); for (const it of state.player.inventory) l.append(el("span", "tag", it)); body.append(l); }
-      else { body.append(el("div", "label", "记得关于你的事")); body.append(memList(cur)); }
+      if (isP || state.companions[cur].recruited) {
+        const who = cur, g = gearOf(who), redraw = () => { save(); renderPlay(); draw(); };
+        body.append(el("div", "label", "装备"));
+        for (const [slot, label] of Object.entries(SLOTS)) {
+          const r = el("div", "kv"); r.append(el("span", null, label), el("b", null, g[slot] ? `${g[slot]}（${ITEMS[g[slot]].desc}）` : "—"));
+          if (g[slot]) { const b = el("button", "btn small", "卸下"); b.type = "button"; b.disabled = !!state.combat; b.onclick = () => { unequip(who, slot); redraw(); }; r.append(b); }
+          body.append(r);
+        }
+        body.append(el("div", "label", "行囊（全队共用）"));
+        const l = el("div", "step");
+        for (const n of [...new Set(state.player.inventory)]) {
+          const it = ITEMS[n], cnt = state.player.inventory.filter(x => x === n).length, r = el("div", "kv"), t = el("span");
+          t.append(el("b", null, n + (cnt > 1 ? ` ×${cnt}` : "")), el("div", "meta", it ? it.desc : CLASSES[state.player.cls].items.includes(n) ? "随身的老家伙（职业自带，数值已经算在角色里）" : "杂物"));
+          r.append(t);
+          const slots = slotOf(it);
+          if (slots.length) { const b = el("button", "btn small", `给${who === "player" ? "自己" : PEOPLE[who].name}装上`); b.type = "button"; b.disabled = !!state.combat;
+            b.onclick = () => { equip(who, slots.find(x => !g[x]) || slots[0], n); redraw(); }; r.append(b); }
+          if (it?.use?.heal) { const s0 = who === "player" ? state.player : state.companions[who]; const b = el("button", "btn small", "喝下"); b.type = "button"; b.disabled = !!state.combat || s0.hp >= s0.hpMax;
+            b.onclick = () => { state.player.inventory.splice(state.player.inventory.indexOf(n), 1); const [c, d, plus] = it.use.heal; const before = s0.hp; s0.hp = Math.min(s0.hpMax, s0.hp + roll(c, d) + plus); push("sys", `${who === "player" ? state.player.name : PEOPLE[who].name}喝下${n}，生命 ${before} → ${s0.hp}`); redraw(); }; r.append(b); }
+          l.append(r);
+        }
+        if (!state.player.inventory.length) l.append(el("div", "meta", "空空如也。"));
+        body.append(l);
+      }
+      if (!isP) { body.append(el("div", "label", "记得关于你的事")); body.append(memList(cur)); }
     };
     s.append(tabs, body); draw();
   });

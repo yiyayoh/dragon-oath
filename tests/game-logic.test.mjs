@@ -423,3 +423,47 @@ test('第三幕：先救的街区才能去；支线能补出盟友；伊芙的�
   })()`);
   assert.deepEqual(result, { blocked: 'act3_1', docks: 'act3_docks_fire', before: 0, after: ['academy', 'tide'], valdo: 'convinced' });
 });
+
+test('装备：换上武器、护甲、饰品后战斗数值跟着变，卸下放回行囊', () => {
+  const run = game();
+  const result = run(`(() => {
+    state=newGame(freshDraft());state.act=1;state.scene='act1_hub';state.companions.selene.recruited=true;
+    const before=partyUnit('player',0);
+    state.player.inventory.push('黑潮弯刀','加固皮甲','精准指环','守誓人徽记','手弩');
+    equip('player','melee','黑潮弯刀');equip('player','armor','加固皮甲');equip('player','trinket1','精准指环');equip('selene','trinket1','守誓人徽记');equip('selene','ranged','手弩');
+    const u=partyUnit('player',0),s=partyUnit('selene',0);
+    const wrong=equip('player','armor','治疗药水');
+    unequip('player','melee');const back=state.player.inventory.includes('黑潮弯刀');
+    return {acUp:u.ac-before.ac,sword:u.weapons.find(w=>!w.ranged).n,hitUp:u.weapons.find(w=>!w.ranged).hit-before.weapons.find(w=>!w.ranged).hit,
+      seleneBow:s.weapons.some(w=>w.n==='手弩'),seleneAc:acTotal('selene')-COMPANIONS.selene.ac,save:bonusFor('selene','save_wis').total-Math.floor((COMPANIONS.selene.ab.wis-10)/2),wrong,back};
+  })()`);
+  assert.deepEqual(result, { acUp: 1, sword: '黑潮弯刀', hitUp: 2, seleneBow: true, seleneAc: 1, save: 1, wrong: false, back: true });
+});
+
+test('战利品只发一次；商店买卖；说书人给的稀有物品要锚点里写着才算', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};state=newGame(freshDraft());state.act=1;state.scene='act1_docks';const gold=state.player.gold;
+    startCombat('docks_brawl');for(const u of Object.values(state.combat.units)) if(u.side!=='party') u.dead=true;endCombat(combatResult());
+    const looted={gold:state.player.gold-gold,bow:state.player.inventory.includes('手弩')};
+    state.scene='act1_market';state.player.gold=100;const ok=buy('治疗药水',SHOPS.act1_market),noRare=buy('龙骨刃',SHOPS.act1_market);
+    const sold=sell('手弩');
+    applyGM({items_add:['龙鳞甲','一根绳子']});const rare=state.player.inventory.includes('龙鳞甲'),junk=state.player.inventory.includes('一根绳子');
+    state.scene='act1_manor_vault';applyGM({items_add:['银刃匕首']});
+    return {looted,ok,noRare,sold,gold:state.player.gold,rare,junk,dagger:state.player.inventory.includes('银刃匕首')};
+  })()`);
+  assert.deepEqual(result, { looted: { gold: 30, bow: true }, ok: true, noRare: false, sold: true, gold: 100, rare: false, junk: true, dagger: true });
+});
+
+test('同伴生命低时自己喝行囊里的药；炸弹扔向区域', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};state=newGame(freshDraft());state.act=1;state.scene='act1_docks';state.companions.selene.recruited=true;
+    state.player.inventory.push('治疗药水','火焰炸弹');startCombat('docks_brawl');const c=state.combat,s=c.units.selene;
+    s.hp=2;c.res={move:0,action:true,bonus:true};allyTurn(s);const drank={hp:s.hp>2,left:state.player.inventory.filter(x=>x==='治疗药水').length};
+    const before=state.player.inventory.filter(x=>x==='治疗药水').length;
+    c.turn=c.order.indexOf('player');c.started=true;c.res={move:1,action:true,bonus:true};pick={kind:'fireball',item:'火焰炸弹',label:'火焰炸弹'};castFireball(1);
+    return {drank,bomb:!state.player.inventory.includes('火焰炸弹'),log:state.log.some(e=>e.k==='cb'&&/火焰炸弹砸进/.test(e.t))};
+  })()`);
+  assert.equal(result.drank.hp, true); assert.equal(result.bomb, true); assert.equal(result.log, true);
+});
