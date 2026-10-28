@@ -739,3 +739,56 @@ test('最后一夜的告别列成按钮、可以有好几个；结局尾声素�
   assert.equal(result.brief, true); assert.equal(result.end, true);
   assert.equal(result.dead, '（尾声素材：墓前的剑）');
 });
+
+test('DS 第二轮：告别与恋人最终场景互斥、尾声素材齐全、情报站每幕 12 条', () => {
+  const run = game();
+  const result = run(`(() => {
+    const names = ['selene','vex','kassian','borin','lyra','naia'];
+    const fw = CAMP_EVENTS.filter(e => e.kind === 'farewell');
+    const missing = names.flatMap(id => [id + '_farewell', id + '_final']).filter(id => !fw.some(e => e.id === id));
+    const badWho = fw.filter(e => !COMPANIONS[e.who]).map(e => e.id);
+    const badSeed = fw.filter(e => !e.seed || !e.when).map(e => e.id);
+
+    state = newGame(freshDraft()); state.act = 3; state.scene = 'act3_whisper';
+    for (const id of names) state.companions[id].recruited = true;
+    state.campSeen = [];
+    let plan = planNight();
+    const farewellOnly = names.every(id => plan.banter.includes(id + '_farewell') && !plan.banter.includes(id + '_final'));
+    state.companions.selene.romance = 'together'; state.campSeen = [];
+    plan = planNight();
+    const finalOnly = plan.banter.includes('selene_final') && !plan.banter.includes('selene_farewell');
+    state.scene = 'act3_haven'; state.campSeen = [];
+    plan = planNight();
+    const elsewhere = names.every(id => !plan.banter.includes(id + '_farewell') && !plan.banter.includes(id + '_final'));
+
+    const ends = Object.keys(ENDINGS), badEp = [];
+    for (const id of names) {
+      const ep = EPILOGUES[id]; if (!ep) { badEp.push(id + ' 缺'); continue; }
+      for (const e of ends) if (!ep.ending?.[e]) badEp.push(id + ' ending ' + e);
+      for (const k of ['egg','seven','hestia','mortal']) if (!ep.lover?.[k]) badEp.push(id + ' lover ' + k);
+      const opts = Object.keys(QUESTS[id].choice.options);
+      for (const o of opts) if (!ep.choice?.[o]) badEp.push(id + ' choice ' + o);
+      const extra = Object.keys(ep.choice || {}).filter(k => !opts.includes(k));
+      if (extra.length) badEp.push(id + ' choice 多出 ' + extra.join(','));
+      const gk = Object.keys(ep.gone || {}).sort().join(',');
+      if (gk !== 'betrayed,dead,taken') badEp.push(id + ' gone ' + gk);
+    }
+
+    state = newGame(freshDraft()); state.act = 3; state.scene = 'act3_end';
+    const s = state.companions.selene; s.recruited = true; s.romance = 'together'; s.alive = true;
+    state.flags['quest.selene'] = 'reforged';
+    const note = epilogueNote('selene', 'seven');
+    const full = note.includes(EPILOGUES.selene.ending.seven) && note.includes(EPILOGUES.selene.lover.seven) && note.includes(EPILOGUES.selene.choice.reforged);
+    s.alive = false; const dead = epilogueNote('selene', 'seven');
+    const onlyDead = dead.includes(EPILOGUES.selene.gone.dead) && !dead.includes(EPILOGUES.selene.ending.seven);
+
+    const dup = a => a.length - new Set(a).size;
+    const i1 = INTEL[1], i3 = INTEL[3];
+    const intel = { l1: i1.length, l3: i3.length, d1: dup(i1), d3: dup(i3), empty: [...i1, ...i3].filter(x => !x || typeof x !== 'string').length };
+    return { missing, badWho, badSeed, farewellOnly, finalOnly, elsewhere, badEp, full, onlyDead, intel };
+  })()`);
+  assert.deepEqual(result.missing, []); assert.deepEqual(result.badWho, []); assert.deepEqual(result.badSeed, []);
+  assert.equal(result.farewellOnly, true); assert.equal(result.finalOnly, true); assert.equal(result.elsewhere, true);
+  assert.deepEqual(result.badEp, []); assert.equal(result.full, true); assert.equal(result.onlyDead, true);
+  assert.deepEqual(result.intel, { l1: 12, l3: 12, d1: 0, d3: 0, empty: 0 });
+});
