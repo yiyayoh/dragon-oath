@@ -460,7 +460,7 @@ const COMPANIONS = {
     personality: "风趣、会读空气、永远在演。她不知道自己真正喜欢什么，很想知道，也很怕知道。",
     likes: "尊重别人的自我认同、艺术与故事、自由选择、宽恕、反抗教团",
     dislikes: "强迫别人暴露真实身份、盲从、把人当工具、在她准备好之前追问她“真正的脸”",
-    secret: "她就是序幕里窗边的兜帽客。她是灰烬教团从小养大的间谍，由千面母亲手训练；现在以流浪女诗人“米拉”（黑色长卷发、绿眼睛、拼布外套、背着鲁特琴）的身份接近队伍，每天向教团传递队伍的情报。暴风夜她自己也被烙上了印记，所以既是教团的间谍，也是教团的猎物。玩家用洞悉 DC 18 可以提前识破（写 act1.naia_seen）；否则在灯塔之夜暴露。（GM 不要透露）",
+    secret: "她就是序幕里窗边的兜帽客。她是灰烬教团从小养大的间谍，由千面母亲自训练；现在以流浪女诗人“米拉”（黑色长卷发、绿眼睛、拼布外套、背着鲁特琴）的身份接近队伍，每天向教团传递队伍的情报。暴风夜她自己也被烙上了印记，所以既是教团的间谍，也是教团的猎物。玩家用洞悉 DC 18 可以提前识破（写 act1.naia_seen）；否则在灯塔之夜暴露。（GM 不要透露）",
     join: "以“米拉”的身份主动接近队伍，在酒馆里弹琴、搭话、请求同行，很容易招募。",
   },
 };
@@ -608,7 +608,7 @@ const SCENES = {
   },
   act1_wreck: {
     title: "沉船湾", loc: "灰帆港 · 沉船湾", bg: "linear-gradient(160deg,#5f7380,#212b31 60%,#0c1013)", loc1: true,
-    anchor: "退潮后的沉船湾，礁石间搁浅着坠落的银龙尸体，大得像一座倒下的山，鳞片已经开始黯淡。拾荒者、学者和好奇的平民远远围着，有人在偷偷撬鳞片卖钱，学院的残余学者在吵着要“保护标本”。赛勒涅看到龙尸会非常动摇（晨星骑士团等了百年的召唤，等来的却是一具尸体）。抉择：取龙鳞龙血（可以制成道具，写进 items_add；赛勒涅 −10，写 act1.dragon_body=harvested），或者为龙举行葬礼（写 act1.dragon_body=funeral，拾荒者会不满，可能要说服或吓退）。印记在龙尸旁会发烫，可以给少量龙化值。龙腹下面、退潮后露出来的礁缝和半沉的旧船里还有东西：advance 设为 act1_wreck_reef。离开时 advance 回 act1_hub。",
+    anchor: "退潮后的沉船湾，礁石间搁浅着坠落的银龙尸体，大得像一座倒下的山，鳞片已经开始黯淡。拾荒者、学者和好奇的平民远远围着，有人在偷偷撬鳞片卖钱，学院的残余学者在吵着要“保护标本”。赛勒涅看到龙尸会非常动摇（晨星骑士团等了百年的召唤，等来的却是一具尸体）。抉择：取龙鳞龙血（只能给杂物，例如“一片银龙鳞”“一小瓶龙血”，写进 items_add；表里的装备和药剂不从这里给；赛勒涅 −10，写 act1.dragon_body=harvested），或者为龙举行葬礼（写 act1.dragon_body=funeral，拾荒者会不满，可能要说服或吓退）。印记在龙尸旁会发烫，可以给少量龙化值。龙腹下面、退潮后露出来的礁缝和半沉的旧船里还有东西：advance 设为 act1_wreck_reef。离开时 advance 回 act1_hub。",
     next: ["act1_wreck_reef", "act1_hub"], encounters: ["wreck_drowned"], act: 1,
   },
   act1_wreck_reef: {
@@ -639,7 +639,7 @@ const SCENES = {
   },
   act1_sewers_shrine: {
     title: "地下祭室", loc: "下水道 · 教团祭室", bg: "linear-gradient(160deg,#4a2f24,#1b110d 60%,#0b0705)", act: 1, rescue: true,
-    anchor: "排水道深处被改造成的祭室，烬火在黑曜石盆里燃烧，一名教团执事在主持仪式。墙上挂着一把刻满符文的矮人战斧——博林认得，那是他“死去”的哥哥达林的斧子（写 act1.darin_axe=true；斧子上的烬火痕迹说明达林可能没死，不要直接说破）。祭室的书架上有一叠写给教团的研究信，笔迹和废塔笔记的抄写者一样：莉拉会认出那是她的导师奥斯瓦尔德（她赞同 ≥ 20 才肯当众承认，写 quest.lyra.oswald=true；信里邀请她“一起完成我们的研究”）。祭室角落的笼子里关着失踪的学徒皮普（支线），他偷听到教团在等“七片印记聚齐”。若序幕里有同伴被交给了教团，他也被关在这里，可以用 recruit 救回。动手时在 JSON 写 combat 为 sewers_cult。抓住执事后的抉择：拷问他（写 act1.deacon=tortured，得知“教团在等七片印记聚齐”的线索和教团在港口的眼线），或放他回去当线人（写 act1.deacon=informant）。两种做法都能问出达林还活着、在龙骨群岛的教团据点（博林赞同 ≥ 20 时他才会追问到底，写 quest.borin.alive=true）。离开时 advance：act1_sewers 或 act1_hub。",
+    anchor: "排水道深处被改造成的祭室，烬火在黑曜石盆里燃烧，一名教团执事在主持仪式。墙上挂着一把刻满符文的矮人战斧——博林在场的话会认得（不在场的话，斧柄上刻着矮人名字“达林”，历史 DC 13 认得出），那是他“死去”的哥哥达林的斧子（写 act1.darin_axe=true；斧子上的烬火痕迹说明达林可能没死，不要直接说破）。祭室的书架上有一叠写给教团的研究信，笔迹和废塔笔记的抄写者一样：莉拉在场的话会认出那是她的导师奥斯瓦尔德（她赞同 ≥ 20 才肯当众承认；她不在场时，信尾只有一个签名“O.”，写 quest.lyra.oswald=true；信里邀请她“一起完成我们的研究”）。祭室角落的笼子里关着失踪的学徒皮普（支线），他偷听到教团在等“七片印记聚齐”。若序幕里有同伴被交给了教团，他也被关在这里，可以用 recruit 救回。动手时在 JSON 写 combat 为 sewers_cult。抓住执事后的抉择：拷问他（写 act1.deacon=tortured，得知“教团在等七片印记聚齐”的线索和教团在港口的眼线），或放他回去当线人（写 act1.deacon=informant）。两种做法都能问出达林还活着、在龙骨群岛的教团据点（博林赞同 ≥ 20 时他才会追问到底，写 quest.borin.alive=true）。离开时 advance：act1_sewers 或 act1_hub。",
     next: ["act1_sewers", "act1_hub"], encounters: ["sewers_cult"], act: 1,
   },
   act1_market: {
@@ -650,7 +650,7 @@ const SCENES = {
   act1_lighthouse: {
     title: "灯塔之夜", loc: "灰帆港 · 灯塔", bg: "linear-gradient(160deg,#6b3a2a,#26140f 60%,#0f0806)", level: 5, camp: false, act: 1,
     split: { flag: "act1.ship_intact", place: "码头", job: "拆掉码头上的炸药" },
-    anchor: "航海图和船都到手的当晚，灰烬教团动手了：酒馆被砸，玛莎被绑走（若 act1.hostage=tom，被绑的是小汤姆；确定人质时写 act1.hostage=martha 或 tom），留话“一个小时内，带着印记持有者到灯塔来交换”。同时米拉的身份暴露：她传给教团的情报让教团知道了你们的航线和船（若 act1.naia_seen 为 true，玩家早已知道，现在她可以选择当面坦白）。把 act1.naia_exposed 设为 true，她从此显出真身（灰白皮肤、水银色头发、没有瞳孔的乳白眼睛），名字是奈雅。玩家必须当场或事后决定怎么处置她：杀掉、关押、接纳（写 act1.naia_fate = killed|imprisoned|recruited；killed 时她死去，imprisoned 时她离队被关在酒馆地窖）。其他同伴会强烈表态：赛勒涅、博林主张严惩，卡西安主张宽恕。教团还在码头埋了炸药，目标是你们的船：队伍可以拆分，一部分人去码头拆炸药，其余人去灯塔。谁去码头由玩家在界面上分派，码头的战斗和拆弹由程序结算并写 act1.ship_intact；你不要替玩家决定谁去哪里，也不要自己写 act1.ship_intact，可以在叙述里提醒玩家要分派。灯塔分底层、旋梯、灯室三层；千面母（教团间谍头子、奈雅的养母，永远不用同一张脸）带着无面刺客混在一群“平民”里等着，开战时她已经变成队伍里某个人的样子。动手时在 JSON 写 combat 为 lighthouse；若奈雅已被接纳且赞同度 ≥ 40，她可以和千面母对话让她动摇退场，用千面母的真名威胁也能让她投降。千面母会当着奈雅说出：她手里握着奈雅的“真名”，教团随时能用它收回她（奈雅在场、赞同度 ≥ 20 时，她事后才会告诉你真名意味着什么，写 quest.naia.name=true）。战后写 act1.martha_alive（人质是否活着），把 advance 设为 act1_dawn。",
+    anchor: "航海图和船都到手的当晚，灰烬教团动手了：酒馆被砸，玛莎被绑走（若 act1.hostage=tom，被绑的是小汤姆；确定人质时写 act1.hostage=martha 或 tom），留话“一个小时内，带着印记持有者到灯塔来交换”。同时米拉的身份暴露：她传给教团的情报让教团知道了你们的航线和船（若 act1.naia_seen 为 true，玩家早已知道，现在她可以选择当面坦白）。把 act1.naia_exposed 设为 true，她从此显出真身（灰白皮肤、水银色头发、没有瞳孔的乳白眼睛），名字是奈雅。玩家必须当场或事后决定怎么处置她：杀掉、关押、接纳（写 act1.naia_fate = killed|imprisoned|recruited；killed 时她死去，imprisoned 时她离队被关在酒馆地窖）。在场的同伴会强烈表态：赛勒涅、博林主张严惩，卡西安主张宽恕（不在队的人不出场）。教团还在码头埋了炸药，目标是你们的船：队伍可以拆分，一部分人去码头拆炸药，其余人去灯塔。谁去码头由玩家在界面上分派，码头的战斗和拆弹由程序结算并写 act1.ship_intact；你不要替玩家决定谁去哪里，也不要自己写 act1.ship_intact，可以在叙述里提醒玩家要分派。灯塔分底层、旋梯、灯室三层；千面母（教团间谍头子、奈雅的养母，永远不用同一张脸）带着无面刺客混在一群“平民”里等着，开战时她已经变成队伍里某个人的样子。动手时在 JSON 写 combat 为 lighthouse；若奈雅已被接纳且赞同度 ≥ 40，她可以和千面母对话让她动摇退场，用千面母的真名威胁也能让她投降。千面母会当着奈雅说出：她手里握着奈雅的“真名”，教团随时能用它收回她（奈雅在场、赞同度 ≥ 20 时，她事后才会告诉你真名意味着什么，写 quest.naia.name=true）。战后写 act1.martha_alive（人质是否活着，不管人质是玛莎还是小汤姆）（人质是否活着），把 advance 设为 act1_dawn。",
     next: "act1_dawn", encounters: ["lighthouse"],
   },
   act1_dawn: {
@@ -733,7 +733,7 @@ const SCENES = {
   },
   act2_mist: {
     title: "雾隐岛", loc: "龙骨群岛 · 雾隐岛", bg: "linear-gradient(160deg,#6a7b7c,#262e2f 60%,#0e1212)", act: 2, loc2: true,
-    anchor: "终年浓雾，高脚屋建在礁石和浅滩上，屋檐挂着用鲸骨和贝壳串成的风铃。这里住着“潮裔”：百年前被晨星骑士团献祭的渔村幸存者的后代。他们憎恨银龙，也恨晨星骑士（赛勒涅在这里会被敌视，孩子们会朝她扔石头），也不信任教团。一上岸就会被持鱼叉的潮裔战士围住，要说明来意（说服或威吓 DC 14，失败就被押去见长老）。瑟拉长老（独眼的老妇人）保管着誓约神殿的钥匙——一枚潮汐石。拿到钥匙的方式：①赢得潮裔的信任——帮他们击退袭击渔村的雾海巨妖（在 JSON 写 combat 为 mist_kraken），并说服长老（说服 DC 16，若 act2.murals 为 true、或赛勒涅愿意当众承认骑士团的罪，有优势），长老交出钥匙（写 act2.temple_key=given、act2.tideborn=ally）；②偷（隐匿 DC 15 + 巧手 DC 15，写 act2.temple_key=stolen、act2.tideborn=neutral，被发现就是 enemy）；③武力夺取（写 act2.temple_key=taken、act2.tideborn=enemy，永久失去这个盟友）。岛的另一头有潮裔的纪念礁和一间离群的小屋：advance 设为 act2_mist_memorial。离开时 advance 回 act2_hub。",
+    anchor: "终年浓雾，高脚屋建在礁石和浅滩上，屋檐挂着用鲸骨和贝壳串成的风铃。这里住着“潮裔”：百年前被晨星骑士团献祭的渔村幸存者的后代。他们憎恨银龙，也恨晨星骑士（赛勒涅在这里会被敌视，孩子们会朝她扔石头），也不信任教团。一上岸就会被持鱼叉的潮裔战士围住，要说明来意（说服或威吓 DC 14，失败就被押去见长老）。瑟拉长老（独眼的老妇人）保管着誓约神殿的钥匙——一枚潮汐石。拿到钥匙的方式：①赢得潮裔的信任——帮他们击退袭击渔村的雾海巨妖（在 JSON 写 combat 为 mist_kraken），并说服长老（说服 DC 16，若 act2.murals 为 true、或赛勒涅愿意当众承认骑士团的罪、或做过潮裔的支线（side.tideborn_child、side.knight_sword、side.lost_names、side.ember_prisoners 任一完成），有优势），长老交出钥匙（写 act2.temple_key=given、act2.tideborn=ally）；②偷（隐匿 DC 15 + 巧手 DC 15，写 act2.temple_key=stolen、act2.tideborn=neutral，被发现就是 enemy）；③武力夺取（写 act2.temple_key=taken、act2.tideborn=enemy，永久失去这个盟友）。岛的另一头有潮裔的纪念礁和一间离群的小屋：advance 设为 act2_mist_memorial。离开时 advance 回 act2_hub。",
     next: ["act2_mist_memorial", "act2_hub"], encounters: ["mist_kraken"],
   },
   act2_mist_memorial: {
@@ -743,17 +743,17 @@ const SCENES = {
   },
   act2_temple: {
     title: "誓约神殿", loc: "龙骨群岛 · 誓约神殿", bg: "linear-gradient(160deg,#6f8aa0,#25313b 60%,#0d1216)", act: 2, camp: false, level: 9,
-    anchor: "退潮时，三座岛中间的海面裂开，一座白石神殿浮了出来，台阶上还挂着海草和发光的水母，潮汐石嵌进大门就开了。门厅的墙上刻着七个空着的掌印。第一重试炼——勇气：每个人都被拉进自己最恐惧之物的幻象，玩家的幻象由他的背景决定（具体写），同伴的幻象按他们的秘密写（赛勒涅：骑士团覆灭的那一夜；维克斯：莉丝被带走；卡西安：倒在他拳下的好友；博林：着火的铁炉堡；莉拉：学院的审判庭；奈雅：一面照不出脸的镜子）。可以要求检定，也可以用信念和行动通过；通过写 act2.trial_courage=true，然后 advance 设为 act2_temple_truth。退潮的时间有限，离开神殿要等下一次退潮（这里不能回锚地）。",
+    anchor: "退潮时，三座岛中间的海面裂开，一座白石神殿浮了出来，台阶上还挂着海草和发光的水母，潮汐石嵌进大门就开了。门厅的墙上刻着七个空着的掌印。第一重试炼——勇气：每个人都被拉进自己最恐惧之物的幻象，玩家的幻象由玩家的背景决定（按下面【勇气试炼的素材】写，素材之外可以补充），同伴的幻象按他们的秘密写（赛勒涅：骑士团覆灭的那一夜；维克斯：莉丝被带走；卡西安：倒在他拳下的好友；博林：着火的铁炉堡；莉拉：学院的审判庭；奈雅：一面照不出脸的镜子）。可以要求检定，也可以用信念和行动通过；通过写 act2.trial_courage=true，然后 advance 设为 act2_temple_truth。退潮的时间有限，离开神殿要等下一次退潮（这里不能回锚地）。",
     next: ["act2_temple_truth"], gate: { act2_temple_truth: () => !!state.flags["act2.trial_courage"] },
   },
   act2_temple_truth: {
     title: "真相之厅", loc: "誓约神殿 · 真相之厅", bg: "linear-gradient(160deg,#5d7a92,#1f2b35 60%,#0b1014)", act: 2, camp: false,
-    anchor: "一座圆形的大厅，地面是一整块镜面般的水。第二重试炼——真相：每位同伴必须站到水面中央，说出一个自己的秘密（照同伴资料里的“秘密”写，写得具体、有分量），水面才会让路。赞同度低于 20 的同伴会拒绝，玩家要说服他（检定或真心话）；玩家自己也要说出一件从没告诉过任何人的事。说出来的秘密会被其他同伴听到——写出他们的反应，可以用 approval 和 relation 调整。都说完写 act2.trial_truth=true，然后 advance 设为 act2_temple_heart。",
+    anchor: "一座圆形的大厅，地面是一整块镜面般的水。第二重试炼——真相：每位同伴必须站到水面中央，说出一个自己的秘密（按下面【真相之厅的素材】写，写得具体、有分量；没有素材的同伴照同伴资料里的“秘密”写），水面才会让路。赞同度低于 20 的同伴会拒绝，玩家要说服他（检定或真心话）；玩家自己也要说出一件从没告诉过任何人的事。说出来的秘密会被其他同伴听到——写出他们的反应，可以用 approval 和 relation 调整。都说完写 act2.trial_truth=true，然后 advance 设为 act2_temple_heart。",
     next: ["act2_temple_heart"], gate: { act2_temple_heart: () => !!state.flags["act2.trial_truth"] },
   },
   act2_temple_heart: {
     title: "誓约之心", loc: "誓约神殿 · 核心", bg: "linear-gradient(160deg,#8aa6bc,#2c3a46 60%,#0f1418)", act: 2, camp: false,
-    anchor: "神殿最深处，一颗心脏大小的银色晶体悬在半空，缓缓跳动——“誓约之心”。第三重试炼——牺牲：必须放弃一件珍贵的东西，写 act2.sacrifice：item 一件珍贵物品（同时在 items_remove 里去掉它）、memory 一段记忆（玩家选一段和某位同伴的回忆，那位同伴会察觉你忘了）、draconic 20 点龙化值（程序扣；不够 20 点不能选）。三重试炼都过了，神殿核心展示全部真相（写 act2.revealed=true）：赫斯提雅拆开誓约寄存在七个人身上，是想借宿主重生——赛勒涅是她原本选中的容器。赫斯提雅现身（银发老妇人，鳞片在脸颊上发光），坦诚地提出交易：“把印记交给我选中的人，我会拯救这片海。”同伴们强烈表态（赛勒涅的反应最重；若是恋人，玩家可以完成她的考验）。就在这时，主教瓦尔多率众杀入（他通过奈雅的情报或奥斯瓦尔德追踪而来）。玩家要在主教抢到之前决定誓约之心怎么处置，写 act2.heart：hestia 交给赫斯提雅、player 自己吸收（龙化值 +30，程序加）、destroyed 交给潮裔销毁（只有 act2.tideborn=ally 时可以）。动手时在 JSON 写 combat 为 temple_raid。不管打没打赢，主教都会从密道撤走，并且掳走一位同伴（由程序决定是谁，你不要写）；没来得及处置的誓约之心也会被他抢走。之后把 advance 设为 act2_end。",
+    anchor: "神殿最深处，一颗心脏大小的银色晶体悬在半空，缓缓跳动——“誓约之心”。第三重试炼——牺牲：必须放弃一件珍贵的东西，写 act2.sacrifice：item 一件珍贵物品（同时在 items_remove 里去掉它）、memory 一段记忆（玩家选一段和某位同伴的回忆，那位同伴会察觉你忘了）、draconic 20 点龙化值（程序扣；不够 20 点不能选）。三重试炼都过了，神殿核心展示全部真相（写 act2.revealed=true）：赫斯提雅拆开誓约寄存在七个人身上，是想借宿主重生——赛勒涅是她原本选中的容器。赫斯提雅现身（银发老妇人，鳞片在脸颊上发光），坦诚地提出交易：“把印记交给我选中的人，我会拯救这片海。”在场的同伴们强烈表态（赛勒涅在场时反应最重；她不在场，赫斯提雅会点出她的名字；若是恋人，玩家可以完成她的考验）。就在这时，主教瓦尔多率众杀入（他通过奈雅的情报或奥斯瓦尔德追踪而来）。玩家要在主教抢到之前决定誓约之心怎么处置，写 act2.heart：hestia 交给赫斯提雅、player 自己吸收（龙化值 +30，程序加）、destroyed 交给潮裔销毁（只有 act2.tideborn=ally 时可以）。动手时在 JSON 写 combat 为 temple_raid。不管打没打赢，主教都会从密道撤走，并且掳走一位同伴（由程序决定是谁，你不要写）；没来得及处置的誓约之心也会被他抢走。之后把 advance 设为 act2_end。",
     next: "act2_end", encounters: ["temple_raid"],
   },
   act2_end: {
@@ -772,7 +772,7 @@ const SCENES = {
   },
   act3_docks_fire: {
     title: "燃烧的码头", loc: "灰帆港 · 燃烧的码头", bg: "linear-gradient(160deg,#7a4022,#2a140a 60%,#100704)", act: 3, camp: false,
-    anchor: "码头的仓库一座接一座地烧，鱼油桶在爆炸，黑潮会的打手和渔民挤在栈桥尽头，海里漂着翻倒的船。老鳗（若还活着）在金鳗的甲板上指挥手下救火，看见你们会露出复杂的表情——这是赢回黑潮会的机会。要做的事：把被困在仓库里的人救出来（运动或杂技 DC 15，或者用法术灭火）、挡住扑下来的黑龙幼体（在 JSON 写 combat 为 harbor_wyrmling）。救下码头，黑潮会会记住（即使之前为敌，老鳗也愿意谈条件）。之后带人退回醉龙酒馆：advance 设为 act3_haven。",
+    anchor: "码头的仓库一座接一座地烧，鱼油桶在爆炸，黑潮会的打手和渔民挤在栈桥尽头，海里漂着翻倒的船。老鳗（若还活着）在金鳗的甲板上指挥手下救火，看见你们会露出复杂的表情——这是赢回黑潮会的机会。要做的事：把被困在仓库里的人救出来（运动或杂技 DC 15，或者用法术灭火）、挡住扑下来的黑龙幼体（在 JSON 写 combat 为 harbor_wyrmling）。救下码头，黑潮会会记住（即使之前为敌，老鳗（或者他死后黑潮会剩下的人）也愿意谈条件）。之后带人退回醉龙酒馆：advance 设为 act3_haven。",
     next: ["act3_haven"], encounters: ["harbor_wyrmling"],
   },
   act3_academy_fire: {
@@ -839,7 +839,7 @@ const SCENES = {
   },
   act3_end: {
     title: "终章", loc: "灰帆港", bg: "linear-gradient(160deg,#6f7480,#272a30 60%,#0e0f12)", act: 3, camp: false, endAct: 3,
-    anchor: "结局已经由玩家的最终抉择决定（act3.ending，具体内容见本轮的要求）。先写结局本身，再为每位同伴写一段尾声（由结局、他的个人任务结果、赞同度共同决定；恋人单独写，写得更长）。玩家可以再回应 1~2 轮，然后把 scene_end 设为 true，故事结束。",
+    anchor: "结局已经由玩家的最终抉择决定（act3.ending，结局的名字和内容在世界标记和最近剧情里）。先写结局本身，再为每位同伴写一段尾声（由结局、个人任务结果、赞同度共同决定）；恋人的尾声放在最后、单独成段，写得更长。玩家可以再回应 1~2 轮，然后把 scene_end 设为 true，故事结束。",
     next: null, endNeeds: { flags: ["act3.ending"], turns: 1 },
   },
 };
@@ -880,35 +880,35 @@ const TRIALS = {
   fears: {
     soldier: {
       vision: "幻象把玩家放回一场没打完的仗：泥、号角、倒下的同袍，还有一个被留在后面的人。幻象不攻击，只让那个声音一遍遍追问当时为什么不回头。若玩家之前提过自己的队伍或家人，可以把那个人的脸换成玩家提过的人。",
-      ways: "①不需要检定：承认当时的害怕或选择，走过去把那个人扶起来，哪怕知道只是幻象；②感知 DC 15 看穿泥和血是记忆拼出来的；③让一位同伴在幻象外喊名字、伸手把他拉出来（同伴愿意即可，或说服 DC 13）。失败时他会在幻象里喊出那个人的名字，回到现实后同伴听见了，那段记忆会模糊一阵。",
+      ways: "①不需要检定：承认当时的害怕或选择，走过去把那个人扶起来，哪怕知道只是幻象；②感知 DC 15 看穿泥和血是记忆拼出来的；③让一位同伴在幻象外喊名字、伸手把玩家拉出来（同伴愿意即可，或说服 DC 13）。失败时玩家会在幻象里喊出那个人的名字，回到现实后同伴听见了，那段记忆会模糊一阵。",
     },
     urchin: {
-      vision: "幻象是冬天的码头：玩家又冷又饿，一个比他还小的孩子把最后半块面包塞给他，然后被巡夜的人拖走。幻象让玩家一遍遍回到那个选择：吃下去，还是追上去。若玩家提过自己认识的小偷或码头孩子，可以把那张脸换成那个人。",
-      ways: "①不需要检定：把面包放回那个孩子手里，或者转身追上去，哪怕知道追不上；②巧手 DC 14 在幻象里解开巡夜人的钥匙；③洞悉 DC 14 看穿巡夜人的脸每转一次都一样。失败时玩家会闻到多年没闻到的煤烟味，同伴会看见他站在原地发抖。",
+      vision: "幻象是冬天的码头：玩家又冷又饿，一个比玩家还小的孩子把最后半块面包塞给玩家，然后被巡夜的人拖走。幻象让玩家一遍遍回到那个选择：吃下去，还是追上去。若玩家提过自己认识的小偷或码头孩子，可以把那张脸换成那个人。",
+      ways: "①不需要检定：把面包放回那个孩子手里，或者转身追上去，哪怕知道追不上；②巧手 DC 14 在幻象里解开巡夜人的钥匙；③洞悉 DC 14 看穿巡夜人的脸每转一次都一样。失败时玩家会闻到多年没闻到的煤烟味，同伴会看见玩家站在原地发抖。",
     },
     sage: {
-      vision: "幻象是一间烧起来的图书馆，书页在火里翻动，每一页都是玩家写过或读过的东西；其中一页被用来害人，署名是玩家。幻象让他承认，他真正怕的不是无知，是没人记得他做过什么。",
-      ways: "①不需要检定：合上书，把那一页撕下来，承认自己怕被遗忘；②奥秘 DC 15 看穿火没有温度、书页上的字在重复；③让莉拉或一位同伴说出玩家做过的一件具体的好事（不需要检定，但同伴要愿意）。失败时他会把幻象里的书全背下来，醒来后头痛，忘掉一段最近的记忆。",
+      vision: "幻象是一间烧起来的图书馆，书页在火里翻动，每一页都是玩家写过或读过的东西；其中一页被用来害人，署名是玩家。幻象让玩家承认，玩家真正怕的不是无知，是没人记得玩家做过什么。",
+      ways: "①不需要检定：合上书，把那一页撕下来，承认自己怕被遗忘；②奥秘 DC 15 看穿火没有温度、书页上的字在重复；③让莉拉或一位同伴说出玩家做过的一件具体的好事（不需要检定，但同伴要愿意）。失败时玩家会把幻象里的书全背下来，醒来后头痛，忘掉一段最近的记忆。",
     },
     noble: {
-      vision: "幻象是家族的宴会厅：长辈、债主、被玩家连累的仆人都在，所有人不说话，只看着玩家。一个仆人站出来替玩家顶罪，幻象让玩家承认自己保不住家族，也保不住任何人。若玩家提过家人，可以把主位上的人换成他提过的那位。",
-      ways: "①不需要检定：当众认错，或者走过去站在仆人身边；②说服 DC 15 让幻象里的长辈开口，打破那片沉默；③洞悉 DC 14 认出这些脸是玩家自己拼出来的。失败时玩家会重复一句小时候听过的训斥，同伴会看见他像换了个人。",
+      vision: "幻象是家族的宴会厅：长辈、债主、被玩家连累的仆人都在，所有人不说话，只看着玩家。一个仆人站出来替玩家顶罪，幻象让玩家承认自己保不住家族，也保不住任何人。若玩家提过家人，可以把主位上的人换成玩家提过的那位。",
+      ways: "①不需要检定：当众认错，或者走过去站在仆人身边；②说服 DC 15 让幻象里的长辈开口，打破那片沉默；③洞悉 DC 14 认出这些脸是玩家自己拼出来的。失败时玩家会重复一句小时候听过的训斥，同伴会看见玩家像换了个人。",
     },
     acolyte: {
-      vision: "幻象是一座空教堂：祈祷的人一个个消失，神像背对着玩家，供桌上的水变成灰。幻象让玩家承认，他信了一辈子的东西从来没有回答过。",
+      vision: "幻象是一座空教堂：祈祷的人一个个消失，神像背对着玩家，供桌上的水变成灰。幻象让玩家承认，玩家信了一辈子的东西从来没有回答过。",
       ways: "①不需要检定：继续把祷词念完，或者握住身边一个人的手；②宗教 DC 13 认出神像背对是因为玩家自己不敢看；③让卡西安或一位同伴一起念（同伴愿意即可）。失败时玩家会听见自己的祈祷变成别人的声音，醒来后有一阵说不出话。",
     },
     entertainer: {
-      vision: "幻象是满座的剧场：观众都是玩家认识的人，灯亮着，他们却在他最需要掌声的时候沉默。幻象让玩家承认，他们喜欢的不是他，只是他演出来的那个人。",
-      ways: "①不需要检定：对空场把歌唱完，或者摘下面具、停下表演，让真实的自己站在那里；②表演 DC 15 把幻象里的沉默唱散；③洞悉 DC 14 看出观众的脸在重复。失败时玩家会在现实里继续演下去，同伴叫他好几声才回神。",
+      vision: "幻象是满座的剧场：观众都是玩家认识的人，灯亮着，他们却在玩家最需要掌声的时候沉默。幻象让玩家承认，他们喜欢的不是玩家，只是玩家演出来的那个人。",
+      ways: "①不需要检定：对空场把歌唱完，或者摘下面具、停下表演，让真实的自己站在那里；②表演 DC 15 把幻象里的沉默唱散；③洞悉 DC 14 看出观众的脸在重复。失败时玩家会在现实里继续演下去，同伴叫玩家好几声才回神。",
     },
     sailor: {
-      vision: "幻象是一艘正在沉的老船：甲板上是玩家第一次出海时的同伴，船长下令弃船，水里有人伸手。幻象让玩家承认，他当时没有回头。",
+      vision: "幻象是一艘正在沉的老船：甲板上是玩家第一次出海时的同伴，船长下令弃船，水里有人伸手。幻象让玩家承认，玩家当时没有回头。",
       ways: "①不需要检定：跳下去，或者把绳子扔回去；②运动 DC 15 在幻象的浪里游到那个人身边；③求生 DC 14 看出潮水的方向是反的、船沉得太慢。失败时玩家会呛一口不存在的海水，之后几天听见水声就紧张。",
     },
     outlander: {
-      vision: "幻象是玩家长大的荒野：族人围着他，要他按旧规矩把受伤的外人留下；他看见自己当年离开时，没有一个人回头。幻象让玩家承认，他既不属于这里，也不属于别处。",
-      ways: "①不需要检定：违反规矩，把那个外人背起来；②求生 DC 14 找到幻象的边界，走出去；③驯兽 DC 13 让幻象里逼近的野兽退开，或者让一位同伴站到他身边（同伴愿意即可）。失败时玩家会朝幻象里的族人大喊，醒来后不记得自己喊了什么。",
+      vision: "幻象是玩家长大的荒野：族人围着玩家，要玩家按旧规矩把受伤的外人留下；玩家看见自己当年离开时，没有一个人回头。幻象让玩家承认，玩家既不属于这里，也不属于别处。",
+      ways: "①不需要检定：违反规矩，把那个外人背起来；②求生 DC 14 找到幻象的边界，走出去；③驯兽 DC 13 让幻象里逼近的野兽退开，或者让一位同伴站到玩家身边（同伴愿意即可）。失败时玩家会朝幻象里的族人大喊，醒来后不记得自己喊了什么。",
     },
   },
   secrets: {
@@ -971,7 +971,11 @@ const INTEL = {
     "潮裔的独木舟在雾里出现过一次，没靠岸；他们只跟救过孩子的人说话", "主教每天黄昏在祖坛献一次血，石柱的光一天比一天亮", "萨丝的副手在酒馆后巷偷偷见了一个穿灰袍的人，第二次见面时带了刀"],
 };
 const tavernHas = k => !!state.flags["tavern." + k];
-const tavernKeeper = () => state.flags["act1.martha_alive"] === false ? "小汤姆" : "玛莎";
+// act1.martha_alive 记的是灯塔人质的死活（人质可能是小汤姆）；旧存档没写 act1.hostage 时当作玛莎
+const hostageDead = () => state.flags["act1.martha_alive"] === false;
+const marthaGone = () => hostageDead() && state.flags["act1.hostage"] !== "tom";
+const tomGone = () => hostageDead() && state.flags["act1.hostage"] === "tom";
+const tavernKeeper = () => marthaGone() ? "小汤姆" : "玛莎";
 function upgradeTavern(k) {
   const t = TAVERN[k]; if (!t || tavernHas(k) || state.player.gold < t.cost) return false;
   state.player.gold -= t.cost; state.flags["tavern." + k] = true;
@@ -1113,21 +1117,23 @@ const SIDE = {
     reward: { gold: 15, items: ["老海狗的鱼叉"] }, rewardText: "15 金币，老海狗的鱼叉（他还会告诉你一条通往外海的暗礁水道）" },
   watch_mole: { name: "港卫军的内鬼", act: 1, at: ["act1_manor"],
     hook: "萨丝发现港卫军的巡逻时间表总是提前泄露给教团，她信不过自己的人，想借外人的眼睛",
+    task: "查出港卫军里给教团通风报信的内鬼：线索在鱼市（谁在大把花钱）、码头（谁和黑潮会的人碰头）、总督府（谁能看到时间表），抓到他交给萨丝",
     goal: "查出内鬼：线索在鱼市（谁在大把花钱）、码头（谁和黑潮会的人碰头）、总督府（谁能看到时间表）；内鬼是被教团收买的文书官霍布，抓到他交给萨丝",
     reward: { gold: 30, flags: { "act1.sath_trust": true } }, rewardText: "30 金币，萨丝的信任" },
   widow_boat: { name: "寡妇的渔船", act: 1, at: ["act1_market"],
     hook: "渔妇奈尔的丈夫出海没回来，留下的渔船“海燕号”被黑潮会以抵债为名扣在码头，她和三个孩子断了生计；她的大儿子还被关在金鳗的货舱里抵债",
     goal: "把海燕号要回来（和老鳗谈、付 50 金币、偷出来，或者在码头翻脸）并救出她儿子（金鳗的货舱 act1_docks_hold），交还给奈尔",
-    reward: { supplies: 2 }, rewardText: "补给 +2；奈尔答应：如果你们没有船，海燕号可以载你们出海" },
-  martha_relic: { name: "守誓人的遗物", act: 1, at: ["act1_hub"],
+    reward: { supplies: 2 }, rewardText: "补给 +2；奈尔答应：如果你们的船出了事，她的海燕号可以当作出海的渔船" },
+  martha_relic: { name: "守誓人的遗物", act: 1, at: ["act1_hub"], need: () => state.flags["act1.chart"] === "opened", // 打开地窖暗格之后
     hook: "打开地窖暗格之后，玛莎看见航海图下面还压着一本皮面日记和一枚旧徽记——是她亡夫的。她不识字，又不肯承认，只说“放着吧，没空看”",
     goal: "把日记读给玛莎听（在酒馆里找个安静的时候）；日记里有守誓人的誓词和一句写给她的话。读完把它交还给她",
     reward: { items: ["守誓人的日记"] }, rewardText: "守誓人的日记（里面有誓约神殿的零星描述）" },
-  cult_eye: { name: "酒馆里的眼线", act: 1, at: ["act1_hub", "act1_sewers_shrine"],
+  cult_eye: { name: "酒馆里的眼线", act: 1, at: ["act1_hub", "act1_sewers_shrine"], need: () => ["tortured", "informant"].includes(state.flags["act1.deacon"]), // 执事说出“酒馆里有眼睛”之后
     hook: "教团对酒馆里的动静知道得太清楚了。拷问或放走的执事都提到“酒馆里有我们的眼睛”",
+    task: "在酒馆的常客里找出给教团传话的人，弄清他为什么这么做，再决定怎么处置",
     goal: "在酒馆的常客里找出眼线（洞悉或调查 DC 15）：是每天坐在角落、只点一杯酒的老水手“灰须”，他的孙子被教团扣着。处置他：交给萨丝、放他走、或者帮他救孙子",
     reward: { gold: 25 }, rewardText: "25 金币（灰须的积蓄，或者萨丝的赏金）" },
-  rat_nest: { name: "鼠王的请求", act: 1, at: ["act1_sewers"],
+  rat_nest: { name: "鼠王的请求", act: 1, at: ["act1_sewers"], need: () => state.flags["prologue.rat_king"] === "spared",
     hook: "（只有序幕放过了鼠王才会发生）鼠王拦住队伍，用铜链指了指下水道深处：教团在它的鼠窝里放了烬火毒，小鼠一窝窝地死",
     goal: "找到下水道深处被下毒的鼠窝，清掉毒源（医疗或奥秘 DC 14，或者把投毒的狂信徒赶走）",
     reward: { supplies: 1 }, rewardText: "补给 +1；鼠王欠你一个人情（第三幕会记得）" },
@@ -1139,10 +1145,11 @@ const SIDE = {
   // DS：三条 NPC 事件链的第二步（第一步分别是 martha_relic、tom_leg、watch_mole）
   martha_letters: { name: "玛莎的信", act: 1, at: ["act1_hub"], need: () => state.flags["side.martha_relic"] === "done",
     hook: "读完日记的第二天早上，玛莎把一只生锈的铁盒推到你面前：里面是十几封没寄出的信，收信人都是她，地址一栏却写着“下一次靠岸的地方”。盒底压着一张鱼市当铺的当票，当的是一枚银坠。她嘴上说“早该扔了”，手却没松开",
-    goal: "去鱼市与灯笼街（act1_market）的当铺把银坠赎回来：付 30 金币、用巧手或欺瞒 DC 15 混过去，或者让维克斯跟掌柜套话（他认识那家当铺的后门）。当票已经过期，银坠被转卖给了总督府的一个女仆——也可以顺着这条线去总督府问（说服 DC 14）。拿回来交给玛莎。玛莎不会说谢，但会把银坠擦干净戴回去",
+    goal: "去鱼市与灯笼街（act1_market）的当铺把银坠赎回来：付 30 金币、用巧手或欺瞒 DC 15 混过去，或者让维克斯跟掌柜套话（他认识那家当铺的后门）。当票已经过期，银坠被转卖给了总督府的一个女仆——也可以顺着这条线去总督府问（说服 DC 14）。拿回来交给玛莎。玛莎不会说谢，把银坠擦干净，最后还是塞回你手里：“出门在外，带着它。”",
     reward: { gold: 20, supplies: 1, items: ["玛莎的银坠"] }, rewardText: "20 金币（玛莎硬塞的），补给 +1，玛莎的银坠" },
   tom_errand: { name: "小汤姆的第一件事", act: 1, at: ["act1_hub"], need: () => state.flags["side.tom_leg"] === "done",
     hook: "小汤姆的腿好了，能跑了。他想还你们人情，又怕玛莎骂，于是趁没人注意把一张画得歪歪扭扭的后巷地图塞给你：鱼市后巷有个收“龙鳞碎片”的人，给的钱多得不正常，还问他酒馆里住了几个“掌心有印子的人”。他不敢一个人去，但知道那人每天黄昏收摊",
+    task: "去鱼市后巷查清那个高价收龙鳞的人是谁、背后是谁，别让小汤姆出面",
     goal: "去鱼市后巷（act1_market）查那个收龙鳞的人：跟踪他（隐匿 DC 14）、假扮卖家（欺瞒 DC 15），或者直接抓住他（威吓 DC 13 或动手）。他是教团的探子，收龙鳞是为了做烬火毒，身上有一张写着酒馆位置的纸条。把证据带回来，别让小汤姆出面——被教团看见他和你们在一起，他就完了。也可以利用这个探子反向传假消息（欺瞒 DC 15），拖住教团一晚。维克斯觉得这事有意思，赛勒涅不喜欢让孩子掺和",
     reward: { gold: 25, supplies: 1 }, rewardText: "25 金币（探子的钱袋），补给 +1" },
   sath_ledger: { name: "萨丝的账", act: 1, at: ["act1_manor"], need: () => state.flags["side.watch_mole"] === "done",
@@ -1153,8 +1160,8 @@ const SIDE = {
   // DS：老鳗事件链第一步（和黑潮会彻底翻脸，或者老鳗已经被卡西安杀死时不出现）
   eel_clerk: { name: "账房的船票", act: 1, at: ["act1_docks", "act1_docks_casino"], need: () => state.flags["act1.eel"] !== "enemy" && state.flags["quest.kassian"] !== "killed_eel",
     hook: "黑潮会的账房先生“算盘”在码头后巷拦住队伍：他替老鳗记了二十年账，知道哪条船载过什么、哪笔钱进了谁的口袋。老鳗要把他和账本一起沉进海湾，因为他留了一笔该抹掉的账的底。他想用账本换一张离开灰帆港的船票，外加他妹妹的赎身钱。和黑潮会做过交易（act1.eel=deal 或 ally）时他更信你们；还没打过交道时他半信半疑。和黑潮会彻底翻脸（act1.eel=enemy）时他不会来找你们，这条链也不会开始。",
-    goal: "把账本和他妹妹弄出来：①和老鳗谈（说服或威吓 DC 15，用账本当筹码；老鳗会记恨，但不会当场翻脸）；②夜里从金鳗号偷账本和妹妹（隐匿 DC 14 + 巧手 DC 15）；③把账本交给萨丝（如果 act1.sath_trust 或愿意冒险，港卫军会查黑潮会，但算盘会被老鳗追杀）。账本是筹码，不要在这里杀老鳗；卡西安的旧账由他的个人任务处理。",
-    reward: { gold: 30, supplies: 1, items: ["黑潮会的账本"] }, rewardText: "30 金币，补给 +1，黑潮会的账本" },
+    goal: "把账本和他妹妹弄出来：①和老鳗谈（说服或威吓 DC 15，用账本当筹码；老鳗会记恨，但不会当场翻脸）；②夜里从金鳗号偷账本和妹妹（隐匿 DC 14 + 巧手 DC 15）；③把账本交给萨丝（如果萨丝已经信任你们，或者愿意冒险，港卫军会查黑潮会，但算盘会被老鳗追杀）。账本是筹码，不要在这里杀老鳗；卡西安的旧账由他的个人任务处理。",
+    reward: { gold: 30, supplies: 1, items: ["黑潮会账本的抄本"] }, rewardText: "30 金币，补给 +1，黑潮会账本的抄本（原本交出去了也留着一份）" },
 
   tideborn_child: { name: "迷路的潮裔孩子", act: 2, at: ["act2_mist", "act2_hub"],
     hook: "潮裔渔村的一个小女孩“珊”偷偷划着独木舟去骨骼岛“找龙的牙齿”，两天没回来，她母亲跪在礁石上哭",
@@ -1200,18 +1207,19 @@ const SIDE = {
     reward: { supplies: 1, items: ["强效治疗药水"] }, rewardText: "补给 +1，强效治疗药水（潮裔药师配的谢礼）" },
   eve_bundle: { name: "伊芙的旧信", act: 2, at: ["act2_mist_memorial"], need: () => ["taken", "done"].includes(state.flags["side.eve_letter"]),
     hook: "伊芙收着哥哥从前写来的信，鲸骨盒子里只剩最后几封。她说瓦尔多年轻时真的想带她走，最后一封信里写着“等我弄明白银龙当年为什么选那个村子”。之后信就断了。她想知道那之后发生了什么，又不敢自己去看",
+    task: "去烬火岛前哨的书房找瓦尔多的旧笔记和没寄出的信，带回给伊芙",
     goal: "去烬火岛前哨的书房（act2_ember_study）找瓦尔多的旧笔记：桌上有一叠没寄出的信（调查 DC 15），或者趁奥斯瓦尔德不在时翻他的书架（隐匿 DC 15）。信里写着瓦尔多查到的真相：被献祭的村子是他母亲的家乡，他因此恨上了银龙。把信带回给伊芙；也可以只告诉她一部分（欺瞒 DC 14，她会察觉，但不会逼问）。莉拉会想知道导师到底在研究什么，赛勒涅不赞成瞒她",
     reward: { supplies: 1, gold: 25 }, rewardText: "补给 +1，25 金币（伊芙攒的，让你们路上用）" },
   eel_wreck: { name: "被抹掉名字的船员", act: 2, at: ["act2_hub", "act2_bone"], need: () => state.flags["side.eel_clerk"] === "done",
-    hook: "账本上记着黑潮会往龙骨群岛运过一批货，收货人是教团前哨；那艘船后来没回灰帆港。皮特（如果上一轮救过他）说那条船搁浅在骨骼岛背面，船上的黑潮会水手还在岛上，靠挖龙骨的边角料活命；老鳗从没派人来找过他们。没遇到皮特的话，就按账本上的名字和潮裔的闲话拼出位置。",
+    hook: "账本上记着黑潮会往龙骨群岛运过一批货，收货人是教团前哨；那艘船后来没回灰帆港。若你们救过走私客皮特（side.ribs_smuggler 完成时是救了他），他会说那条船搁浅在骨骼岛背面；否则就按账本上的航线和潮裔的闲话拼出位置——船搁浅在骨骼岛背面，船上的黑潮会水手还在岛上，靠挖龙骨的边角料活命；老鳗从没派人来找过他们。",
     goal: "去骨骼岛背面找那艘搁浅的走私船：①救出还活着的水手（医疗 DC 13 处理伤口，或说服 DC 14 让他们相信你们不是老鳗派来灭口的）；②拿走船上的账本下半册和货（巧手 DC 14；货是教团封在陶罐里的烬火毒，打开要体质豁免 DC 13）；③也可以只拿账本就走，让水手自己决定。水手会告诉你们老鳗把他们的名字从账上抹了，黑潮会早就不认他们。带他们回锚地、给他们一条小船、或者只拿账本走，都会影响第三步他们会不会出现。",
     reward: { gold: 40, supplies: 2 }, rewardText: "40 金币（沉船上的私货钱），补给 +2" },
 
   refugees: { name: "最后一艘船", act: 3, at: ["act3_haven"],
     hook: "酒馆地窖里挤着三十多个孩子和老人，港口只剩一艘还能出海的船，船长要价，教团的人在码头巡逻",
     goal: "把难民从酒馆护送到码头上船（在街巷里避开或打退教团小队，和船长谈价钱或者用武力说服），看着船离港",
-    reward: { flags: {} }, rewardText: "难民平安离港；玛莎和小汤姆会记住这件事" },
-  tom_courage: { name: "小汤姆的勇气", act: 3, at: ["act3_haven"], need: () => state.flags["side.tom_errand"] === "done",
+    reward: { flags: {} }, rewardText: "难民平安离港；酒馆里的人会记住这件事" },
+  tom_courage: { name: "小汤姆的勇气", act: 3, at: ["act3_haven"], need: () => state.flags["side.tom_errand"] === "done" && !tomGone(),
     hook: "小汤姆说他知道一条从酒馆地窖通往码头的旧排水道，想带着信去叫援兵，玛莎不许，他偷偷来找你。他腿上的旧伤还没有完全好，可他说这次不会再拖后腿了——之前在后巷和院子里练的那些，他想用上",
     goal: "决定要不要让他去（或者陪他去）：排水道里有狂信徒，他一个人很危险；成功的话援兵会早一步赶到",
     reward: { supplies: 2 }, rewardText: "补给 +2；小汤姆第一次挺直了腰" },
@@ -1219,7 +1227,7 @@ const SIDE = {
     hook: "学院残部守着的结界石快撑不住了，学者们需要从旧学院的废墟里挖出备用的结界石核心",
     goal: "在街巷里（act3_streets）找到并护送备用的结界石核心到学院（奥秘 DC 15 判断哪块还能用），挡住来抢的狂信徒",
     reward: { flags: {} }, rewardText: "学院残部愿意派人上山（第三幕多一方盟友）" },
-  eel_deal: { name: "老鳗的最后一笔", act: 3, at: ["act3_haven", "act3_docks_fire"],
+  eel_deal: { name: "老鳗的最后一笔", act: 3, at: ["act3_haven", "act3_docks_fire"], need: () => state.flags["quest.kassian"] !== "killed_eel", // 老鳗被卡西安杀了就没有这笔
     hook: "老鳗（若还活着）派人送来口信：黑潮会的船队还剩七艘船，他愿意谈——价钱另说",
     goal: "去和老鳗谈（他要的可能是钱、赦免、或者一个人情；维克斯和卡西安会有很强的意见），谈成就写 done",
     reward: { flags: { "act1.eel": "ally" } }, rewardText: "黑潮会船队成为盟友" },
@@ -1245,12 +1253,12 @@ const SIDE = {
     hook: "酒馆地窖最里面压着一桶“龙息”陈酿，是玛莎亡夫留下的最后一桶，桶身上还有他刻的字。博林说该打开，让挤在地窖里的人喝一口热的；玛莎说那是给伤员消毒用的，谁也别碰。桶被塌下来的横梁压住了，要挪开就得先撑住那面墙",
     goal: "把桶挖出来：用酒馆的旧撬棍和木桩撑住横梁（运动 DC 15；博林在场有优势），或者从地窖侧面挖一条小通道（求生或巧手 DC 14，但会弄塌半面墙）。桶打开之后决定给谁：伤员（消毒和止痛）、地窖里的难民（一人一口，士气会好起来）、还是留给守街垒的人。剩下一半还能装瓶带走。玛莎会看着你们，什么都不说",
     reward: { supplies: 2, gold: 20 }, rewardText: "补给 +2，20 金币（桶底沉着几枚旧银币）" },
-  martha_last_letter: { name: "最后一封没拆的信", act: 3, at: ["act3_haven"], need: () => state.flags["side.martha_letters"] === "done" && state.flags["act1.martha_alive"] !== false,
-    hook: "被围的第二天夜里，玛莎把最后一封信放在桌上，信封没拆，火漆还是完整的。她说这封是亡夫留给“读到这封信的人”的，不是给她的。酒馆里挤满了人，她问你：现在拆，还是等打完再拆",
+  martha_last_letter: { name: "最后一封没拆的信", act: 3, at: ["act3_haven"], need: () => state.flags["side.martha_letters"] === "done" && !marthaGone(),
+    hook: "围城中的一个夜里，玛莎把最后一封信放在桌上，信封没拆，火漆还是完整的。她说这封是亡夫留给“读到这封信的人”的，不是给她的。酒馆里挤满了人，她问你：现在拆，还是等打完再拆",
     goal: "陪玛莎拆信，或者劝她先别拆（洞悉 DC 13 能看出她其实怕的是信里怪她）。信里写着亡夫早就知道地窖暗格里有什么，也知道自己回不来；最后一句是请读到信的人替他守住酒馆和玛莎。也可以按信里的提示去酒馆后墙挪开旧柜子（调查 DC 13），找到他藏的一枚旧银币和一张手画的港口地图。不管拆不拆，玛莎都会把信收进围裙口袋，然后回去给伤员盛汤",
     reward: { supplies: 2, gold: 25 }, rewardText: "补给 +2，25 金币（玛莎把亡夫留下的旧银币塞给你们）" },
   sath_stand: { name: "萨丝的街垒", act: 3, at: ["act3_haven", "act3_streets"], need: () => state.flags["side.sath_ledger"] === "done",
-    hook: "围城第三天，萨丝决定亲自守最后一道街垒。出发前她把一串旧钥匙交给你：总督府地窖里还锁着港卫军的补给和几个走不动的伤员，钥匙能开，但地窖的门被塌下来的石梁顶住了。她说：“救人还是拿补给，你定。别两样都想要。”",
+    hook: "围城期间，萨丝决定亲自守最后一道街垒。出发前她把一串旧钥匙交给你：总督府地窖里还锁着港卫军的补给和几个走不动的伤员，钥匙能开，但地窖的门被塌下来的石梁顶住了。她说：“救人还是拿补给，你定。别两样都想要。”",
     goal: "去街巷的总督府后门（act3_streets）：先撑住石梁（运动 DC 15；博林在场有优势），再决定先搬人还是先搬补给。搬人要多花时间，补给可能被趁乱抢走；搬补给快，但伤员会多等一阵，其中一个撑不住。也可以让卡西安留下来照看伤员、你们去搬补给（卡西安赞同，他会晚一步回来）。完事回去告诉萨丝",
     reward: { supplies: 2, items: ["港卫军胸甲"] }, rewardText: "补给 +2，港卫军胸甲（萨丝从自己身上解下来的）" },
   eve_witness: { name: "伊芙要上山", act: 3, at: ["act3_haven", "act3_council"], need: () => state.flags["side.eve_bundle"] === "done",
@@ -1258,8 +1266,8 @@ const SIDE = {
     goal: "带伊芙穿过街巷到山脚（act3_streets）：路上教团在搜捕印记持有者，要隐匿 DC 15 绕开，或者让奈雅给伊芙换一张脸（欺瞒 DC 14；伊芙不喜欢，但会答应）。到了山脚，把伊芙安顿在攻山队伍的后队，答应她在祖坛上先开口。不要在祖坛替玩家决定辩论的结果——说服成不成，由玩家自己和证据决定",
     reward: { flags: { "act2.eve": true }, supplies: 1 }, rewardText: "伊芙会亲自作证（说服主教时多一份证据），补给 +1" },
   eel_last_crew: { name: "黑潮会的最后一船人", act: 3, at: ["act3_haven", "act3_docks_fire"], need: () => state.flags["side.eel_wreck"] === "done" && state.flags["quest.kassian"] !== "killed_eel",
-    hook: "被老鳗抛弃的那批水手回到了灰帆港，守在着火的码头一带。老鳗的船队还剩几艘，他要把最后一批人推上去挡教团，自己带金子和账房跑路。水手们不想再替他死；他们手里有老鳗和教团私下换船的凭证。别在这里杀老鳗：他会在混乱里带着最后一艘快船逃走，或者被自己的手下赶下船，后面由主线和卡西安的个人任务处理。若 quest.kassian=killed_eel，老鳗已经死了，这条支线不会出现。",
-    goal: "在燃烧的码头（act3_docks_fire）或避难所（act3_haven）处理：①说服萨丝收编这些水手（说服 DC 15，港卫军多一批人手）；②帮水手夺一条船（战斗或巧手/威吓 DC 15，黑潮会失去最后一艘船，老鳗逃走）；③拿凭证去和老鳗谈（如果 eel_deal 已做，可以作为同一场谈判的一部分，但不要改 eel_deal 的奖励；谈成他交出最后一批人的卖身契，水手散伙）。水手会记得你们怎么选。",
+    hook: "被老鳗抛弃的水手里有几个辗转回到了灰帆港（第二步时你们怎么对待他们，他们记得；只拿了账本就走的话，回来的人更少、也更冷淡），守在着火的码头一带。老鳗的船队还剩几艘，他要把最后一批人推上去挡教团，自己带金子和账房跑路。水手们不想再替他死；他们手里有老鳗和教团私下换船的凭证。这和“老鳗的最后一笔”（和老鳗本人谈船队）是两件事：这里只管被抛弃的水手。别在这里杀老鳗：他会在混乱里带着最后一艘快船逃走，或者被自己的手下赶下船，后面由主线和卡西安的个人任务处理。若 quest.kassian=killed_eel，老鳗已经死了，这条支线不会出现。",
+    goal: "在燃烧的码头（act3_docks_fire）或避难所（act3_haven）处理：①说服萨丝收编这些水手（说服 DC 15，港卫军多一批人手）；②帮水手夺一条船（战斗或巧手/威吓 DC 15，黑潮会失去最后一艘船，老鳗逃走）；③拿凭证去和老鳗谈（如果“老鳗的最后一笔”已经谈过，可以算作同一场谈判的一部分；谈成他交出最后一批人的卖身契，水手散伙）。水手会记得你们怎么选。",
     reward: { gold: 30, supplies: 2 }, rewardText: "30 金币（水手凑的），补给 +2" },
 };
 for (const id of Object.keys(SIDE)) FLAG_KEYS[`side.${id}`] = ["taken", "done", "failed"];
@@ -2405,7 +2413,7 @@ function buildPrompt(action, mode) {
     `\nHP ${p.hp}/${p.hpMax}，AC ${acTotal("player")}，金币 ${p.gold}，灵感 ${p.inspiration}，龙化值 ${p.draconic}${marksOf("player").length ? "（印记能力：" + marksOf("player").map(m => m.name).join("、") + "）" : ""}，装备：${gearLine("player")}，行囊：${p.inventory.join("、") || "无"}` +
     `\n\n【在场同伴】\n${pres.length ? pres.map(companionBrief).join("\n") : "（无，玩家独自一人）"}` +
     `\n\n【NPC】\n${npcLines()}` +
-    `\n\n【世界标记】${JSON.stringify(state.flags)}；赫斯提雅信任 ${state.hestiaTrust}；第 ${state.day} 天，营地补给 ${state.supplies ?? 0}${debtLine()}${allyLine()}${state.act ? "；阵营声望：" + repLine() : ""}` +
+    `\n\n【世界标记】${JSON.stringify(state.flags)}；赫斯提雅信任 ${state.hestiaTrust}；第 ${state.day} 天，营地补给 ${state.supplies ?? 0}${debtLine()}${allyLine()}${hostageDead() ? `；灯塔之夜的人质${tomGone() ? "小汤姆" : "玛莎"}没能救回来，已经死了：之后的场景里不要再让${tomGone() ? "他" : "她"}出场` : ""}${state.act ? "；阵营声望：" + repLine() : ""}` +
     (Object.entries(state.rel || {}).some(([, v]) => v) ? `\n【同伴之间】${Object.entries(state.rel).filter(([, v]) => v).map(([k, v]) => k.split("_").map(id => PEOPLE[id].name).join("×") + " " + sgn(v)).join("，")}` : "") +
     (chapters ? `\n\n【往事】（已经结束的各章纪要）\n${chapters}` : "") +
     `\n\n【前情提要】${m.summary || (chapters ? "（往事之后的事都在下面的最近剧情里）" : "（还没有，更早的剧情都在下面的最近剧情里）")}` +
@@ -3081,7 +3089,7 @@ const ENDINGS = {
     need: () => [state.flags["act2.egg_warmed"] === 3 && eggHere() ? "" : "龙蛋要在身边、并保温满 3 次", state.companions.vex.alive && state.companions.vex.approval >= 40 && party().includes("vex") ? "" : "维克斯在队里且赞同度 ≥ 40"].filter(Boolean) },
   seven: { name: "七人之誓", act: "七人共同承担誓约", text: "七个人各自保留一片印记，成为新一代守誓人。银龙终于安息，醉龙酒馆成了守誓人重聚的地方。",
     need: () => { const met = Object.keys(COMPANIONS).filter(id => inAct(id) && state.companions[id].alive && (state.companions[id].recruited || state.companions[id].betrayed));
-      return [met.some(id => state.companions[id].betrayed) ? "没有人背叛" : "", met.every(id => state.companions[id].approval >= 40) ? "" : "在世同伴的赞同度都 ≥ 40"].filter(Boolean); } },
+      return [met.some(id => state.companions[id].betrayed) ? "没有人背叛" : "", Object.keys(COMPANIONS).some(id => state.companions[id].alive && state.companions[id].taken) ? "被掳走的同伴已经救回来" : "", met.every(id => state.companions[id].approval >= 40) ? "" : "在世同伴的赞同度都 ≥ 40"].filter(Boolean); } },
   hestia: { name: "银龙重生", act: "把身体献给赫斯提雅", text: "容器的灵魂沉入长眠，赫斯提雅借那具身体重生，封印稳固千年。", need: () => [] },
   mortal: { name: "凡人之世", act: "打碎誓约，以凡人之力斩龙", text: "印记全部消失。盟军与你们七人合力屠龙，世上再也没有龙了。",
     need: () => [state.flags["act2.heart"] === "destroyed" ? "" : "誓约之心已经销毁", allies().length >= 3 ? "" : "最终战有 ≥ 3 方盟友"].filter(Boolean) },
@@ -3145,11 +3153,11 @@ const EPILOGUES = {
     },
     lover: {
       egg: "他一边数金币一边数蛋，最后把两样都交给你管；幼龙第一次叫他叔叔时，他差点从椅子上摔下来。",
-      seven: "你们在酒馆后间立誓，他用一枚付过钱的戒指换你一句答应；婚礼上他哭得比莉丝还难看。",
+      seven: "你们在酒馆后间立誓，他用一枚付过钱的戒指换你一句答应；婚礼上他哭得比谁都难看（莉丝若在，她笑得最大声）。",
       hestia: "若容器是你，他每天来跟你说一遍港口的新鲜事，怕你醒不过来；若容器是他，他最后留给你的是一张写满笑话的纸。",
       mortal: "你们在港口开了家小店，他管账，你管他；他终于学会把留下说出口。",
       dragon: "他替你在人间跑腿，收留那些不敢看龙的人；他从不叫你陛下，只叫你的名字。",
-      crown: "他试过杀你，没下得去手；后来他带着莉丝消失，再也没有消息。",
+      crown: "他试过杀你，没下得去手；后来他消失了（莉丝若在，带着她一起），再也没有消息。",
       fall: "他把身边的人推上船，自己留在码头找了你一夜；天亮时他坐在栈桥尽头，手里攥着一枚铜板。",
     },
     choice: {
@@ -3158,7 +3166,7 @@ const EPILOGUES = {
       alone: "他带着莉丝回来了，绝口不提自己付出了什么；只是从那以后，他不再赌钱。",
     },
     gone: {
-      dead: "他口袋里有一枚磨亮的铜板，边缘被摸得很薄；莉丝把它串在脖子上。",
+      dead: "他口袋里有一枚磨亮的铜板，边缘被摸得很薄；莉丝若还在，把它串在了脖子上，否则它一直放在酒馆吧台后面。",
       betrayed: "他替烬王两边传话，直到没人再信他；他笑得还是很好看，眼睛是空的。",
       taken: "他骗看守说自己只是个小贼，混进了祖坛的杂役里；他在等一个信号。",
     },
@@ -3170,7 +3178,7 @@ const EPILOGUES = {
       hestia: "若容器是他，他睡在神殿里，脸上没有痛苦；若容器是别人，他在神殿外支了一口锅，给守夜的人做饭。",
       mortal: "他收留了港口战争里的孤儿，教他们做饭、识字、给死者念名字；他不再碰拳头。",
       dragon: "他没有留下，也没有骂你；他走之前把贝壳护身符挂在酒馆门上，说海会记得。",
-      crown: "他死在去杀你的路上，手里没有武器，只有一袋给难民的干粮。",
+      crown: "他没有拿武器来见你，只带着一袋给难民的干粮；后来有人说他死在去难民营的路上。",
       fall: "他守着最后一个伤员上船，自己没走；有人说看见他在火里跪着祈祷。",
     },
     lover: {
@@ -3180,7 +3188,7 @@ const EPILOGUES = {
       mortal: "你们在海边有了自己的小屋，门口种着薄荷；他每天早上先去看潮，再回来叫你起床。",
       dragon: "他离开前给你做了最后一顿饭，没看你吃完；他说他不能一边爱你一边看你变成那样。",
       crown: "他来劝你回头，没带武器；被卫兵拖走时他还在叫你的名字。",
-      fall: "他在船上给每个人分水，最后才轮到自己；他说海不会怪我们。",
+      fall: "他把你推上最后一艘船，自己留在码头守着伤员；你最后看见他时，他在火光里朝你挥手，嘴里还在唱潮歌。",
     },
     choice: {
       exposed: "阿登把证据还给了他，他替死去的好友立了一块碑，碑上没写无辜，只写了名字。",
@@ -3200,7 +3208,7 @@ const EPILOGUES = {
       hestia: "若容器是他，他睡着前还在讲笑话；若容器是别人，他给重生的银龙敬了一杯，说这龙比传说里能喝。",
       mortal: "他回了铁炉堡，或者回那片废墟，把能修的都修了；每年托人给酒馆送一桶酒，桶上不写名字。",
       dragon: "他拎着斧子来见你，说矮人不给龙下跪；他没有动手，也没有再叫你朋友。",
-      crown: "他死在酒馆门口，斧子砍卷了刃；最后一句还是笑话，没人笑得出来。",
+      crown: "他提着砍卷了刃的斧子冲上烬冠，倒下前最后一句还是笑话，没人笑得出来。",
       fall: "他守在地窖门口，让女人和孩子先走；等火烧过来时，他还在唱战歌。",
     },
     lover: {
@@ -3225,7 +3233,7 @@ const EPILOGUES = {
   },
   lyra: {
     ending: {
-      egg: "她给幼龙做了全套测量，写了三篇论文，最后把论文标题改成一只幼龙的日常；她说这是她写过最不严谨的东西。",
+      egg: "她给幼龙做了全套测量，写了三篇论文，最后把论文标题改成《一只幼龙的日常》；她说这是她写过最不严谨的东西。",
       seven: "她把七片印记的共鸣写成新的理论，学院给她留了一间教室；她第一堂课讲的是知识没有善恶、用它的人才有。",
       hestia: "若容器是她，她的笔记停在最后一页，没人敢续写；若容器是别人，她天天去神殿记录银龙重生的数据，被守夜人赶了三次。",
       mortal: "印记消失后，她失去了最好的研究样本，难过了很久；后来她开始研究海，说海比龙更难懂。",
@@ -3385,14 +3393,14 @@ const CAMP_EVENTS = [
     seed: "袭击过后的深夜，酒馆一片狼藉，大家围着壁炉坐着，谁都睡不着。每个人掌心的印记还在隐隐发烫。有人想聊那只银色的眼睛和看到的记忆碎片，有人只想喝一杯，有人在包扎伤口。这是大家第一次以“同伴”的身份坐在一起。" },
   // 恋爱的关键场景：不在篝火边聊，而是跟着对方走开，进入单独的小场景（scene，见 SCENES 的 love_*）
   { id: "selene_scene", who: "selene", kind: "romance", scene: "love_selene", title: "月下练剑", when: c => c.approval >= 40 && ["none", "hint"].includes(c.romance), seed: "（单独的场景：月下练剑）" },
-  { id: "vex_scene", who: "vex", kind: "romance", scene: "love_vex", title: "屋顶烟火", when: c => c.approval >= 55 && ["hint", "together"].includes(c.romance), seed: "（单独的场景：屋顶烟火）" },
+  { id: "vex_scene", who: "vex", kind: "romance", scene: "love_vex", title: "屋顶烟火", when: c => c.approval >= 55 && c.romance === "hint", seed: "（单独的场景：屋顶烟火）" },
   { id: "kassian_scene", who: "kassian", kind: "romance", scene: "love_kassian", title: "海边篝火", when: c => c.approval >= 40 && ["none", "hint"].includes(c.romance), seed: "（单独的场景：海边篝火）" },
   { id: "borin_scene", who: "borin", kind: "romance", scene: "love_borin", title: "屋顶醉谈", when: c => c.approval >= 40 && ["none", "hint"].includes(c.romance), seed: "（单独的场景：屋顶醉谈）" },
   { id: "lyra_scene", who: "lyra", kind: "romance", scene: "love_lyra", title: "深夜研究", when: c => c.approval >= 40 && ["none", "hint"].includes(c.romance), seed: "（单独的场景：深夜研究）" },
-  { id: "naia_scene", who: "naia", kind: "romance", scene: "love_naia", title: "哪一张脸", when: c => naiaTrue() && c.approval >= 50 && c.romance !== "vowed", seed: "（单独的场景：哪一张脸）" },
+  { id: "naia_scene", who: "naia", kind: "romance", scene: "love_naia", title: "哪一张脸", when: c => naiaTrue() && c.approval >= 50 && ["none", "hint"].includes(c.romance), seed: "（单独的场景：哪一张脸）" },
   { id: "selene_friend", who: "selene", kind: "friend", when: c => c.approval >= 20,
     seed: "赛勒涅独自擦拭一枚磨旧的骑士徽章。素材：晨星骑士团一夜之间消亡、她等了百年的召唤终于来了；她不习惯被人关心，但会认真回答认真的问题。" },
-  { id: "selene_hint", who: "selene", kind: "romance", when: c => c.approval >= 40 && c.romance === "none",
+  { id: "selene_hint", who: "selene", kind: "romance", when: c => c.approval >= 40 && c.romance === "none" && !(state.campSeen || []).includes("selene_scene"),
     seed: "夜深，赛勒涅睡不着，独自在院子里练剑。她开始在意你，但自己还没意识到，也不习惯被人靠近。素材：教你骑士礼；第一次在你面前笑出来；“誓言不是枷锁，是我选择站立的地方。”" },
   { id: "selene_confess", who: "selene", kind: "romance", when: c => c.approval >= 60 && c.romance === "hint",
     seed: "赛勒涅主动找你，表情比平时更紧张。她心里有一个问题：“你会对我说谎吗？”如果她曾发现你撒谎，她会难过地退回去。" },
@@ -3400,15 +3408,15 @@ const CAMP_EVENTS = [
     seed: "成为恋人后的某个夜晚。赛勒涅还在学着怎么做恋人：笨拙、认真，偶尔冒出一句让人意外的情话，说完自己先脸红。" },
   { id: "vex_friend", who: "vex", kind: "friend", when: c => c.approval >= 20,
     seed: "维克斯在火边数钱，数着数着望向港口发呆。素材：他有个妹妹；他嘴上说一切都是为了钱。" },
-  { id: "vex_hint", who: "vex", kind: "romance", when: c => c.approval >= 40 && c.romance === "none",
-    seed: "维克斯拉你爬上屋顶看港口的灯火。他平时的调情油滑熟练，今晚却有点认真，玩笑开到一半会停下来。" },
+  { id: "vex_hint", who: "vex", kind: "romance", when: c => c.approval >= 40 && c.romance === "none" && !(state.campSeen || []).includes("vex_scene"),
+    seed: "维克斯拉你到码头尽头的木桩上坐着，教你怎么一眼看出谁是扒手。他平时的调情油滑熟练，今晚却有点认真，玩笑开到一半会停下来。" },
   { id: "vex_confess", who: "vex", kind: "romance", when: c => c.approval >= 60 && c.romance === "hint",
     seed: "维克斯少见地没有开玩笑。素材：他承认从来没有人等过他；他怕自己只是在演一出很像真心的戏。" },
   { id: "vex_lovers", who: "vex", kind: "romance", when: c => c.romance === "together",
     seed: "成为恋人后的某个夜晚。维克斯又恢复了油嘴滑舌，但会在你睡着后偷偷看你很久。" },
   { id: "kassian_friend", who: "kassian", kind: "friend", when: c => c.approval >= 20,
     seed: "卡西安在火边烤点心，给你留了一块。素材：他手掌上的老伤；他不愿谈过去，但会讲海洋女神的故事。" },
-  { id: "kassian_hint", who: "kassian", kind: "romance", when: c => c.approval >= 40 && c.romance === "none",
+  { id: "kassian_hint", who: "kassian", kind: "romance", when: c => c.approval >= 40 && c.romance === "none" && !(state.campSeen || []).includes("kassian_scene"),
     seed: "卡西安注意到你身上的伤，坚持替你包扎，手很轻。素材：他教你唱一首水手的潮歌；他会因为离你太近而手足无措。" },
   { id: "kassian_confess", who: "kassian", kind: "romance", when: c => c.approval >= 60 && c.romance === "hint",
     seed: "篝火将熄，卡西安终于开口讲起那场打死好友的比赛。素材：他想知道你还愿不愿意靠近一双杀过人的手。" },
@@ -3416,7 +3424,7 @@ const CAMP_EVENTS = [
     seed: "成为恋人后的某个夜晚。卡西安守着篝火让你先睡，怕自己的力气弄疼你，所有的亲近都小心翼翼。" },
   { id: "borin_friend", who: "borin", kind: "friend", when: c => c.approval >= 20,
     seed: "博林举着酒杯讲铁炉堡的笑话，讲着讲着停住了。素材：他提到哥哥达林，然后用一个更大声的笑话盖过去。" },
-  { id: "borin_hint", who: "borin", kind: "romance", when: c => c.approval >= 40 && c.romance === "none",
+  { id: "borin_hint", who: "borin", kind: "romance", when: c => c.approval >= 40 && c.romance === "none" && !(state.campSeen || []).includes("borin_scene"),
     seed: "博林喝多了，拉你到屋顶看星星。平时的笑话今晚讲不下去，醉意让他比清醒时胆大。" },
   { id: "borin_confess", who: "borin", kind: "romance", when: c => c.approval >= 60 && c.romance === "hint",
     seed: "博林没有喝酒，这本身就很反常。素材：他第一次在人前哭，说起哥哥，也说起你。" },
@@ -3424,7 +3432,7 @@ const CAMP_EVENTS = [
     seed: "成为恋人后的某个夜晚。博林笨拙又真诚：喝醉时胆子大，清醒时反而脸红；他在考虑要不要为你少喝一点。" },
   { id: "lyra_friend", who: "lyra", kind: "friend", when: c => c.approval >= 20,
     seed: "莉拉借着火光翻她那本烧焦了角的笔记，嘴里念念有词，被打扰时先嫌你烦，再忍不住给你讲印记的新发现。素材：她被学院除名的那天；失踪的导师奥斯瓦尔德是唯一替她说过话的人。" },
-  { id: "lyra_hint", who: "lyra", kind: "romance", when: c => c.approval >= 40 && c.romance === "none",
+  { id: "lyra_hint", who: "lyra", kind: "romance", when: c => c.approval >= 40 && c.romance === "none" && !(state.campSeen || []).includes("lyra_scene"),
     seed: "深夜，莉拉拉你一起研究两人掌心的印记，靠得很近，讲着讲着不小心靠在你肩上睡着了。醒来后她会嘴硬地否认，耳朵却红了。" },
   { id: "lyra_confess", who: "lyra", kind: "romance", when: c => c.approval >= 60 && c.romance === "hint",
     seed: "莉拉罕见地没带书来找你。素材：她最怕的是被人当成好用的工具；她想知道你在意的是她，还是她能做到的事。如果她曾发现你撒谎，她会冷着脸走开。" },
@@ -3432,7 +3440,7 @@ const CAMP_EVENTS = [
     seed: "成为恋人后的某个夜晚。莉拉还是刻薄，但会把最好的位置让给你，偷偷把你的名字写进笔记的页边。" },
   { id: "naia_friend", who: "naia", kind: "friend", when: c => c.approval >= 20,
     seed: "米拉/奈雅抱着琴在火边即兴编歌，歌里藏着关于你的小玩笑。素材：她会反问你喜欢什么、想要什么，问得太认真，像在替自己找答案；如果身份还没暴露，她的谎言之下有一闪而过的疲惫。" },
-  { id: "naia_hint", who: "naia", kind: "romance", when: c => c.approval >= 40 && c.romance === "none",
+  { id: "naia_hint", who: "naia", kind: "romance", when: c => c.approval >= 40 && c.romance === "none" && !(state.campSeen || []).includes("naia_scene"),
     seed: "她邀你在月光下跳一支舞，一边跳一边模仿别人的样子逗你笑，最后停下来，用自己（或她以为是自己）的样子看着你。" },
   { id: "naia_confess", who: "naia", kind: "romance", when: c => c.approval >= 60 && c.romance === "hint",
     seed: "她第一次以真面目（灰白皮肤、水银色头发、乳白的眼睛）站在你面前，问：“你喜欢的是哪一张脸？”回答“哪张都是你”或“你自己想用的那张”能打动她。如果身份还没暴露，这一幕可以改成她差一点就要说出真相。" },
@@ -3455,13 +3463,13 @@ const CAMP_EVENTS = [
   { id: "selene_diary", who: "selene", kind: "quest", when: c => !!state.flags["quest.selene.diary"] && !state.flags["quest.selene.truth"],
     seed: "赛勒涅借着火光一页页拆开泡烂的日记，字迹大多化开了。素材：她认出骑士团长的笔迹；她害怕读懂它，又停不下来；她问你：如果发现自己守了一辈子的东西是错的，人还能站在原地吗？" },
   { id: "selene_truth", who: "selene", kind: "quest", when: c => !!state.flags["quest.selene.truth"] && !state.flags["quest.selene"],
-    seed: "幽灵船之后，赛勒涅一夜没睡。素材：骑士团献祭了一整个渔村；她的誓言、她的百年等待都建在这上面；她不需要安慰，需要有人陪她想清楚——公开、掩盖，还是干脆放下剑。" },
+    seed: "知道骑士团的真相之后，赛勒涅一夜没睡。素材：骑士团献祭了一整个渔村；她的誓言、她的百年等待都建在这上面；她不需要安慰，需要有人陪她想清楚——公开、掩盖，还是干脆放下剑。" },
   { id: "vex_egg", who: "vex", kind: "quest", when: c => !!state.flags["quest.vex.egg"] && !state.flags["quest.vex"],
     seed: "维克斯把那颗银色的“宝石”放在两人中间，它在发热。素材：他偷它是为了还债，现在知道是龙蛋了；他一边说“卖了它就能救莉丝”，一边下意识地用手护着它。" },
   { id: "vex_after", who: "vex", kind: "quest", when: c => !!state.flags["quest.vex"] || state.flags["act1.lise"] === "sold",
     seed: "莉丝的事有了结果之后的夜里，维克斯少见地没有赌钱。素材：他按结果说起妹妹（被救回来、被卖走，或者跟着他）；他第一次承认自己是个哥哥，而不只是个贼。" },
   { id: "kassian_arden", who: "kassian", kind: "quest", when: c => !!state.flags["quest.kassian.arden"] && !state.flags["quest.kassian"],
-    seed: "阿登当众挑战之后，卡西安一直在擦拳头上的老茧。素材：那场比赛、那瓶毒药、他十年没睡过整夜；他问你：如果阿登要他的命，他是不是应该给？" },
+    seed: "阿登当众挑战之后，卡西安一直在擦拳头上的老茧。素材：那场比赛、他十年没睡过整夜（若已经查到老鳗买过毒药，quest.kassian.poison，也可以聊那瓶毒药；没查到就别提）；他问你：如果阿登要他的命，他是不是应该给？" },
   { id: "borin_axe", who: "borin", kind: "quest", when: c => !!state.flags["act1.darin_axe"] && !state.flags["quest.borin"],
     seed: "博林抱着那把从祭室拿回来的战斧，一口酒都没喝。素材：斧柄上他小时候刻的歪歪扭扭的名字；达林教他第一首战歌；他问你：如果哥哥变成了怪物，他该不该再见他一面？" },
   { id: "lyra_oswald", who: "lyra", kind: "quest", when: c => !!state.flags["quest.lyra.oswald"] && !state.flags["quest.lyra"],
@@ -3470,11 +3478,11 @@ const CAMP_EVENTS = [
     seed: "奈雅坐在离篝火最远的地方，一会儿换一张脸。素材：千面母握着她的真名，教团随时能用它收回她；她不知道没有真名的自己算不算一个人；她问你会不会害怕一个随时可能被别人操纵的人。" },
 
   // —— 第二、三幕：更深的友情（赞同 ≥ 50）——
-  { id: "selene_deep", who: "selene", kind: "friend", when: c => state.act >= 2 && c.approval >= 50,
+  { id: "selene_deep", who: "selene", kind: "friend", when: c => state.act === 2 && c.approval >= 50,
     seed: "海上的夜，赛勒涅在船头值夜，邀你一起。素材：她讲第一次握剑的那天；她承认很久没有为自己做过一个决定；她把一句骑士的祷词改成了自己的话念给你听。" },
   { id: "vex_deep", who: "vex", kind: "friend", when: c => state.act >= 2 && c.approval >= 50,
     seed: "维克斯教你玩一个提夫林小孩的戏法游戏，故意输给你。素材：他小时候和莉丝在码头讨生活；他第一次没有在你面前算账；他说如果这次能活下来，想开一家正经的店。" },
-  { id: "kassian_deep", who: "kassian", kind: "friend", when: c => state.act >= 2 && c.approval >= 50,
+  { id: "kassian_deep", who: "kassian", kind: "friend", when: c => state.act === 2 && c.approval >= 50,
     seed: "卡西安在甲板上教船员唱潮歌，唱完把你拉过去。素材：海洋女神的一个关于“放下”的故事；他说他终于能睡着了，因为有人在身边；他给你编了一条贝壳护身符。" },
   { id: "borin_deep", who: "borin", kind: "friend", when: c => state.act >= 2 && c.approval >= 50,
     seed: "博林在火边教你铁炉堡战歌的第一段，跑调跑得理直气壮。素材：矮人怎么记住死去的人；他说你是他“选的家人”；他想等这一切结束，带你去看铁炉堡的山。" },
@@ -3491,13 +3499,13 @@ const CAMP_EVENTS = [
   { id: "vex_act2_coins", who: "vex", kind: "friend", when: c => state.act === 2 && c.approval >= 30,
     seed: "维克斯在船舱里数钱，数到一半停下来笑，说这是他从小的毛病：越紧张越要数清楚自己有多少。素材：他讲小时候和莉丝在码头捡贝壳换铜板；他第一次说“这次我不打算跑”；他问你，等这一切结束，有没有可能开一家不卖赃货的店。不要替他做决定。" },
   { id: "vex_act3_dull_blade", who: "vex", kind: "friend", when: c => state.act === 3 && c.approval >= 30,
-    seed: "围城里的维克斯把飞刀一把把磨过，最钝的那把留给自己。素材：他把莉丝（如果还活着）托付给玛莎，嘴上说“她比我会活”；他第一次没开玩笑地说“如果我回不来，别让她等”；他问你借一枚铜板，说以后还你两枚。你可以借，也可以问他为什么。" },
+    seed: "围城里的维克斯把飞刀一把把磨过，最钝的那把留给自己。素材：他把莉丝（如果还在）托付给玛莎（她不在了就托付给小汤姆），嘴上说“她比我会活”；他第一次没开玩笑地说“如果我回不来，别让她等”；他问你借一枚铜板，说以后还你两枚。你可以借，也可以问他为什么。" },
   { id: "kassian_act2_pastry", who: "kassian", kind: "friend", when: c => state.act === 2 && c.approval >= 30,
     seed: "卡西安把最后一点面粉烤成小块，先分给船上的人，自己留最小的那块。素材：他讲自己小时候饿过，饿到吃过船底的木屑；他说神没有回答过他的问题，但他还是每天祈祷；他问你，一双杀过人的手还能不能做点心。不要替他回答。" },
   { id: "kassian_act3_prayer", who: "kassian", kind: "friend", when: c => state.act === 3 && c.approval >= 30,
     seed: "避难所里伤员太多，卡西安从早忙到晚，手上全是血，还在对每个人说“没事”。素材：他第一次承认自己也怕；他给将死的人念同一段祷词，念到嗓子哑；他请你替他照看一会儿伤员，自己想到外面站一站，又怕走了就没人管。你可以留下，也可以陪他出去。" },
   { id: "borin_act2_stone", who: "borin", kind: "friend", when: c => state.act === 2 && c.approval >= 30,
-    seed: "博林在甲板上哼铁炉堡战歌，跑调跑得理直气壮，被赛勒涅说了一句。他笑着道歉，转身却沉默了很久。素材：铁炉堡陷落那天他不在城里，他在外面酿酒；他记得哥哥教他的第一段战歌怎么唱；他说矮人的记忆都在石头和酒里，石头没了，就只剩酒。他问你，这算不算一种逃。" },
+    seed: "博林在甲板上哼铁炉堡战歌，跑调跑得理直气壮，被赛勒涅说了一句。他笑着道歉，转身却沉默了很久。素材：铁炉堡陷落那天他在城里，却被哥哥推上了最后一辆逃难的马车，他到现在都不愿讲那天；他记得哥哥教他的第一段战歌怎么唱；他说矮人的记忆都在石头和酒里，石头没了，就只剩酒。他问你，这算不算一种逃。" },
   { id: "borin_act3_rainwater", who: "borin", kind: "friend", when: c => state.act === 3 && c.approval >= 30,
     seed: "博林把分到的酒都让给伤员，自己喝雨水，还说“这水够劲”。素材：他给避难所的孩子讲铁炉堡的故事，讲得比平时夸张；他说等打完要重建酒馆的地窖，第一桶酒请你喝；他第一次提起哥哥时没有用笑话遮掩。你可以陪他喝那碗雨水，也可以去找点真的酒。" },
   { id: "lyra_act2_names", who: "lyra", kind: "friend", when: c => state.act === 2 && c.approval >= 30,
@@ -3513,35 +3521,35 @@ const CAMP_EVENTS = [
   { id: "selene_lovers2", who: "selene", kind: "romance", when: c => state.act >= 2 && ["together", "vowed"].includes(c.romance),
     seed: "月下的甲板（或者被围的港口里一个难得安静的屋顶），赛勒涅教你骑士的誓词，然后自己改了几个字，变成说给你一个人听的。素材：她说她不再是谁的剑，只是选了站在你身边；亲吻要等她先靠过来。" },
   { id: "vex_lovers2", who: "vex", kind: "romance", when: c => state.act >= 2 && ["together", "vowed"].includes(c.romance),
-    seed: "维克斯拉你爬上桅杆顶（或者屋顶）看烟火——他偷偷买的，花光了身上所有的钱。素材：他说从来没有人等过他，现在他想每天都被等；他油嘴滑舌，手却在抖。" },
+    seed: "这次维克斯没买烟火，只带了一瓶酒和一把旧钥匙，说是他在港口租下的一间小屋，“打完仗总得有个地方回”。素材：他想每天都被等，也想学着等你；他油嘴滑舌，手却在抖。" },
   { id: "kassian_lovers2", who: "kassian", kind: "romance", when: c => state.act >= 2 && ["together", "vowed"].includes(c.romance),
-    seed: "海边的篝火，卡西安替你包扎今天的伤，然后很久都没有松开你的手。素材：他唱完一整首潮歌，最后一句改成了你的名字；他问你能不能把以后的日子也交给他照顾。" },
+    seed: "卡西安在灶边给你做了一份只有你们俩知道的点心，说是他母亲的方子，从没给第二个人做过。素材：他讲他想象中以后的一天是怎么过的；他问你能不能把以后的日子也交给他照顾。" },
   { id: "borin_lovers2", who: "borin", kind: "romance", when: c => state.act >= 2 && ["together", "vowed"].includes(c.romance),
     seed: "博林今晚滴酒未沾，郑重地把一枚矮人的铁指环放在你手心。素材：矮人的指环要自己打；他说喝醉时说的话都是真的，清醒时也一样；他会脸红到耳朵根。" },
   { id: "lyra_lovers2", who: "lyra", kind: "romance", when: c => state.act >= 2 && ["together", "vowed"].includes(c.romance),
-    seed: "深夜研究印记，莉拉发现你们两人的印记在靠近时会一起发光，她把这写成了一篇“学术报告”念给你听。素材：报告的结论是她离不开你；她念到一半自己先恼羞成怒。" },
+    seed: "莉拉把一份写了一半的论文塞给你看，致谢里有一行被涂掉又重写了三遍，是你的名字。素材：她假装那只是“学术惯例”；她问你战后愿不愿意给她当一辈子的“对照组”，说完自己先恼羞成怒。" },
   { id: "naia_lovers2", who: "naia", kind: "romance", when: c => state.act >= 2 && ["together", "vowed"].includes(c.romance),
     seed: "她今晚用了一张谁都没见过的脸来找你——她说这是她想了很久、想给自己的脸。素材：她问你喜不喜欢；她说如果哪天她又被收走，希望你记得这张脸。" },
 
   // —— 第二、三幕的群戏 ——
   { id: "act2_sea", group: true, kind: "main", title: "海上的夜", when: () => state.act === 2 && !!SCENES[state.scene].act && state.scene !== "act2_temple",
-    seed: "雾海上的夜，船随浪轻轻摇，远处偶尔有不知名的东西发光。大家挤在甲板或船舱里，有人晕船，有人在钓鱼，有人在望着雾里的龙骨群岛。说说这几天看到的事：海妖、幽灵船、岛上的东西，和越来越近的神殿。" },
+    seed: "雾海上的夜，船随浪轻轻摇，远处偶尔有不知名的东西发光。大家挤在甲板或船舱里，有人晕船，有人在钓鱼，有人在望着雾里的龙骨群岛。说说这几天海上遇到的怪事（只说真的遇到过的）、岛上的东西，和越来越近的神殿。" },
   { id: "act3_war", group: true, kind: "main", title: "战火里的酒馆", when: () => state.act === 3 && state.scene !== "act3_whisper",
     seed: "被围的灰帆港，醉龙酒馆挤满了避难的人。外面还有零星的喊杀声，烬冠山的方向一片红光。同伴们在给伤员帮忙、擦武器、写信。有人说起要是活下来想做什么，有人说起已经不在的人。" },
   { id: "selene_naia_masks", pair: ["selene", "naia"], kind: "banter", title: "面具与誓言",
     seed: "赛勒涅问奈雅：一个可以随时换脸的人，怎么守得住誓言？奈雅反问：一个守了一百年誓言的人，知不知道自己原来长什么样？两个人都被问住了，转头看你。" },
   { id: "vex_borin_family", pair: ["vex", "borin"], kind: "banter", title: "当哥哥的人",
-    seed: "维克斯和博林喝着酒比谁的手足更让人操心：一个有个倔脾气的妹妹，一个有个变成怪物的哥哥。比着比着都不说话了，然后博林大笑着又倒了一杯。" },
+    seed: "维克斯和博林喝着酒比谁的手足更让人操心：一个有个倔脾气的妹妹，一个有个让人操心的哥哥（博林知道多少就说多少：以为他死了、知道他被教团改造、还是已经把他唤醒）。比着比着都不说话了，然后博林大笑着又倒了一杯。" },
   { id: "lyra_naia_research", pair: ["lyra", "naia"], kind: "banter", title: "变形的原理",
     seed: "莉拉缠着奈雅研究形变者的变形原理，拿着笔记本追问个不停；奈雅故意变成莉拉的样子回答她，把莉拉气得跳脚。" },
   { id: "kassian_selene_mercy", pair: ["kassian", "selene"], kind: "banter", title: "宽恕与审判",
     seed: "卡西安和赛勒涅为该不该宽恕一个投降的教团信徒争了起来：一个相信人可以回头，一个相信罪要有人承担。两人都很克制，但谁也说服不了谁，等你说一句话。" },
-  { id: "borin_lyra_axe", pair: ["borin", "lyra"], kind: "banter", title: "符文与咒语",
+  { id: "borin_lyra_axe", pair: ["borin", "lyra"], kind: "banter", title: "符文与咒语", when: () => !!state.flags["act1.darin_axe"],
     seed: "莉拉对达林战斧上的矮人符文很感兴趣，想拓下来研究；博林舍不得让人碰哥哥的斧子，最后还是一边嘟囔一边教她念符文的发音。" },
 
   // —— DS：缺的同伴对手戏 ——
   { id: "selene_borin_oath", pair: ["selene", "borin"], kind: "banter", title: "誓言与酒",
-    seed: "赛勒涅把博林的酒袋从篝火边踢开，说守夜的人不该喝成这样；博林拍着酒袋笑，说矮人血管里流的本来就是麦酒。说笑到后来，赛勒涅问他：你哥哥战死那晚，你也是这么笑着喝完一整桶的吗？博林的笑僵了一下，又用更大的声音盖过去。要你表态。" },
+    seed: "赛勒涅把博林的酒袋从篝火边踢开，说守夜的人不该喝成这样；博林拍着酒袋笑，说矮人血管里流的本来就是麦酒。说笑到后来，赛勒涅问他：你以为哥哥死了的那晚，你也是这么笑着喝完一整桶的吗？（若博林已经唤醒了达林，quest.borin=woke，改问：你把他唤醒以后，怎么还喝得这么凶？）博林的笑僵了一下，又用更大的声音盖过去。要你表态。" },
   { id: "vex_kassian_coin", pair: ["vex", "kassian"], kind: "banter", title: "偷来的祝福",
     seed: "维克斯顺手摸走卡西安的圣徽，想逗他发火；卡西安没有生气，反而抓住他的手看他掌心的旧伤，替他包好，说“下次缺钱就开口”。维克斯受不了这种好，故意说了几句难听的。你可以替维克斯圆场，也可以让他自己面对。" },
   { id: "vex_lyra_scale", pair: ["vex", "lyra"], kind: "banter", title: "假龙鳞与真研究",
@@ -3611,7 +3619,7 @@ function eventFor(id) { return CAMP_EVENTS.find(e => e.id === id) || loverTalks(
 // 每晚的事件安排：重要事件只挑一个；群戏可以有好几个
 function planNight() {
   const seen = new Set(state.campSeen || []), here = campers();
-  const ok = e => !seen.has(e.id) && (e.group ? e.when() : e.pair ? e.pair.every(id => here.includes(id)) : here.includes(e.who) && e.when(state.companions[e.who]));
+  const ok = e => !seen.has(e.id) && (e.group ? e.when() : e.pair ? e.pair.every(id => here.includes(id)) && (!e.when || e.when()) : here.includes(e.who) && e.when(state.companions[e.who]));
   const important = [...CAMP_EVENTS.filter(e => !LISTED.includes(e.kind)), ...loverTalks()].filter(ok).sort((a, b) => KIND_ORDER[a.kind] - KIND_ORDER[b.kind])[0];
   return { important: important?.id || null, banter: CAMP_EVENTS.filter(e => LISTED.includes(e.kind) && ok(e)).map(e => e.id) };
 }
@@ -5143,7 +5151,7 @@ function openJournal() {
       s.append(el("div", "label", "支线"));
       for (const [id, q] of sides) {
         const st = state.flags[`side.${id}`], d = el("div", "slot"), t = el("div");
-        t.append(el("b", null, `《${q.name}》 · ${st === "done" ? "完成" : st === "failed" ? "失败" : "进行中"}`), el("div", "meta", st === "taken" ? q.goal.replace(/（act\d_\w+）|\s?act\d_\w+/g, "") : st === "done" ? "奖励：" + q.rewardText : ""));
+        t.append(el("b", null, `《${q.name}》 · ${st === "done" ? "完成" : st === "failed" ? "失败" : "进行中"}`), el("div", "meta", st === "taken" ? (q.task || q.goal).replace(/（act\d_\w+）|\s?act\d_\w+|（[^）]*\b[a-z]\w*\.[\w.]+[^）]*）/g, "") : st === "done" ? "奖励：" + q.rewardText : ""));
         d.append(t); s.append(d);
       }
     }

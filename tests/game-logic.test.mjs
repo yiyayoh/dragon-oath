@@ -888,8 +888,9 @@ test('DS 第三轮：勇气幻象八背景、真相秘密六同伴、老鳗链�
     const missing = ids.filter(id => !SIDE[id]);
     const badAt = ids.flatMap(id => (SIDE[id]?.at || []).filter(a => !SCENES[a]).map(a => id + ':' + a));
     const badReward = ids.filter(id => !SIDE[id]?.reward || !SIDE[id]?.rewardText);
-    const badItems = ids.flatMap(id => (SIDE[id]?.reward?.items || []).filter(n => !ITEMS[n] && n !== '黑潮会的账本').map(n => id + ':' + n));
-    const eelDealNeed = Object.prototype.hasOwnProperty.call(SIDE.eel_deal, 'need');
+    const badItems = ids.flatMap(id => (SIDE[id]?.reward?.items || []).filter(n => !ITEMS[n] && n !== '黑潮会账本的抄本').map(n => id + ':' + n));
+    // 老鳗的最后一笔只在老鳗被卡西安杀死时不出现（校对报告规则-1），其他时候不能被挡住
+    const kq=state.flags['quest.kassian'];state.flags['quest.kassian']=undefined;const eelDealNeed=!!SIDE.eel_deal.need&&!SIDE.eel_deal.need();state.flags['quest.kassian']='killed_eel';const eelDealDead=!SIDE.eel_deal.need||SIDE.eel_deal.need();state.flags['quest.kassian']=kq;
 
     state.flags['act1.eel'] = 'enemy'; delete state.flags['quest.kassian'];
     const enemy = SIDE.eel_clerk.need();
@@ -907,7 +908,7 @@ test('DS 第三轮：勇气幻象八背景、真相秘密六同伴、老鳗链�
     const step3After = SIDE.eel_last_crew.need();
     state.flags['quest.kassian'] = 'killed_eel';
     const step3Killed = SIDE.eel_last_crew.need();
-    return { bgKeys, fearKeys, badFears, extraFears, badSecrets, extraSecrets, fearHit, trial, missing, badAt, badReward, badItems, eelDealNeed, enemy, deal, killed, step2Before, step2After, step3Before, step3After, step3Killed };
+    return { bgKeys, fearKeys, badFears, extraFears, badSecrets, extraSecrets, fearHit, trial, missing, badAt, badReward, badItems, eelDealNeed, eelDealDead, enemy, deal, killed, step2Before, step2After, step3Before, step3After, step3Killed };
   })()`);
   assert.equal(result.bgKeys, 'acolyte,entertainer,noble,outlander,sage,sailor,soldier,urchin');
   assert.equal(result.fearKeys, result.bgKeys);
@@ -918,6 +919,7 @@ test('DS 第三轮：勇气幻象八背景、真相秘密六同伴、老鳗链�
   assert.deepEqual(result.missing, []); assert.deepEqual(result.badAt, []);
   assert.deepEqual(result.badReward, []); assert.deepEqual(result.badItems, []);
   assert.equal(result.eelDealNeed, false);
+  assert.equal(result.eelDealDead, false);
   assert.equal(result.enemy, false); assert.equal(result.deal, true); assert.equal(result.killed, false);
   assert.equal(result.step2Before, false); assert.equal(result.step2After, true);
   assert.equal(result.step3Before, false); assert.equal(result.step3After, true); assert.equal(result.step3Killed, false);
@@ -939,4 +941,32 @@ test('立绘：龙化 40 / 80 换变体图（排在表情前面），第二个�
   assert.equal(result.naiaMasked, 'portraits/naia_disguise.webp');
   assert.equal(result.dragon, 'portraits/hestia_dragon.webp'); assert.equal(result.human, 'portraits/hestia_neutral.webp');
   assert.equal(result.arden, 'arden'); assert.equal(result.note, true);
+});
+
+test('校对报告修复：人质死的是谁、支线前置条件、关键场景之后不再出旧的暧昧事件、对手戏条件、日志不剧透、七人之誓要救回被掳的人', () => {
+  const run = game();
+  const result = run(`(() => {
+    state=newGame(freshDraft());state.act=3;state.flags['act1.martha_alive']=false;state.flags['act1.hostage']='tom';
+    const tomDead={keeper:tavernKeeper(),letter:SIDE.martha_last_letter.need.length===0&&(state.flags['side.martha_letters']='done',SIDE.martha_last_letter.need()),courage:(state.flags['side.tom_errand']='done',SIDE.tom_courage.need()),note:buildPrompt('x').includes('人质小汤姆没能救回来')};
+    state.flags['act1.hostage']='martha';const marthaDead={keeper:tavernKeeper(),letter:SIDE.martha_last_letter.need()};
+    state=newGame(freshDraft());state.act=1;
+    const needs={relic:SIDE.martha_relic.need(),eye:SIDE.cult_eye.need(),rat:SIDE.rat_nest.need()};
+    state.flags['act1.chart']='opened';state.flags['act1.deacon']='informant';state.flags['prologue.rat_king']='spared';
+    const needs2={relic:SIDE.martha_relic.need(),eye:SIDE.cult_eye.need(),rat:SIDE.rat_nest.need()};
+    state.scene='act1_hub';const s=state.companions.selene;s.recruited=true;s.approval=45;state.companions.borin.recruited=true;state.companions.lyra.recruited=true;
+    state.campSeen=['act1_home','selene_scene'];const afterScene=planNight().important;
+    const axe1=planNight().banter.includes('borin_lyra_axe');state.flags['act1.darin_axe']=true;const axe2=planNight().banter.includes('borin_lyra_axe');
+    const journal=SIDE.watch_mole.task.includes('霍布')||SIDE.cult_eye.task.includes('灰须');
+    state=newGame(freshDraft());state.act=3;for(const id of Object.keys(COMPANIONS)){const c=state.companions[id];c.recruited=true;c.approval=50;}
+    state.companions.lyra.taken=true;state.companions.lyra.recruited=false;const seven=ENDINGS.seven.need();
+    return {tomDead,marthaDead,needs,needs2,afterScene,axe1,axe2,journal,seven};
+  })()`);
+  assert.deepEqual(result.tomDead, { keeper: '玛莎', letter: true, courage: false, note: true });
+  assert.deepEqual(result.marthaDead, { keeper: '小汤姆', letter: false });
+  assert.deepEqual(result.needs, { relic: false, eye: false, rat: false });
+  assert.deepEqual(result.needs2, { relic: true, eye: true, rat: true });
+  assert.notEqual(result.afterScene, 'selene_hint');
+  assert.equal(result.axe1, false); assert.equal(result.axe2, true);
+  assert.equal(result.journal, false);
+  assert.ok(result.seven.includes('被掳走的同伴已经救回来'));
 });
