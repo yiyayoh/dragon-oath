@@ -299,3 +299,49 @@ test('烬卫达林：熔炉给他回血，博林的战歌唤醒他', () => {
   })()`);
   assert.deepEqual(result, { healed: 100, out: 'awakened', flag: 'woke', result: 'victory' });
 });
+
+test('第三幕：盟友按标记算，赞同低又没了结个人任务的同伴在最后一夜背叛，攻山路线和说服主教有条件', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};state=newGame(freshDraft());state.act=3;state.scene='act3_council';
+    for(const id of ['selene','vex','kassian']) state.companions[id].recruited=true;
+    state.companions.vex.approval=-10;state.companions.kassian.approval=-10;state.flags['quest.kassian']='spared';
+    state.flags['act1.sath_trust']=true;state.flags['act2.darin']='woke';
+    const allyNames=allies().map(a=>a.id);const line=buildPrompt('开会').includes('盟友（程序按之前的选择算出，共 2 方）');
+    applyGM({advance:'act3_whisper'});
+    const betrayed={vex:!!state.companions.vex.betrayed,kassian:!!state.companions.kassian.betrayed,party:party().sort()};
+    state.scene='act3_climb';applyGM({flags:{'act3.route':'wings'}});const wings=state.flags['act3.route']??null;
+    applyGM({flags:{'act3.route':'charge'}});const charge=state.flags['act3.route'];
+    state.scene='act3_altar';applyGM({flags:{'act3.valdo':'convinced'}});const noProof=state.flags['act3.valdo']??null;
+    state.flags['act2.eve']=true;state.flags['quest.selene.diary']=true;applyGM({flags:{'act3.valdo':'convinced','act3.ending':'crown'}});
+    return {allyNames,line,betrayed,wings,charge,noProof,valdo:state.flags['act3.valdo'],ending:state.flags['act3.ending']??null};
+  })()`);
+  assert.deepEqual(result, { allyNames: ['watch', 'darin'], line: true, betrayed: { vex: true, kassian: false, party: ['kassian', 'selene'] },
+    wings: null, charge: 'charge', noProof: null, valdo: 'convinced', ending: null });
+});
+
+test('烬王：低语、升空后近战够不着、盟友压制、坠落时进入最终抉择，选完进入终章', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};openFinal=()=>{};render=()=>{};state=newGame(freshDraft());state.act=3;state.scene='act3_king';levelUp(12);
+    state.companions.selene.recruited=true;state.flags['act1.sath_trust']=true;
+    startCombat('ember_king');const c=state.combat,k=Object.values(c.units).find(u=>u.type==='ember_king');
+    k.hp=150;kingTurn(k);const air={aloft:k.aloft,grounded:k.grounded,allies:c.allies.length};
+    kingTurn(k);const noMelee=validTarget({kind:'attack',w:0},k)===false||state.combat.units.player.weapons[0].ranged;
+    hurt(k,60);const result=combatResult();endCombat(result);
+    const pending=!!state.pendingFinal;const egg=ENDINGS.egg.need().length>0, crown=ENDINGS.crown.need().length===0;
+    chooseEnding('crown');
+    return {air,noMelee,result,pending,egg,crown,scene:state.scene,ending:state.flags['act3.ending']};
+  })()`);
+  assert.deepEqual(result, { air: { aloft: true, grounded: true, allies: 0 }, noMelee: true, result: 'final', pending: true, egg: true, crown: true, scene: 'act3_end', ending: 'crown' });
+});
+
+test('最终战失败就是港口陷落', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};render=()=>{};state=newGame(freshDraft());state.act=3;state.scene='act3_king';levelUp(12);
+    startCombat('ember_king');for(const u of Object.values(state.combat.units)) if(u.side==='party'){u.hp=0;u.down=true;}
+    endCombat(combatResult());return {ending:state.flags['act3.ending'],scene:state.scene,over:!!state.gameOver};
+  })()`);
+  assert.deepEqual(result, { ending: 'fall', scene: 'act3_end', over: false });
+});

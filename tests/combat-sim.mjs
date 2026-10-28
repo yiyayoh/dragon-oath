@@ -39,14 +39,15 @@ hurt = function(u, n, o) {
   if (u.type === 'cultist' && !wasDead && u.dead && state.combat.round === 1) simCultistFirst++;
   return result;
 };
-globalThis.simulate = function(id, level, scene, away = []) {
+globalThis.simulate = function(id, level, scene, away = [], allyFlags = {}) {
   const d = freshDraft(); d.cls = 'paladin'; d.race = 'half_orc'; classPreset(d);
-  state = newGame(d); state.act = id === 'tavern_ambush' ? 0 : scene.startsWith('act2') ? 2 : 1; state.scene = scene;
+  state = newGame(d); state.act = id === 'tavern_ambush' ? 0 : scene.startsWith('act3') ? 3 : scene.startsWith('act2') ? 2 : 1; state.scene = scene;
   for (const id of ['selene', 'kassian', 'borin']) state.companions[id].recruited = true;
   if (id === 'tower_spies' || id.startsWith('docks')) state.companions.borin.recruited = false; // 场景里遇到莉拉或维克斯，仍为四人
   if (id === 'tavern_ambush') state.companions.vex.taken = true; // 序幕在场者自动参战，控制为四人
   levelUp(level);
   if (state.pendingAsi) applyAsi({ str: 2 });
+  Object.assign(state.flags, allyFlags); // 第三幕的盟友由标记算出
   if (away.length) state.split = { scene, away, text: '' }; // 灯塔之夜分头行动：去码头的人不参战
   simDown = 0; simDownFirst = 0; simCultistFirst = 0;
   startCombat(id);
@@ -58,13 +59,13 @@ globalThis.simulate = function(id, level, scene, away = []) {
     if (u.dead || u.out) { nextTurn(); continue; }
     beginTurn(u);
     if (combatResult()) break;
-    if (ACTIVE(u)) (u.side === 'party' ? allyTurn : foeTurn)(u);
+    if (ACTIVE(u) && !u.skip) (u.side === 'party' ? allyTurn : foeTurn)(u);
     nextTurn();
   }
   result ||= combatResult();
   if (!result) throw new Error(id + ': 战斗未结束');
   const us = Object.values(c.units).filter(u => u.side === 'party');
-  return { win: result === 'victory' && !c.units.player.dead, result, rounds: c.round,
+  return { win: (result === 'victory' || result === 'final') && !c.units.player.dead, result, rounds: c.round,
     down: simDown, firstDown: simDownFirst, firstCultists: simCultistFirst,
     died: us.some(u => u.dead), playerDied: !!c.units.player.dead };
 };`, context, { filename: 'dragon-oath-battle.js' });
@@ -85,12 +86,18 @@ const scenarios = [
   ['darin_forge', 7, 'act2_ember'], ['darin_forge', 8, 'act2_ember'],
   ['mist_kraken', 7, 'act2_mist'], ['mist_kraken', 8, 'act2_mist'],
   ['temple_raid', 9, 'act2_temple'],
+  ['harbor_wyrmling', 10, 'act3_1'],
+  ['ember_slope', 11, 'act3_climb'],
+  ['valdo_altar', 11, 'act3_altar'],
+  ['ember_king', 12, 'act3_king', [], { 'act1.sath_trust': true, 'act2.tideborn': 'ally' }],
+  ['ember_king', 12, 'act3_king', [], { 'act1.sath_trust': true, 'act2.tideborn': 'ally', 'act2.darin': 'woke', 'prologue.rat_king': 'spared' }],
+  ['ember_king', 12, 'act3_king'],
 ].filter(([id]) => !only || id === only);
 if (!scenarios.length) throw new Error('未知遭遇：' + only);
-const results = scenarios.map(([id, level, scene, away = []]) => {
-  const rows = Array.from({ length: runs }, () => context.simulate(id, level, scene, away));
+const results = scenarios.map(([id, level, scene, away = [], allyFlags = {}]) => {
+  const rows = Array.from({ length: runs }, () => context.simulate(id, level, scene, away, allyFlags));
   const avg = key => rows.reduce((n, r) => n + (Number(r[key]) || 0), 0) / runs;
-  return { id: id + (away.length ? `（${4 - away.length} 人）` : ''), level, runs, winRate: avg('win'), avgRounds: avg('rounds'), avgDown: avg('down'), deathRate: avg('died'), playerDeathRate: avg('playerDied'), avgFirstCultists: avg('firstCultists'), avgFirstDown: avg('firstDown') };
+  return { id: id + (away.length ? `（${4 - away.length} 人）` : '') + (id === 'ember_king' ? `（${Object.keys(allyFlags).length} 方盟友）` : ''), level, runs, winRate: avg('win'), avgRounds: avg('rounds'), avgDown: avg('down'), deathRate: avg('died'), playerDeathRate: avg('playerDied'), avgFirstCultists: avg('firstCultists'), avgFirstDown: avg('firstDown') };
 });
 if (args.includes('--json')) console.log(JSON.stringify({ seed, results }, null, 2));
 else console.table(results.map(r => ({ 遭遇: r.id, 等级: r.level, 局数: r.runs, 胜率: (r.winRate * 100).toFixed(1) + '%', 平均回合: r.avgRounds.toFixed(2), 平均倒地: r.avgDown.toFixed(2), 阵亡比例: (r.deathRate * 100).toFixed(1) + '%', 首回合狂信徒死亡: r.avgFirstCultists.toFixed(2), 首回合倒地: r.avgFirstDown.toFixed(2) })));
