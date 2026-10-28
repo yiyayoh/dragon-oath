@@ -281,11 +281,13 @@ test('第二幕：岛屿升级、神殿要钥匙、誓约之心与主教掳人�
     state.flags['quest.vex.egg']=true;applyGM({flags:{'act2.egg_warmed':2}});const skip=state.flags['act2.egg_warmed']??0;
     applyGM({flags:{'act2.egg_warmed':1}});applyGM({flags:{'act2.egg_warmed':2}});const warmed=state.flags['act2.egg_warmed'];
     applyGM({flags:{'act2.temple_key':'stolen'}});applyGM({advance:'act2_temple'});
+    applyGM({advance:'act2_temple_truth'});const blocked=state.scene;
+    applyGM({flags:{'act2.trial_courage':true},advance:'act2_temple_truth'});applyGM({flags:{'act2.trial_truth':true},advance:'act2_temple_heart'});
     applyGM({flags:{'act2.heart':'destroyed'}});const noTide=state.flags['act2.heart']??null;
     applyGM({advance:'act2_end'});
-    return {locked,level,skip,warmed,noTide,heart:state.flags['act2.heart'],taken:state.flags['act2.taken'],gone:!party().includes('kassian'),scene:state.scene};
+    return {locked,blocked,level,skip,warmed,noTide,heart:state.flags['act2.heart'],taken:state.flags['act2.taken'],gone:!party().includes('kassian'),scene:state.scene};
   })()`);
-  assert.deepEqual(result, { locked: 'act2_hub', level: 9, skip: 0, warmed: 2, noTide: null, heart: 'cult', taken: 'kassian', gone: true, scene: 'act2_end' });
+  assert.deepEqual(result, { locked: 'act2_hub', blocked: 'act2_temple', level: 9, skip: 0, warmed: 2, noTide: null, heart: 'cult', taken: 'kassian', gone: true, scene: 'act2_end' });
 });
 
 test('烬卫达林：熔炉给他回血，博林的战歌唤醒他', () => {
@@ -344,4 +346,80 @@ test('最终战失败就是港口陷落', () => {
     endCombat(combatResult());return {ending:state.flags['act3.ending'],scene:state.scene,over:!!state.gameOver};
   })()`);
   assert.deepEqual(result, { ending: 'fall', scene: 'act3_end', over: false });
+});
+
+test('第一幕的小场景：货舱要先知道债、舞会要请柬；小场景不算升级的地点', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};state=newGame(freshDraft());state.act=1;state.scene='act1_hub';levelUp(2);
+    applyGM({advance:'act1_docks'});applyGM({advance:'act1_docks_hold'});const hold=state.scene;
+    applyGM({flags:{'act1.debt_known':true},advance:'act1_docks_hold'});const hold2=state.scene;
+    applyGM({advance:'act1_docks_casino'});applyGM({advance:'act1_docks_arena'});applyGM({advance:'act1_hub'});
+    applyGM({advance:'act1_manor'});applyGM({advance:'act1_manor_ball'});const ball=state.scene;
+    applyGM({flags:{'act1.invite':'bought'},advance:'act1_manor_ball'});const ball2=state.scene;
+    applyGM({advance:'act1_manor_vault'});applyGM({advance:'act1_hub'});
+    return {hold,hold2,ball,ball2,level:state.player.level,market:nextOf(SCENES.act1_hub).includes('act1_market')};
+  })()`);
+  assert.deepEqual(result, { hold: 'act1_docks', hold2: 'act1_docks_hold', ball: 'act1_manor', ball2: 'act1_manor_ball', level: 3, market: true });
+});
+
+test('支线：在对的场景能接，先接下才能完成，完成时代码发奖励', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};state=newGame(freshDraft());state.act=1;state.scene='act1_market';
+    const offer=buildPrompt('看看').includes('《寡妇的渔船》（side.widow_boat）');
+    applyGM({flags:{'side.ghost_ring':'done'}});const skip=state.flags['side.ghost_ring']??null;
+    const gold=state.player.gold;applyGM({flags:{'side.ghost_ring':'taken'}});applyGM({flags:{'side.ghost_ring':'done'}});
+    const after={state:state.flags['side.ghost_ring'],gold:state.player.gold-gold,item:state.player.inventory.includes('老海狗的鱼叉')};
+    applyGM({flags:{'side.ghost_ring':'failed'}});
+    state.scene='act1_manor';applyGM({flags:{'side.watch_mole':'taken'}});applyGM({flags:{'side.watch_mole':'done'}});
+    return {offer,skip,after,locked:state.flags['side.ghost_ring'],sath:state.flags['act1.sath_trust']};
+  })()`);
+  assert.deepEqual(result, { offer: true, skip: null, after: { state: 'done', gold: 15, item: true }, locked: 'done', sath: true });
+});
+
+test('营地事件的数据完整：同伴存在、条件能执行', () => {
+  const run = game();
+  const result = run(`(() => {
+    state=newGame(freshDraft());state.act=2;state.scene='act2_hub';
+    const bad=CAMP_EVENTS.filter(e=>{try{ if(e.group) e.when(); else if(e.pair) return !e.pair.every(id=>COMPANIONS[id]); else { if(!COMPANIONS[e.who]) return true; e.when(state.companions[e.who]); } return !e.seed||!KIND_ORDER.hasOwnProperty(e.kind)&&e.kind!=='banter'; }catch(x){return true;}}).map(e=>e.id);
+    const ids=CAMP_EVENTS.map(e=>e.id);return {bad,dup:ids.length-new Set(ids).size,count:ids.length};
+  })()`);
+  assert.deepEqual(result.bad, []); assert.equal(result.dup, 0); assert.ok(result.count >= 55, String(result.count));
+});
+
+test('数据完整：出口、遭遇、支线地点、个人任务标记都指向存在的东西', () => {
+  const run = game();
+  const result = run(`(() => {
+    const bad=[];
+    for(const [id,sc] of Object.entries(SCENES)){
+      for(const n of nextOf(sc)) if(!SCENES[n]) bad.push(id+' → '+n);
+      for(const e of sc.encounters||[]) if(!ENCOUNTERS[e]) bad.push(id+' 遭遇 '+e);
+      for(const g of Object.keys(sc.gate||{})) if(!nextOf(sc).includes(g)) bad.push(id+' gate '+g);
+      if(sc.campNext&&!SCENES[sc.campNext]) bad.push(id+' campNext');
+      if(sc.after&&!SCENES[sc.after]) bad.push(id+' after');
+      for(const m of (sc.anchor.match(/act\d_[a-z_]+(?= |；|）|，|。|$)/g)||[])) if(!SCENES[m]&&!FLAG_KEYS[m]&&!/^act\d_$/.test(m)) bad.push(id+' 锚点提到 '+m);
+    }
+    for(const [id,q] of Object.entries(SIDE)) for(const a of q.at) if(!SCENES[a]) bad.push('支线 '+id+' '+a);
+    for(const [id,E] of Object.entries(ENCOUNTERS)) for(const [t] of [...E.foes,...(E.events||[]).flatMap(e=>e.spawn||[])]) if(!ENEMIES[t]) bad.push(id+' 敌人 '+t);
+    return bad;
+  })()`);
+  assert.deepEqual(result, []);
+});
+
+test('第三幕：先救的街区才能去；支线能补出盟友；伊芙的信可以代替证词', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};state=newGame(freshDraft());state.act=3;state.scene='act3_1';
+    applyGM({advance:'act3_docks_fire'});const blocked=state.scene;
+    applyGM({flags:{'act3.saved_first':'docks'},advance:'act3_docks_fire'});const docks=state.scene;
+    const before=allies().length;
+    state.flags['side.ward_stones']='done';state.flags['act1.eel']='enemy';state.scene='act3_haven';
+    applyGM({flags:{'side.eel_deal':'taken'}});applyGM({flags:{'side.eel_deal':'done'}});
+    const after=allies().map(a=>a.id).sort();
+    state.scene='act3_altar';state.flags['quest.selene.diary']=true;state.flags['side.eve_letter']='done';
+    applyGM({flags:{'act3.valdo':'convinced'}});
+    return {blocked,docks,before,after,valdo:state.flags['act3.valdo']};
+  })()`);
+  assert.deepEqual(result, { blocked: 'act3_1', docks: 'act3_docks_fire', before: 0, after: ['academy', 'tide'], valdo: 'convinced' });
 });

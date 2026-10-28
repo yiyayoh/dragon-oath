@@ -73,6 +73,7 @@ globalThis.simulate = function(id, level, scene, away = [], allyFlags = {}) {
 const scenarios = [
   ['tavern_ambush', 1, 'prologue_3'],
   ['docks_brawl', 2, 'act1_docks'], ['docks_brawl', 3, 'act1_docks'], ['docks_ship', 3, 'act1_docks'], ['docks_ship', 4, 'act1_docks'],
+  ['arena_bout', 2, 'act1_docks_arena'], ['arena_bout', 3, 'act1_docks_arena'],
   ['tower_spies', 2, 'act1_tower'], ['tower_spies', 3, 'act1_tower'],
   ['wreck_drowned', 3, 'act1_wreck'],
   ['manor_guards', 3, 'act1_manor'], ['manor_guards', 4, 'act1_manor'],
