@@ -249,3 +249,53 @@ test('维克斯独自去交易：赞同不够就带着妹妹和龙蛋消失', ()
   })()`);
   assert.deepEqual(result, { lise: 'saved', gone: true, left: true });
 });
+
+test('第二幕：第一幕结束接到出海，航程每晚一个海上事件，暴风由代码结算', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};state=newGame(freshDraft());state.act=1;state.scene='act1_dawn';state.ended=true;closeModal=()=>{};render=()=>{};
+    state.companions.selene.recruited=true;state.flags['act1.departure_ship']='seagull';
+    nextAct();const start={act:state.act,scene:state.scene,level:state.player.level};
+    state.camp={};restNight(null);const sirenLine=state.log.find(e=>e.k==='sys'&&/海妖之歌/.test(e.t))?.t||'';const siren={scene:state.scene,saves:/=[0-9]+ (成功|失败)/.test(sirenLine)&&!/object/.test(sirenLine)};
+    state.camp={};restNight(null);const ghost=state.scene;
+    state.camp={};restNight(null);const storm={scene:state.scene,flag:state.flags['act2.storm'],clean:!/object|NaN/.test(state.log.filter(e=>e.k==='sys').pop().t)};
+    applyGM({flags:{'act2.storm':'light'},advance:'act2_hub'});
+    return {start,siren,ghost,storm,hub:state.scene,stormKept:state.flags['act2.storm']===storm.flag};
+  })()`);
+  assert.deepEqual(result.start, { act: 2, scene: 'act2_1', level: 6 });
+  assert.deepEqual(result.siren, { scene: 'act2_siren', saves: true });
+  assert.equal(result.ghost, 'act2_ghost');
+  assert.equal(result.storm.scene, 'act2_storm'); assert.ok(result.storm.clean); assert.ok(['light', 'heavy'].includes(result.storm.flag));
+  assert.equal(result.hub, 'act2_hub'); assert.equal(result.stormKept, true);
+});
+
+test('第二幕：岛屿升级、神殿要钥匙、誓约之心与主教掳人、龙蛋计数', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};state=newGame(freshDraft());state.act=2;state.scene='act2_hub';levelUp(6);
+    for(const id of ['selene','vex','kassian']) state.companions[id].recruited=true;
+    state.companions.kassian.approval=50;state.companions.vex.approval=10;
+    applyGM({advance:'act2_temple'});const locked=state.scene;
+    for(const id of ['act2_bone','act2_ember','act2_mist']){applyGM({advance:id});applyGM({advance:'act2_hub'});}
+    const level=state.player.level;
+    state.flags['quest.vex.egg']=true;applyGM({flags:{'act2.egg_warmed':2}});const skip=state.flags['act2.egg_warmed']??0;
+    applyGM({flags:{'act2.egg_warmed':1}});applyGM({flags:{'act2.egg_warmed':2}});const warmed=state.flags['act2.egg_warmed'];
+    applyGM({flags:{'act2.temple_key':'stolen'}});applyGM({advance:'act2_temple'});
+    applyGM({flags:{'act2.heart':'destroyed'}});const noTide=state.flags['act2.heart']??null;
+    applyGM({advance:'act2_end'});
+    return {locked,level,skip,warmed,noTide,heart:state.flags['act2.heart'],taken:state.flags['act2.taken'],gone:!party().includes('kassian'),scene:state.scene};
+  })()`);
+  assert.deepEqual(result, { locked: 'act2_hub', level: 9, skip: 0, warmed: 2, noTide: null, heart: 'cult', taken: 'kassian', gone: true, scene: 'act2_end' });
+});
+
+test('烬卫达林：熔炉给他回血，博林的战歌唤醒他', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};state=newGame(freshDraft());state.act=2;state.scene='act2_ember';levelUp(7);state.companions.borin.recruited=true;
+    startCombat('darin_forge');const c=state.combat,d=Object.values(c.units).find(u=>u.type==='darin');
+    const forge=Object.values(c.units).find(u=>u.type==='forge');d.hp=90;foeTurn(forge);const healed=d.hp;
+    rollD20=()=>20;const b=c.units.borin;for(let i=0;i<3;i++){c.res={move:1,action:true,bonus:true};allyTurn(b);}
+    return {healed,out:d.out,flag:state.flags['act2.darin'],result:combatResult()};
+  })()`);
+  assert.deepEqual(result, { healed: 100, out: 'awakened', flag: 'woke', result: 'victory' });
+});

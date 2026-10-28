@@ -41,7 +41,7 @@ hurt = function(u, n, o) {
 };
 globalThis.simulate = function(id, level, scene, away = []) {
   const d = freshDraft(); d.cls = 'paladin'; d.race = 'half_orc'; classPreset(d);
-  state = newGame(d); state.act = id === 'tavern_ambush' ? 0 : 1; state.scene = scene;
+  state = newGame(d); state.act = id === 'tavern_ambush' ? 0 : scene.startsWith('act2') ? 2 : 1; state.scene = scene;
   for (const id of ['selene', 'kassian', 'borin']) state.companions[id].recruited = true;
   if (id === 'tower_spies' || id.startsWith('docks')) state.companions.borin.recruited = false; // 场景里遇到莉拉或维克斯，仍为四人
   if (id === 'tavern_ambush') state.companions.vex.taken = true; // 序幕在场者自动参战，控制为四人
@@ -79,6 +79,12 @@ const scenarios = [
   ['lighthouse', 5, 'act1_lighthouse'],
   ['lighthouse', 5, 'act1_lighthouse', ['borin']],
   ['lighthouse', 5, 'act1_lighthouse', ['borin', 'kassian']],
+  ['ghost_ship', 6, 'act2_ghost'],
+  ['bone_wyrms', 6, 'act2_bone'], ['bone_wyrms', 7, 'act2_bone'],
+  ['ember_outpost', 7, 'act2_ember'], ['ember_outpost', 8, 'act2_ember'],
+  ['darin_forge', 7, 'act2_ember'], ['darin_forge', 8, 'act2_ember'],
+  ['mist_kraken', 7, 'act2_mist'], ['mist_kraken', 8, 'act2_mist'],
+  ['temple_raid', 9, 'act2_temple'],
 ].filter(([id]) => !only || id === only);
 if (!scenarios.length) throw new Error('未知遭遇：' + only);
 const results = scenarios.map(([id, level, scene, away = []]) => {

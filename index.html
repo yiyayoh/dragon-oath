@@ -387,6 +387,11 @@ const PEOPLE = {
   governor: { name: "艾德蒙总督", title: "灰帆港总督", color: "#3d4f7a" },
   sath: { name: "萨丝", title: "港卫军尉官", color: "#a07a3a" },
   facemother: { name: "千面母", title: "教团间谍头子", color: "#4b3f4f" },
+  darin: { name: "达林", title: "烬卫，博林的哥哥", color: "#8a3a22" },
+  oswald: { name: "奥斯瓦尔德", title: "莉拉的导师", color: "#5a4a6e" },
+  sera: { name: "瑟拉长老", title: "潮裔长老", color: "#3f6a6a" },
+  eve: { name: "伊芙", title: "主教的妹妹", color: "#7a6a5a" },
+  valdo: { name: "主教瓦尔多", title: "灰烬教团领袖", color: "#6b2a20" },
 };
 const naiaTrue = () => !!state?.flags?.["act1.naia_exposed"];
 const EXPRS = ["neutral", "smile", "angry", "sad", "tender"];
@@ -535,15 +540,73 @@ const SCENES = {
   act1_dawn: {
     title: "雾海的黎明", loc: "灰帆港 · 码头", bg: "linear-gradient(160deg,#7d8790,#2d3338 60%,#111416)", camp: false, act: 1, endAct: 1, jail: true,
     anchor: "灯塔之夜过后的清晨。清点代价：人质是否活着、船是否完好（船被炸毁的话，只能找一艘平民渔船出海，航程会更危险）、奈雅的去留。同伴们各自对昨晚的事表态。玛莎（如果活着）把亡夫的守誓人徽记交给你。船准备出港，驶向雾海深处的龙骨群岛。确定实际出海的船时写 act1.departure_ship：black_eel、seagull、stolen 或 fishing（民用渔船）；原先取得的船记录仍保留在 act1.ship。对话 1~3 轮后，把 scene_end 设为 true，第一幕结束。",
+    next: null, endNeeds: { turns: 1 }, after: "act2_1",
+  },
+
+  /* 第二幕：龙骨群岛。航程（每睡一晚一个海上事件）→ 群岛（枢纽）⇄ 三座岛，任意顺序 → 誓约神殿 → 尾声 */
+  act2_1: {
+    title: "出海", loc: "雾海 · 船上", bg: "linear-gradient(160deg,#55687a,#1d2731 60%,#0b1015)", act: 2, campFree: true, campNext: "act2_siren", level: 6,
+    anchor: "船驶出灰帆港，进入雾海。按 act1.departure_ship 写船（black_eel 黑鳗号、seagull 海鸥号、stolen 偷来的船、fishing 民用渔船——渔船又小又破，同伴挤在一起，航程更危险）。航海图上的墨线在雾里会自己微微发光。同伴们各自适应海上的日子：谁晕船、谁在船头发呆、谁和水手赌钱。若维克斯还带着龙蛋（quest.vex.egg 为 true 且 quest.vex 不是 sold），那颗“宝石”开始发热；卡西安的神术或莉拉的火焰可以替它保温，每保温一次写 act2.egg_warmed（在现有次数上加 1，最多 3 次）。去龙骨群岛要三天三夜。天黑后玩家扎营（写 camp: true），睡下后程序会进入海上的第一夜。不要自己写 advance。",
+    next: "act2_siren",
+  },
+  act2_siren: {
+    title: "海妖之歌", loc: "雾海 · 第一夜", bg: "linear-gradient(160deg,#3d5470,#141d2a 60%,#080b11)", act: 2, campFree: true, campNext: "act2_ghost",
+    saves: { ab: "wis", dc: 14, text: "海妖之歌", fail: "梦游着走向船边" },
+    anchor: "午夜，雾里传来海妖的歌声。程序已经替全队掷了感知豁免（结果在最近的系统记录里）：失败的人像梦游一样走向船舷，要被拉回来。玩家可以去拉住某个人——如果是恋人或暧昧对象，这是一个特别的亲密时刻（在海风里抱住对方、对方醒来时的眼神）。玩家自己失败的话，由豁免成功的同伴来拉他，按赞同度最高的人写。可以用 romance 推进。海妖不现身，天亮前歌声停了。之后玩家扎营睡觉（写 camp: true），程序会进入下一夜。",
+    next: "act2_ghost",
+  },
+  act2_ghost: {
+    title: "幽灵船", loc: "雾海 · 第二夜", bg: "linear-gradient(160deg,#4b5a5f,#182023 60%,#090c0d)", act: 2, campFree: true, campNext: "act2_storm",
+    anchor: "第二夜，一艘挂着破烂晨星旗的帆船从雾里漂来：百年前晨星骑士团的船。船长室里坐着一位亡灵骑士。若赛勒涅在队，亡灵骑士认出她的纹章，向她忏悔：百年前骑士团为加固封印，献祭了雾隐岛附近的一整个渔村，幸存者的复仇让骑士团覆灭——这是赛勒涅个人任务的第二步（她赞同 ≥ 20 时她愿意听完并和你谈，写 quest.selene.truth=true；不到 20 她会把自己关进船舱，只说“以后再说”）。之后可以让亡灵安息（宗教 DC 15，写 act2.ghost_ship=laid），或者被亡灵当作“背誓者”攻击：动手时在 JSON 写 combat 为 ghost_ship，打完写 act2.ghost_ship=fought；也可以划开距离逃走（写 act2.ghost_ship=fled）。之后玩家扎营睡觉（写 camp: true），程序会进入下一夜。",
+    next: "act2_storm", encounters: ["ghost_ship"],
+  },
+  act2_storm: {
+    title: "暴风", loc: "雾海 · 第三夜", bg: "linear-gradient(160deg,#3a4552,#111820 60%,#06090c)", act: 2, camp: false,
+    roll: { skills: ["survival", "nature"], dc: 15, flag: "act2.storm", ok: "light", bad: "heavy", text: "穿过暴风" },
+    anchor: "第三夜，暴风。程序已经按队里最会看天、掌舵的人掷了生存/自然检定（DC 15，渔船有劣势），结果在最近的系统记录里，并写好 act2.storm：light 轻微受损，heavy 船受重创、补给被卷走一些。按结果写这一夜：桅杆、浪、谁抓住了谁、谁差点掉下去。天亮时风停了，雾散开，龙骨群岛出现在眼前：三座岛像一条沉睡巨龙露出海面的脊背。描写完之后把 advance 设为 act2_hub。",
+    next: "act2_hub",
+  },
+  act2_hub: {
+    title: "龙骨群岛", loc: "龙骨群岛 · 锚地", bg: "linear-gradient(160deg,#5b6b6a,#1f2726 60%,#0c100f)", act: 2, hub: true, campFree: true,
+    anchor: "船停在三座岛中间的锚地，这里是队伍在群岛的据点（睡觉写 camp: true，不消耗补给）。三座岛可以按任意顺序去，玩家说要去哪里时，把 advance 设为对应的场景 id：骨骼岛 act2_bone（上古巨龙的骨架和壁画，龙骨妖出没）；烬火岛 act2_ember（教团前哨，冒着黑烟，据说有一个被火改造的矮人看守熔炉）；雾隐岛 act2_mist（终年起雾，住着敌视外人的“潮裔”部族）。誓约神殿沉在三座岛中间的海底，只在退潮时浮出，要用潮裔保管的钥匙（潮汐石，act2.temple_key 有值）才能进去：拿到钥匙后，把 advance 设为 act2_temple。若维克斯还带着龙蛋，它越来越烫，可以继续保温（act2.egg_warmed 加 1）。",
+    next: ["act2_bone", "act2_ember", "act2_mist", "act2_temple"],
+    goals: [{ flag: "act2.temple_key", name: "神殿的钥匙" }, { flag: "act2.murals", name: "骨骼岛的壁画" }, { flag: "act2.ritual_plan", name: "教团的仪式计划" }],
+    gate: { act2_temple: () => !!state.flags["act2.temple_key"] },
+  },
+  act2_bone: {
+    title: "骨骼岛", loc: "龙骨群岛 · 骨骼岛", bg: "linear-gradient(160deg,#7a7262,#2b2822 60%,#11100d)", act: 2, loc2: true,
+    anchor: "整座岛就是一具上古巨龙的骨架：肋骨像拱门一样插在沙里，头骨里是一座洞穴。洞壁上有远古的壁画，画着银龙、黑龙和一圈跪着的人——读懂它（历史或宗教 DC 15，莉拉或赛勒涅在场时有帮助）就得到真相的前半：封印不是银龙一个人维持的，每隔几代都要用活人献祭来加固（写 act2.murals=true；后半——赫斯提雅想借宿主重生——要到神殿才揭开，不要说破）。印记在这里会共鸣，可以给少量龙化值，也可以让两位同伴互相看到对方的一段记忆。骨粉沙地下有龙骨妖：踩到松软的沙地、或者在洞里待太久会惊动它们，动手时在 JSON 写 combat 为 bone_wyrms；用火把逼退、或者悄悄绕开（隐匿 DC 15）也可以。离开时把 advance 设为 act2_hub。",
+    next: ["act2_hub"], encounters: ["bone_wyrms"],
+  },
+  act2_ember: {
+    title: "烬火岛", loc: "龙骨群岛 · 烬火岛", bg: "linear-gradient(160deg,#6b3524,#26120c 60%,#0e0705)", act: 2, loc2: true,
+    anchor: "火山岛，黑曜石的海岸，岩浆沟上架着铁桥。灰烬教团在这里有一座前哨：狂信徒、烬火术士，还有被黑龙之火改造的“烬卫士兵”。可以潜入（隐匿 DC 16）、伪装（奈雅可以变形带路）、或者硬闯（在 JSON 写 combat 为 ember_outpost）。前哨里有两个人（他们的个人任务第二步若还没写——quest.lyra.oswald、quest.borin.alive——见到本人时先补写，再写抉择）：①莉拉的导师奥斯瓦尔德在书房研究仪式，他会邀请莉拉留下“一起完成我们的研究”——莉拉个人任务的抉择（莉拉赞同 ≥ 20 才会认真谈；写 quest.lyra：killed 杀死导师、turned 说服他反水（第三幕他会告知祖坛的弱点）、joined 让莉拉接受邀请（她的龙化之路由此开始））；②熔炉厅里，博林的哥哥达林被改造成了“烬卫”，看守三座烬火熔炉——他不认得任何人，一见面就动手：在 JSON 写 combat 为 darin_forge（博林在场时，他会在战斗里唱铁炉堡战歌，唤醒由程序结算）。战后博林个人任务的抉择写 quest.borin：mercy 给达林一个痛快（同时写 act2.darin=killed）、woke 唤醒成功（程序已写 act2.darin=woke，达林恢复神智但伤得很重，留在岛上，第三幕会来援）、abandoned 放任不管（act2.darin=left）。从书房或执事那里能找到教团的仪式计划：他们要在烬冠山的祖坛上用七片印记唤醒烬王（写 act2.ritual_plan=true）。离开时把 advance 设为 act2_hub。",
+    next: ["act2_hub"], encounters: ["ember_outpost", "darin_forge"],
+  },
+  act2_mist: {
+    title: "雾隐岛", loc: "龙骨群岛 · 雾隐岛", bg: "linear-gradient(160deg,#6a7b7c,#262e2f 60%,#0e1212)", act: 2, loc2: true,
+    anchor: "终年浓雾，高脚屋建在礁石和浅滩上。这里住着“潮裔”：百年前被晨星骑士团献祭的渔村幸存者的后代。他们憎恨银龙（也恨晨星骑士，赛勒涅在这里会被敌视），也不信任教团。瑟拉长老保管着誓约神殿的钥匙——一枚潮汐石。拿到钥匙的方式：①赢得潮裔的信任——帮他们击退袭击渔村的雾海巨妖（在 JSON 写 combat 为 mist_kraken），并说服长老（说服 DC 16，若 act2.murals 为 true、或赛勒涅愿意当众承认骑士团的罪，有优势），长老交出钥匙（写 act2.temple_key=given、act2.tideborn=ally）；②偷（隐匿 DC 15 + 巧手 DC 15，写 act2.temple_key=stolen、act2.tideborn=neutral，被发现就是 enemy）；③武力夺取（写 act2.temple_key=taken、act2.tideborn=enemy，永久失去这个盟友）。伊芙——主教瓦尔多的妹妹——隐居在这里，赢得潮裔信任或单独找到她（洞悉 DC 15 看出她不是潮裔）时，她会说出哥哥也是献祭幸存者的后代、他真正想要什么（写 act2.eve=true；这是第三幕说服主教的关键）。离开时把 advance 设为 act2_hub。",
+    next: ["act2_hub"], encounters: ["mist_kraken"],
+  },
+  act2_temple: {
+    title: "誓约神殿", loc: "龙骨群岛 · 誓约神殿", bg: "linear-gradient(160deg,#6f8aa0,#25313b 60%,#0d1216)", act: 2, camp: false, level: 9,
+    anchor: "退潮时，三座岛中间的海面裂开，一座白石神殿浮了出来，潮汐石嵌进大门就开了。里面有三重试炼，可以按顺序写：①勇气：每个人面对自己最恐惧之物的幻象，玩家的幻象由他的背景决定；通过写 act2.trial_courage=true（可以要求检定，也可以用信念和行动通过）。②真相：每位同伴必须说出一个自己的秘密（照同伴资料里的“秘密”写），赞同度低于 20 的同伴会拒绝，玩家要说服他（检定或真心话）；都说完写 act2.trial_truth=true。③牺牲：必须放弃一件珍贵的东西，写 act2.sacrifice：item 一件珍贵物品（同时在 items_remove 里去掉它）、memory 一段记忆（玩家选一段和某位同伴的回忆，那位同伴会察觉你忘了）、draconic 20 点龙化值（程序扣；不够 20 点不能选）。三重试炼都过了，神殿核心展示全部真相（写 act2.revealed=true）：赫斯提雅拆开誓约寄存在七个人身上，是想借宿主重生——赛勒涅是她原本选中的容器。赫斯提雅现身，坦诚地提出交易：“把印记交给我选中的人，我会拯救这片海。”同伴们强烈表态。神殿核心悬着“誓约之心”。就在这时，主教瓦尔多率众杀入（他通过奈雅的情报或奥斯瓦尔德追踪而来）。玩家要在主教抢到之前决定誓约之心怎么处置，写 act2.heart：hestia 交给赫斯提雅、player 自己吸收（龙化值 +30，程序加）、destroyed 交给潮裔销毁（只有 act2.tideborn=ally 时可以）。动手时在 JSON 写 combat 为 temple_raid。不管打没打赢，主教都会从密道撤走，并且掳走一位同伴（由程序决定是谁，你不要写）；没来得及处置的誓约之心也会被他抢走。之后把 advance 设为 act2_end。",
+    next: "act2_end", encounters: ["temple_raid"],
+  },
+  act2_end: {
+    title: "退潮之后", loc: "龙骨群岛 · 神殿外的礁石", bg: "linear-gradient(160deg,#6e7a86,#262c32 60%,#0e1114)", act: 2, camp: false, endAct: 2,
+    enter: "templeAftermath",
+    anchor: "神殿重新沉回海里。最近的系统记录里写着主教掳走了谁、誓约之心的下落（程序已经写好 act2.taken 和 act2.heart）。清点代价：被掳走的同伴留下的东西、其他同伴的反应（愤怒、自责、互相指责）。赫斯提雅若还信任玩家，会在梦里或幻象中最后说一句话。远处，烬冠山的方向升起一道黑烟——主教要在那里的祖坛唤醒烬王。船准备返航灰帆港，第三幕的战争在那里等着。对话 1~3 轮后，把 scene_end 设为 true，第二幕结束。",
     next: null, endNeeds: { turns: 1 },
   },
 };
 const ACT_NAMES = ["序幕 · 暴风之夜", "第一幕 · 灰帆港", "第二幕 · 龙骨群岛", "第三幕 · 烬冠"];
 const nextOf = sc => sc.next == null ? [] : [].concat(sc.next);
 const actGoals = () => Object.values(SCENES).find(sc => sc.act === state.act && sc.goals)?.goals || [];
-const GOAL_VALUES = { opened: "从龙息酒桶底的暗格取出", stolen: "偷来的", legal: "合法取回", blackmail: "勒索总督", eel: "从老鳗那里拿到", black_eel: "黑鳗号", seagull: "海鸥号" };
-// 第一幕的地点，走完的越多等级越高
+const GOAL_VALUES = { opened: "从龙息酒桶底的暗格取出", stolen: "偷来的", legal: "合法取回", given: "潮裔长老交出", taken: "武力夺取", blackmail: "勒索总督", eel: "从老鳗那里拿到", black_eel: "黑鳗号", seagull: "海鸥号" };
+// 第一幕的地点，走完的越多等级越高（第二幕的三座岛同理，见 levelNeed）
 const ACT1_LOCS = Object.keys(SCENES).filter(id => SCENES[id].loc1);
+const ACT2_LOCS = Object.keys(SCENES).filter(id => SCENES[id].loc2);
 
 const FLAG_KEYS = {
   "prologue.betrayed_companion": "id", "prologue.tom_saved": "bool", "prologue.talked_hooded": "bool", "prologue.saw_gem": "bool",
@@ -559,6 +622,12 @@ const FLAG_KEYS = {
   "act1.facemother_seen": "bool", "act1.darin_axe": "bool", "act1.deacon": ["tortured", "informant", "killed"],
   "act1.naia_seen": "bool", "act1.naia_exposed": "bool", "act1.naia_fate": ["recruited", "imprisoned", "killed"],
   "act1.hostage": ["martha", "tom"], "act1.martha_alive": "bool", "act1.ship_intact": "bool", "act1.departure_ship": ["black_eel", "seagull", "stolen", "fishing"],
+  // 第二幕。storm 由代码结算；egg_warmed 是计数（每次最多 +1）；taken 是神殿里被主教掳走的同伴（代码写）
+  "act2.storm": ["light", "heavy"], "act2.ghost_ship": ["laid", "fought", "fled"], "act2.egg_warmed": "count",
+  "act2.murals": "bool", "act2.ritual_plan": "bool", "act2.darin": ["killed", "woke", "left"],
+  "act2.tideborn": ["ally", "neutral", "enemy"], "act2.temple_key": ["given", "stolen", "taken"], "act2.eve": "bool",
+  "act2.trial_courage": "bool", "act2.trial_truth": "bool", "act2.sacrifice": ["item", "memory", "draconic"],
+  "act2.revealed": "bool", "act2.heart": ["hestia", "player", "destroyed", "cult"], "act2.taken": "id",
 };
 
 /* 同伴的个人任务（设定集各同伴的“个人任务”）。每一步由一个标记完成，按顺序推进；act 是最早哪一幕能做。
@@ -661,6 +730,16 @@ const ENEMIES = {
   guard: { name: "总督府卫兵", hp: 13, ac: 16, dex: 0, atk: { n: "长戟", cnt: 1, d: 8, plus: 2, hit: 4 }, plead: true },
   deacon: { name: "教团执事", pid: "cultist", hp: 24, ac: 13, dex: 1, atk: { n: "烬火杖", cnt: 2, d: 6, plus: 0, hit: 5, ranged: true }, ignite: true, plead: true, unique: true },
   // shift：开战时伪装成队伍里的某人；一次受到这么多伤害就换一张脸，重新混进人群
+  // 第二幕。weak/immune：火焰伤害加倍/免疫；burrow：从地下钻到任意区域；frenzy：生命低于一半后每回合多打一次
+  // object：不会攻击的物件（熔炉），不计入胜负；mend：每回合给同场某种敌人回血
+  drowned_deep: { name: "深海溺尸", hp: 30, ac: 12, dex: 0, atk: { n: "爪击", cnt: 2, d: 6, plus: 3, hit: 5 }, multi: 2 },
+  ghost_knight: { name: "晨星亡灵骑士", hp: 45, ac: 17, dex: 0, atk: { n: "锈蚀长剑", cnt: 1, d: 10, plus: 4, hit: 7 }, multi: 2, unique: true },
+  bone_wyrm: { name: "龙骨妖", hp: 60, ac: 15, dex: 2, atk: { n: "尾击", cnt: 2, d: 8, plus: 3, hit: 7 }, burrow: true, weak: "fire" },
+  ember_guard: { name: "烬卫士兵", hp: 44, ac: 17, dex: 0, atk: { n: "巨斧", cnt: 1, d: 12, plus: 4, hit: 8 }, immune: "fire" },
+  darin: { name: "烬卫达林", hp: 120, ac: 18, dex: 0, atk: { n: "符文战斧", cnt: 2, d: 8, plus: 5, hit: 9 }, multi: 2, frenzy: true, immune: "fire", unique: true },
+  forge: { name: "烬火熔炉", hp: 20, ac: 12, dex: -5, atk: null, object: true, mend: { type: "darin", n: 10 } },
+  tentacle: { name: "巨妖触手", hp: 25, ac: 13, dex: 1, atk: { n: "缠绞", cnt: 1, d: 8, plus: 4, hit: 7 } },
+  kraken: { name: "雾海巨妖", hp: 160, ac: 15, dex: 1, atk: { n: "触手", cnt: 2, d: 8, plus: 4, hit: 8 }, multi: 3, unique: true },
   facemother: { name: "千面母", pid: "facemother", hp: 70, ac: 15, dex: 4, atk: { n: "淬毒匕首", cnt: 2, d: 4, plus: 4, hit: 7 }, sneak: 3, unique: true, shift: 15 },
 };
 const ZONE_TAGS = { cover: "掩体", high: "高处", obscured: "遮蔽", exit: "出口" };
@@ -722,6 +801,91 @@ const ENCOUNTERS = {
     start: 0,
     foes: [["thug", 2, 1], ["thug", 1, 3], ["bosun", 1, 1]],
     events: [{ round: 2, spawn: [["thug", 2, 0]], text: "栈桥上脚步杂乱，两个黑潮会打手听到动静赶了过来！" }],
+  },
+  ghost_ship: {
+    title: "幽灵船", lethal: true,
+    brief: "晨星骑士团的幽灵船靠了上来：1 名晨星亡灵骑士（每回合砍两剑）和 4 具深海溺尸；第 2 回合又有 2 具从船舷爬上来。用宗教检定（DC 15）可以让亡灵安息，赛勒涅在场时亡灵骑士会先向她忏悔",
+    props: "两船之间的跳板、腐朽的桅杆、缠满海藻的缆绳、船舱里漏进的海水",
+    zones: [
+      { n: "自家甲板", adj: [1] },
+      { n: "跳板", adj: [0, 2] },
+      { n: "幽灵船甲板", adj: [1, 3] },
+      { n: "船长室", tags: ["cover"], adj: [2] },
+    ],
+    start: 0,
+    foes: [["drowned_deep", 2, 1], ["drowned_deep", 2, 2], ["ghost_knight", 1, 3]],
+    events: [{ round: 2, spawn: [["drowned_deep", 2, 0]], text: "两具深海溺尸从你们自家的船舷爬了上来！" }],
+  },
+  bone_wyrms: {
+    title: "龙骨妖", lethal: true,
+    brief: "3 只龙骨妖（会从地下钻出、出现在任意区域；怕火，火焰伤害加倍）；第 3 回合第四只从龙骨下钻出",
+    props: "巨龙的肋骨拱门、半埋在沙里的龙牙、壁画所在的头骨洞穴、松软的骨粉沙地",
+    zones: [
+      { n: "沙滩", adj: [1] },
+      { n: "肋骨拱门", tags: ["cover"], adj: [0, 2, 3] },
+      { n: "龙脊", tags: ["high"], adj: [1] },
+      { n: "头骨洞穴", tags: ["obscured"], adj: [1] },
+    ],
+    start: 0,
+    foes: [["bone_wyrm", 2, 1], ["bone_wyrm", 1, 3]],
+    events: [{ round: 3, spawn: [["bone_wyrm", 1, 2]], text: "龙脊下的骨粉翻涌——又一只龙骨妖钻了出来！" }],
+  },
+  ember_outpost: {
+    title: "教团前哨", lethal: true,
+    brief: "烬火岛的教团前哨：3 名烬卫士兵（火焰免疫）、2 名狂信徒（濒死自爆）和 1 名烬火术士；第 2 回合又有 2 名狂信徒从营房冲出来",
+    props: "岩浆沟上的铁桥、堆满黑曜石的矿车、营房的木栅、冒着烟的仪式坑",
+    zones: [
+      { n: "登陆的礁滩", adj: [1] },
+      { n: "铁桥", adj: [0, 2] },
+      { n: "前哨广场", adj: [1, 3] },
+      { n: "营房", tags: ["cover"], adj: [2] },
+    ],
+    start: 0,
+    foes: [["ember_guard", 3, 2], ["cultist", 2, 1], ["mage", 1, 3]],
+    events: [{ round: 2, spawn: [["cultist", 2, 3]], text: "营房的门被撞开，又有两个狂信徒尖叫着冲了出来！" }],
+  },
+  darin_forge: {
+    title: "烬卫达林", lethal: true,
+    brief: "烬卫达林（生命 120，AC 18，火焰免疫，每回合砍两斧；生命低于一半后狂怒，再多砍一次）和身旁 3 座烬火熔炉（每座每回合给他回 10 点生命，可以打碎或用水浇灭）。博林在场时，他每回合会用动作唱铁炉堡战歌（魅力 DC 15），累计 3 次成功就唤醒达林、战斗结束",
+    props: "三座喷着烬火的熔炉、悬在头顶的铁链吊桶（里面是冷却用的海水）、熔岩沟、锻造台",
+    zones: [
+      { n: "熔炉厅入口", adj: [1] },
+      { n: "锻造台", adj: [0, 2, 3] },
+      { n: "左侧熔炉", tags: ["cover"], adj: [1] },
+      { n: "右侧熔炉", tags: ["cover"], adj: [1] },
+    ],
+    start: 0,
+    foes: [["darin", 1, 1], ["forge", 1, 1], ["forge", 1, 2], ["forge", 1, 3]],
+    wake: { who: "borin", target: "darin", ab: "cha", dc: 15, need: 3, flag: "act2.darin", value: "woke" },
+  },
+  mist_kraken: {
+    title: "雾海巨妖", lethal: true,
+    brief: "雾海巨妖袭击潮裔的渔村：本体在浅滩，每回合挥三次触手；另有 2 条触手缠上栈桥和高脚屋，第 3 回合再来 2 条；打掉本体一半生命它就会沉回深海",
+    props: "高脚屋之间的木栈道、晾满渔网的竹架、搁浅的独木舟、潮裔的鲸骨号角",
+    zones: [
+      { n: "高脚屋", tags: ["cover"], adj: [1] },
+      { n: "木栈道", adj: [0, 2] },
+      { n: "浅滩", adj: [1, 3] },
+      { n: "礁石", tags: ["high"], adj: [2] },
+    ],
+    start: 1,
+    foes: [["kraken", 1, 2], ["tentacle", 1, 0], ["tentacle", 1, 1]],
+    events: [{ round: 3, spawn: [["tentacle", 2, 1]], text: "两条新的触手从栈桥下的海水里甩了上来！" }],
+    flee: { type: "kraken", at: 0.5, text: "雾海巨妖发出一声低沉的哀鸣，拖着断掉的触手沉回了深海！" },
+  },
+  temple_raid: {
+    title: "神殿突袭", lethal: true,
+    brief: "主教瓦尔多带人杀进神殿：3 名烬卫士兵、3 名狂信徒和 2 名烬火术士挡在你们和主教之间，第 2 回合密道里再出 2 名狂信徒；主教本人不参战，打完后带着他抢到的东西从密道撤走",
+    props: "浸着海水的石阶、七根刻着印记的石柱、神殿核心的祭台、正在涨潮的大门",
+    zones: [
+      { n: "神殿大门", tags: ["exit"], adj: [1] },
+      { n: "柱廊", tags: ["cover"], adj: [0, 2] },
+      { n: "祭台", tags: ["high"], adj: [1, 3] },
+      { n: "密道口", adj: [2] },
+    ],
+    start: 2,
+    foes: [["ember_guard", 3, 1], ["cultist", 3, 0], ["mage", 2, 3]],
+    events: [{ round: 2, spawn: [["cultist", 2, 3]], text: "密道里又涌出两个狂信徒，嘴里念着烬王的名字！" }],
   },
   tower_spies: {
     title: "围塔的探子", lethal: true,
@@ -1109,7 +1273,8 @@ function catchUpLevel() {
 function levelNeed() {
   const seen = [...new Set(state.log.map(e => e.s))];
   const done = ACT1_LOCS.filter(id => seen.includes(id) && id !== state.scene).length;
-  return Math.max(1, ...seen.map(id => SCENES[id]?.level || 1), state.act >= 1 ? 2 + Math.min(2, Math.floor(done / 2)) : 1);
+  const done2 = ACT2_LOCS.filter(id => seen.includes(id) && id !== state.scene).length; // 第二幕每走完一座岛升一级（6 → 9）
+  return Math.max(1, ...seen.map(id => SCENES[id]?.level || 1), state.act >= 1 ? 2 + Math.min(2, Math.floor(done / 2)) : 1, state.act >= 2 ? 6 + Math.min(3, done2) : 1);
 }
 // 属性提升：choice 形如 { str: 2 } 或 { dex: 1, cha: 1 }，总共 2 点，单项最高 20
 function applyAsi(choice) {
@@ -1239,6 +1404,11 @@ const NPC_NOTES = [
   ["eel", 1, "老鳗·莫格，黑潮会首领，控制港口地下世界的胖老头，笑眉笑眼、毒如蛇蝎，只认利益；脖子上盘着鳗鱼刺青，满手金戒指。和维克斯、卡西安的过去都有关。"],
   ["governor", 1, "艾德蒙·科尔，灰帆港总督，风度翩翩、满口法度的半精灵。十年前没收了玛莎亡夫的守誓人钥匙（打开地窖里航海图暗格的唯一钥匙），锁在金库。他秘密接受教团资助，但并不信仰教团，只是想借教团打压黑潮会（GM 不要透露，要靠证据揭开）。"],
   ["sath", 1, "萨丝·铁锤，港卫军尉官，正直的青铜龙裔。对印记持有者充满怀疑，可以用行动赢得她的信任；她在暗中调查总督。"],
+  ["darin", 2, "达林·红须，博林的哥哥。被黑龙之火改造成“烬卫”，盔甲和皮肉烧在一起，缝隙里透出暗红烬光；在烬火岛的教团前哨看守熔炉。他对博林的声音和铁炉堡战歌还有反应。"],
+  ["oswald", 2, "奥斯瓦尔德，莉拉被学院除名前的导师，温文尔雅的老法师。他认为印记是“人类第一次有机会拿回神的力量”，已加入教团，在烬火岛研究仪式；真心欣赏莉拉，想让她“一起完成我们的研究”。"],
+  ["sera", 2, "瑟拉长老，雾隐岛“潮裔”部族的长老，独眼的老妇人。潮裔是百年前被晨星骑士团献祭的渔村的幸存者后代：憎恨银龙，也不信任教团。誓约神殿的钥匙（一枚潮汐石）由她保管。"],
+  ["eve", 2, "伊芙，主教瓦尔多的妹妹，多年前逃离教团，隐居在潮裔中间。她能证明瓦尔多也是献祭幸存者的后代，以及他真正想要的是什么（第三幕说服主教的关键证词）。"],
+  ["valdo", 2, "主教瓦尔多，灰烬教团领袖，光头、灰色仪式纹身、燃烧的橙色眼睛。第二幕只在誓约神殿的高潮现身：带人杀入、抢走誓约之心、掳走一名同伴。他冷静、有说服力，把银龙的“守护”称作建立在尸骨上的谎言。"],
   ["facemother", 1, "千面母，灰烬教团的间谍头子、奈雅的养母，从不以同一张脸出现两次。第一幕里可以让她伪装成路人、贵妇、小贩和玩家说上几句话埋下伏笔（GM 不要透露身份），灯塔之夜主导伏击。"],
 ];
 const npcLines = () => NPC_NOTES.filter(([, from, , to]) => from <= state.act && (to == null || state.act <= to))
@@ -1323,6 +1493,8 @@ function nextLine(sc) {
 }
 // 第一幕：维克斯欠老鳗的债限期三天（按长休计）
 const DEBT_DAYS = 3;
+// 维克斯还带着龙蛋：知道是龙蛋、没卖给老鳗、他还在队里
+const eggHere = () => !!state.flags["quest.vex.egg"] && state.flags["quest.vex"] !== "sold" && party().includes("vex");
 const debtOpen = () => state.act === 1 && state.act1Day != null && state.companions.vex.alive && !state.flags["act1.vex_debt"] && !state.flags["act1.lise"];
 const debtDays = () => Math.max(0, state.act1Day + DEBT_DAYS - state.day);
 function updateDebtJournal() {
@@ -1765,6 +1937,16 @@ function applyGM(d, mode) {
       const c = state.companions[tid]; if (v && c?.romance === "together" && !c.tested) { c.tested = true; state.flags[k] = true; notes.push([`${PEOPLE[tid].name}看到了你的心意`, "up"]); }
       continue;
     }
+    if (rule === "count") { // 计数：每次最多 +1，最多 3
+      const cur = state.flags[k] || 0;
+      if (k === "act2.egg_warmed" && !eggHere()) continue;
+      if (v === cur + 1 && v <= 3) { state.flags[k] = v; notes.push([v === 3 ? "龙蛋的壳上出现了一道裂纹" : `龙蛋保温了 ${v}/3 次`, "up"]); }
+      continue;
+    }
+    if (k === "act2.sacrifice" && v === "draconic") { if (state.player.draconic < 20 || state.flags[k]) continue; state.player.draconic -= 20; notes.push(["龙化值 −20", ""]); }
+    if (k === "act2.heart" && (state.flags[k] || v === "cult" || v === "destroyed" && state.flags["act2.tideborn"] !== "ally")) continue; // 抢走由代码写；销毁要潮裔是盟友
+    if (k === "act2.heart" && v === "player") { state.player.draconic = clamp(state.player.draconic + 30, 0, 100); notes.push(["龙化值 +30", ""]); }
+    if (k === "act2.taken" || k === "act2.storm") continue; // 由代码结算
     if (rule === "bool") state.flags[k] = !!v;
     else if (rule === "id") { if (v === false || COMPANIONS[v]) state.flags[k] = v; }
     else if (Array.isArray(rule) && rule.includes(v)) {
@@ -1906,8 +2088,41 @@ function goScene(id, keepLocation, rested = false) {
   if (id === "prologue_5" && !rested) { const p = state.player; p.hp = p.hpMax; for (const c of Object.values(state.companions)) c.hp = c.hpMax; push("sys", "长休：全员生命恢复"); }
   const need = levelNeed(); // 里程碑升级：场景数据里的 level，第一幕按走完的地点数
   if (need > partyLevel()) levelUp(need);
+  if (state.visits[id] === 1) sceneRolls(ns); // 第一次进入时，代码替全队掷的豁免/检定
+  if (ns.enter) SCENE_ENTER[ns.enter]?.();
   flashScene = !!ns.flash;
 }
+// saves：全队各掷一次属性豁免；roll：由队里最擅长的人掷一次技能检定，结果写进标记
+function sceneRolls(sc) {
+  const who = ["player", ...party()], name = id => id === "player" ? state.player.name : PEOPLE[id].name;
+  if (sc.saves) {
+    const res = who.map(id => { const b = bonusFor(id, "save_" + sc.saves.ab).total, d = rollD20(), ok = d + b >= sc.saves.dc; return `${name(id)} d20(${d})${sgn(b)}=${d + b}${ok ? " 成功" : " 失败，" + sc.saves.fail}`; });
+    push("sys", `${sc.saves.text} · ${AB[sc.saves.ab]}豁免 DC ${sc.saves.dc}：${res.join("；")}`);
+  }
+  if (sc.roll) {
+    const r = sc.roll, best = who.flatMap(id => r.skills.map(k => ({ id, k, b: bonusFor(id, k).total }))).sort((a, b) => b.b - a.b)[0];
+    const [d, rs] = d20x(false, state.flags["act1.departure_ship"] === "fishing"), total = d + best.b, ok = d === 20 || (d !== 1 && total >= r.dc);
+    state.flags[r.flag] = ok ? r.ok : r.bad;
+    let t = `${r.text} · ${name(best.id)}的${SKILLS[best.k][0]}检定：d20(${rs.join("/")})${sgn(best.b)} = ${total} 对 DC ${r.dc}${rs.length > 1 ? "（渔船，劣势）" : ""}，${ok ? "成功，船只受了点轻伤" : "失败，船受了重创"}`;
+    if (!ok) { const lost = Math.min(2, state.supplies || 0); state.supplies = (state.supplies || 0) - lost; if (lost) t += `，补给被卷走 ${lost} 份`; }
+    push("sys", t, { cls: ok ? "appr-up" : "appr-down" });
+  }
+}
+// 场景进入时由代码处理的剧情后果
+const SCENE_ENTER = {
+  // 神殿之后：誓约之心没处置就被主教抢走；主教掳走在场同伴里赞同度最高的人
+  templeAftermath() {
+    if (state.flags["act2.taken"] !== undefined) return;
+    if (!state.flags["act2.heart"]) { state.flags["act2.heart"] = "cult"; push("sys", "主教瓦尔多抢走了誓约之心", { cls: "appr-down" }); }
+    const pick = party().slice().sort((a, b) => state.companions[b].approval - state.companions[a].approval)[0];
+    state.flags["act2.taken"] = pick || false;
+    if (pick) {
+      const c = state.companions[pick]; c.taken = true; c.recruited = false;
+      remember(pick, "在誓约神殿被主教瓦尔多掳走");
+      push("sys", `主教瓦尔多掳走了${PEOPLE[pick].name}`, { cls: "appr-down" });
+    }
+  },
+};
 // 一幕结束后进入下一幕（结束卡片上的按钮）
 function nextAct() {
   const sc = SCENES[state.scene];
@@ -1916,6 +2131,10 @@ function nextAct() {
   if (state.act === 1) {
     state.act1Day = state.day;
     state.journal.push({ quest: "第一幕：灰帆港", note: "去誓约神殿需要航海图和船。航海图封在酒馆地窖，要先从总督府金库拿回守誓人的钥匙。" });
+  }
+  if (state.act === 2) {
+    state.supplies = Math.max(state.supplies || 0, 4); // 出海带足补给
+    state.journal.push({ quest: "第二幕：龙骨群岛", note: "穿过雾海去龙骨群岛，找到沉在海底的誓约神殿。神殿的钥匙在雾隐岛的潮裔手里。" });
   }
   push("chapter", ACT_NAMES[state.act]);
   goScene(sc.after);
@@ -2160,9 +2379,9 @@ function restNight(partner) {
   const after = news.length ? `夜里发生了：${news.join("；")}。要写出这件事的余波。` : "";
   if (sc.campNext) {
     // 入睡发生在旧场景，不能算作玩家对梦境开场的回应。
-    push("you", partner ? `今晚，你和${PEOPLE[partner].name}在一起。` : "你在壁炉边睡去。");
+    push("you", partner ? `今晚，你和${PEOPLE[partner].name}在一起。` : state.act >= 2 ? "你在船舱里睡去。" : "你在壁炉边睡去。");
     goScene(sc.campNext, false, true);
-    gm(`（${night}然后玩家沉入梦中，按新场景的锚点开始。${after}）`, null);
+    gm(`（${night}${SCENES[sc.campNext].dream ? "然后玩家沉入梦中" : "然后到了下一夜"}，按新场景的锚点开始。${after}）`, null);
   } else {
     gm(`（${night}直接写第二天清晨醒来后：同伴们各自的样子${partner ? `；和${PEOPLE[partner].name}醒来时的画面可以写得亲昵，其他同伴可能察觉到什么` : ""}。${after}给出新一天的建议。不要再次写入睡或 camp: true。）`, partner ? `今晚，你和${PEOPLE[partner].name}在一起。` : "你睡下了。", "morning");
   }
@@ -2326,7 +2545,7 @@ function foeUnit(type, zone, side) {
   const n = c.count[type];
   return {
     id: type + n, type, side, pid: e.pid || null, name: e.name + (e.unique && n === 1 ? "" : String.fromCharCode(64 + n)), zone, dexMod: e.dex,
-    hp: e.hp, max: e.hp, ac: e.ac, weapons: [Object.assign({}, e.atk)], cond: {}, saves: { s: 0, f: 0 },
+    hp: e.hp, max: e.hp, ac: e.ac, weapons: e.atk ? [Object.assign({}, e.atk)] : [], cond: {}, saves: { s: 0, f: 0 },
   };
 }
 function sortOrder() { const c = state.combat; c.order = cbList().sort((a, b) => b.init - a.init || (a.side === "party" ? -1 : 1)).map(u => u.id); }
@@ -2356,12 +2575,17 @@ function hurt(u, n, o = {}) {
   const c = state.combat;
   if (u.dead || u.out) return "";
   if (o.fire && u.ref === "player" && state.player.race === "tiefling") n = Math.floor(n / 2);
+  const ef = u.type && ENEMIES[u.type];
+  if (o.fire && ef?.immune === "fire") n = 0;
+  if (o.fire && ef?.weak === "fire") n *= 2;
   if (u.down) {
     u.saves.f += o.crit ? 2 : 1;
     if (u.saves.f >= 3) { if (lethal()) { u.dead = true; return `${u.name} 没能挺过来……`; } u.stable = true; return `${u.name} 昏死过去`; }
     return `${u.name} 死亡豁免失败 ${u.saves.f}`;
   }
   u.hp -= n;
+  const fl = c && ENCOUNTERS[c.id]?.flee;
+  if (fl && u.type === fl.type && u.hp > 0 && u.hp <= u.max * fl.at) { u.out = "fled"; clog(fl.text, "event"); return ""; }
   if (u.hp > 0) {
     const shift = u.type && ENEMIES[u.type].shift;
     if (shift && n >= shift && !u.guise) { disguise(u); return `${u.name} 的脸像水一样流动起来，换了一张面孔钻进人群`; }
@@ -2495,7 +2719,17 @@ function foeTurn(u) {
     delete u.guise; clog(`${u.name}撕下了${face}的脸，露出了真身`, "event");
     return;
   }
+  if (e.mend) { // 熔炉：给同场的某种敌人回血
+    const t = cbList().find(v => v.type === e.mend.type && ACTIVE(v) && v.hp < v.max);
+    if (t) { const n = Math.min(e.mend.n, t.max - t.hp); t.hp += n; clog(`${u.name}喷出一股烬火，${t.name}恢复了 ${n} 点生命`, "event"); }
+    return;
+  }
+  if (!e.atk) return;
   if (u.cond.prone) { delete u.cond.prone; c.res.move = 0; clog(`${u.name} 爬了起来`); }
+  if (e.burrow && !cbList().some(v => hostile(u, v) && seen(v) && v.zone === u.zone)) {
+    const ts = cbList().filter(v => hostile(u, v) && seen(v));
+    if (ts.length) { const t = ts[Math.floor(Math.random() * ts.length)]; u.zone = t.zone; clog(`${u.name}钻进地下，从${c.zones[t.zone].n}的地面下猛地钻了出来！`, "event"); }
+  }
   if (e.summon) {
     const n = Math.min(2, 6 - cbList().filter(v => v.type === "rat" && ACTIVE(v)).length);
     if (n > 0) {
@@ -2512,10 +2746,27 @@ function foeTurn(u) {
     if (best != null) { c.zones[best].burning = 3; clog(`${u.name} 抬手一挥，${c.zones[best].n}燃起了烬火（3 回合内，在里面开始回合的人会被烧伤）`, "event"); return; }
   }
   fightTurn(u);
-  for (let i = 1; i < (e.multi || 1) && ACTIVE(u); i++) fightTurn(u); // multi：每回合攻击几次
+  const times = (e.multi || 1) + (e.frenzy && u.hp <= u.max / 2 ? 1 : 0);
+  if (e.frenzy && u.hp <= u.max / 2 && !u.raged) { u.raged = true; clog(`${u.name}的盔甲缝里喷出烈焰——他陷入了狂怒！`, "event"); }
+  for (let i = 1; i < times && ACTIVE(u); i++) fightTurn(u); // multi：每回合攻击几次
+}
+// 唤醒（达林）：指定的同伴每回合用动作唱战歌，累计成功够了，目标就醒过来退出战斗
+function wakeTurn(u) {
+  const c = state.combat, w = ENCOUNTERS[c.id].wake;
+  if (!w || u.ref !== w.who) return false;
+  const t = cbList().find(v => v.type === w.target && ACTIVE(v)); if (!t) return false;
+  const b = mod(abOf(u.ref)[w.ab]) + profBonus(partyLevel()), d = rollD20(), ok = d === 20 || (d !== 1 && d + b >= w.dc);
+  c.woke = (c.woke || 0) + (ok ? 1 : 0); c.res.action = false;
+  clog(`${u.name}放声唱起铁炉堡战歌：d20(${d})${sgn(b)} = ${d + b} 对 DC ${w.dc}，${ok ? `${t.name}的动作迟疑了（${c.woke}/${w.need}）` : "歌声被火焰的轰鸣盖过"}`, ok ? "up" : "");
+  if (c.woke >= w.need) {
+    t.out = "awakened"; state.flags[w.flag] = w.value;
+    clog(`${t.name}的斧子垂了下来，烬光从他眼里褪去——他认出了弟弟的声音`, "event");
+  }
+  return true;
 }
 function allyTurn(u) {
   const c = state.combat, mates = cbList().filter(v => v.side === "party" && !v.dead && !v.out);
+  if (wakeTurn(u)) return;
   if (u.cond.prone) { delete u.cond.prone; c.res.move = 0; clog(`${u.name} 爬了起来`); }
   if (u.feat === "heal" && u.uses > 0) {
     const t = mates.find(v => v.down) || mates.find(v => !v.down && v.hp <= v.max * .35);
@@ -2573,7 +2824,7 @@ function combatResult() {
   const c = state.combat, us = cbList();
   if (c.end) return c.end;
   if (!us.some(u => u.side === "party" && ACTIVE(u))) return "defeat";
-  if (!us.some(u => u.side !== "party" && ACTIVE(u))) return "victory";
+  if (!us.some(u => u.side !== "party" && ACTIVE(u) && !ENEMIES[u.type]?.object)) return "victory"; // 熔炉之类的物件不算
   return null;
 }
 async function advanceCombat() {
@@ -2635,7 +2886,7 @@ function endCombat(r) {
   const tally = list => { const m = {}; for (const u of list) { const n = ENEMIES[u.type].name; m[n] = (m[n] || 0) + 1; } return Object.entries(m).map(([n, k]) => n + "×" + k).join("、"); };
   const R = { victory: "胜利", defeat: "全队倒下", escaped: "撤离战场", talked: "敌人放弃了战斗" }[r];
   const parts = [`结果：${R}，共 ${c.round} 回合。`];
-  for (const [label, f] of [["击倒", u => u.dead], ["活捉", u => u.out === "captured"], ["投降", u => u.out === "surrendered"], ["逃走", u => u.out === "fled"], ["仍在场", ACTIVE]]) {
+  for (const [label, f] of [["击倒", u => u.dead], ["活捉", u => u.out === "captured"], ["投降", u => u.out === "surrendered"], ["逃走", u => u.out === "fled"], ["被唤醒", u => u.out === "awakened"], ["仍在场", ACTIVE]]) {
     const l = foes.filter(f); if (l.length) parts.push(`${label}：${tally(l)}。`);
   }
   parts.push("我方：" + us.filter(u => u.side === "party").map(u => `${u.name} ${u.dead ? "阵亡" : u.down ? "倒地" : u.hp + "/" + u.max}`).join("，") + "。");
@@ -3196,7 +3447,7 @@ function openJournal() {
       s.append(el("div", "label", "本幕目标"));
       for (const g of goals) {
         const value = state.flags[g.flag];
-        s.append(el("div", "meta", `${g.name}：${value ? `已拿到（${GOAL_VALUES[value] || value}）` : "还没拿到"}`));
+        s.append(el("div", "meta", `${g.name}：${value === true ? "已完成" : value ? `已拿到（${GOAL_VALUES[value] || value}）` : "还没拿到"}`));
       }
       if (goals.some(g => !state.flags[g.flag]) && state.log.slice(-40).some(e => (e.k === "you" || e.k === "gm") && /钥匙|航海图|船/.test(e.t))) {
         const check = el("button", "btn small", "我已经拿到了，请说书人核对"); check.type = "button";
@@ -3411,6 +3662,7 @@ function asiPicker(box) {
 const END_TEXT = [
   "晨光照进醉龙酒馆。你掌心的银色印记还在微微发烫。灰帆港的街道上，有人在找你们，也有人在等你们。",
   "船帆鼓满了风，灰帆港在身后的雾里越来越小。航海图上的墨线指向雾海深处的龙骨群岛，沉没的誓约神殿在那里等着你们。",
+  "神殿沉回了海底，烬冠山的方向升起黑烟。你们少了一个人，多了一个必须知道的真相。船头转向灰帆港——战争在那里等着。",
 ];
 function openEnd() {
   const sc = SCENES[state.scene], act = sc.endAct ?? state.act, nextSc = SCENES[sc.after];
