@@ -1493,7 +1493,7 @@ const ENEMIES = {
   assassin: { name: "无面刺客", hp: 22, ac: 15, dex: 3, atk: { n: "匕首", cnt: 1, d: 4, plus: 4, hit: 6 }, sneak: 2 },
   drowned: { name: "溺死水手", hp: 22, ac: 11, dex: 0, atk: { n: "爪击", cnt: 1, d: 8, plus: 3, hit: 6 }, multi: 2 },
   guard_captain: { name: "卫队长", hp: 32, ac: 17, dex: 1, atk: { n: "长剑", cnt: 1, d: 8, plus: 3, hit: 6 }, multi: 2, plead: true, unique: true },
-  pit_fighter: { name: "斗场打手", hp: 26, ac: 14, dex: 1, atk: { n: "铁拳套", cnt: 1, d: 8, plus: 3, hit: 5 }, multi: 2, plead: true },
+  pit_fighter: { name: "斗场打手", hp: 26, ac: 14, dex: 1, atk: { n: "拳套", cnt: 1, d: 8, plus: 3, hit: 5 }, multi: 2, plead: true },
   pit_croc: { name: "铁笼鳄", hp: 40, ac: 12, dex: 0, atk: { n: "撕咬", cnt: 2, d: 8, plus: 3, hit: 6 }, unique: true },
   bosun: { name: "黑鳗号水手长", hp: 30, ac: 14, dex: 1, atk: { n: "船钩", cnt: 1, d: 8, plus: 3, hit: 5 }, multi: 2, plead: true, unique: true },
   guard: { name: "总督府卫兵", hp: 13, ac: 16, dex: 0, atk: { n: "长戟", cnt: 1, d: 8, plus: 2, hit: 4 }, plead: true },
@@ -4169,7 +4169,7 @@ function foeTurn(u) {
       clog(`${u.name} 尖啸一声，${n} 只巨鼠从墙缝里钻了出来`, "event");
     }
   }
-  if (e.plead && u.hp <= u.max / 2 && !u.pleaded) { u.pleaded = true; if (Math.random() < .5) { u.out = "surrendered"; clog(`${u.name} 扔下武器，跪地求饶`); return; } }
+  if (e.plead && u.hp <= u.max / 2 && !u.pleaded) { u.pleaded = true; if (Math.random() < .5) { u.out = "surrendered"; clog(ENCOUNTERS[state.combat.id]?.bout ? `${u.name} 摘下拳套，举手认输` : `${u.name} 扔下武器，跪地求饶`); return; } }
   if (e.ignite && c.round % 3 === 1) {
     const score = zi => cbList().filter(v => v.zone === zi && ACTIVE(v)).reduce((s, v) => s + (hostile(u, v) ? 1 : -1), 0);
     const best = c.zones.map((z, i) => i).filter(i => !c.zones[i].burning && score(i) > 0).sort((a, b) => score(b) - score(a))[0];
