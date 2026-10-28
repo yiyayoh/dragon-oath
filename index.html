@@ -2970,6 +2970,17 @@ function openFinal() {
     }
   });
 }
+// 结局尾声的素材（填数据见 docs/任务书-内容扩充-DS-2.md）：说书人写终章时按每位同伴的处境拿到对应的要点，可以不照抄
+// EPILOGUES[同伴] = { ending: { 结局 id: 要点 }, lover: { 结局 id: 恋人另写的要点 }, choice: { 个人任务抉择: 要点 }, gone: { dead|betrayed|taken: 要点 } }
+const EPILOGUES = {};
+function epilogueNote(cid, end) {
+  const ep = EPILOGUES[cid], c = state.companions[cid]; if (!ep) return "";
+  const gone = !c.alive ? "dead" : c.betrayed ? "betrayed" : c.taken ? "taken" : "";
+  const pick = state.flags[QUESTS[cid].choice.flag];
+  const bits = gone ? [ep.gone?.[gone]] : [ep.ending?.[end], isLover(cid) && ep.lover?.[end], pick && ep.choice?.[pick]];
+  const t = bits.filter(Boolean).join("；");
+  return t ? `（尾声素材：${t}）` : "";
+}
 function chooseEnding(id) {
   const e = ENDINGS[id];
   state.flags["act3.ending"] = id; state.pendingFinal = false;
@@ -2977,8 +2988,8 @@ function chooseEnding(id) {
   goScene("act3_end"); save(); render();
   const lines = Object.keys(COMPANIONS).filter(cid => inAct(cid) && (state.companions[cid].recruited || state.companions[cid].taken || state.companions[cid].betrayed || !state.companions[cid].alive))
     .map(cid => { const c = state.companions[cid], q = QUESTS[cid], pick = state.flags[q.choice.flag];
-      return `${PEOPLE[cid].name}：${!c.alive ? "已死" : c.betrayed ? "投向了烬王" : c.taken ? "仍被困" : "同行"}，赞同 ${c.approval}${c.romance !== "none" ? "，恋爱：" + ROMANCE[c.romance].name : ""}，个人任务：${pick ? q.choice.options[pick] : "没有了结"}`; });
-  gm(`（最终结局：${e.name}——${e.text}${e.act ? "玩家的抉择是：" + e.act + "。" : ""}按这个结局写终章：先写结局发生的那一刻，再为每位同伴写一段尾声（由结局、个人任务结果、赞同度决定；恋人单独写、写得更长）。同伴情况：${lines.join("；")}。）`, null);
+      return `${PEOPLE[cid].name}：${!c.alive ? "已死" : c.betrayed ? "投向了烬王" : c.taken ? "仍被困" : "同行"}，赞同 ${c.approval}${c.romance !== "none" ? "，恋爱：" + ROMANCE[c.romance].name : ""}，个人任务：${pick ? q.choice.options[pick] : "没有了结"}${epilogueNote(cid, id)}`; });
+  gm(`（最终结局：${e.name}——${e.text}${e.act ? "玩家的抉择是：" + e.act + "。" : ""}按这个结局写终章：先写结局发生的那一刻，再为每位同伴写一段尾声（由结局、个人任务结果、赞同度决定；恋人单独写、写得更长）。同伴情况：${lines.join("；")}。括号里的尾声素材是参考，要按实际发生过的事改写，和剧情对不上的就别用。）`, null);
 }
 
 // 场景进入时由代码处理的剧情后果
@@ -3230,6 +3241,10 @@ const CAMP_EVENTS = [
     seed: "博林和奈雅之间的火气看她的身份有没有暴露：还没暴露时，他只是不喜欢“米拉”什么都知道的样子；暴露之后，他连坐都不肯和她坐同一张桌子，说教团害了他哥哥，而她是教团养大的。奈雅没有还嘴。博林把酒杯推过去又收回来。要你调停，或者让他把话说完。" },
 ];
 const KIND_ORDER = { main: 0, romance: 1, resonance: 2, quest: 3, friend: 4 };
+// 不占每晚“一个重要事件”名额、另外列成按钮的事件：banter 同伴之间的群戏（pair），farewell 最后一夜每个人的告别（who，title 可省略）
+const LISTED = ["banter", "farewell"];
+const eventLabel = e => e.group ? "★ " + e.title : e.kind === "farewell" ? e.title || `告别 · ${PEOPLE[e.who].name}` : e.title;
+const eventWho = ev => ev?.group ? "大家" : ev?.pair ? ev.pair.map(id => PEOPLE[id].name).join("和") : ev?.who ? PEOPLE[ev.who].name : null;
 for (const [id, cb] of Object.entries(COMBOS)) CAMP_EVENTS.push({ id: `${id}_resonance`, who: id, kind: "resonance", when: c => c.approval >= 40 && !c.resonance,
   seed: `印记共鸣：你和${PEOPLE[id].name}的掌心同时发烫，两人一起看见了对方最深的记忆。${PEOPLE[id].name}的记忆是：${cb.memory}。你的记忆由玩家的背景决定，写一段具体的。醒过来之后两人都很沉默，然后聊起各自看到的东西。之后战斗里你们可以使用合体技“${cb.name}”。` });
 // 多人恋爱：玩家已有恋人，又和别人走到暧昧以上时，现任会想找你谈（还没表态过才会出现）
@@ -3248,8 +3263,8 @@ function eventFor(id) { return CAMP_EVENTS.find(e => e.id === id) || loverTalks(
 function planNight() {
   const seen = new Set(state.campSeen || []), here = campers();
   const ok = e => !seen.has(e.id) && (e.group ? e.when() : e.pair ? e.pair.every(id => here.includes(id)) : here.includes(e.who) && e.when(state.companions[e.who]));
-  const important = [...CAMP_EVENTS.filter(e => e.kind !== "banter"), ...loverTalks()].filter(ok).sort((a, b) => KIND_ORDER[a.kind] - KIND_ORDER[b.kind])[0];
-  return { important: important?.id || null, banter: CAMP_EVENTS.filter(e => e.kind === "banter" && ok(e)).map(e => e.id) };
+  const important = [...CAMP_EVENTS.filter(e => !LISTED.includes(e.kind)), ...loverTalks()].filter(ok).sort((a, b) => KIND_ORDER[a.kind] - KIND_ORDER[b.kind])[0];
+  return { important: important?.id || null, banter: CAMP_EVENTS.filter(e => LISTED.includes(e.kind) && ok(e)).map(e => e.id) };
 }
 
 // 恋爱、关系、补给等字段，营地内外都能用（只在描写战况时不处理）
@@ -3302,7 +3317,7 @@ function campBrief() {
   let t = `\n\n【营地】第 ${state.day} 夜，${state.location}。在营地的同伴：${who || "无"}。`;
   if (k.talk) {
     const ev = k.event ? eventFor(k.event) : null;
-    const names = ev?.group ? "大家" : ev?.pair ? ev.pair.map(id => PEOPLE[id].name).join("和") : PEOPLE[k.talk]?.name;
+    const names = eventWho(ev) || PEOPLE[k.talk]?.name;
     t += `\n【正在进行】玩家正在和${names}${ev?.group || ev?.pair ? "一起" : "单独"}说话。` + (ev ? `这一晚的处境（素材，可以不用，也可以被玩家带往别处）：${ev.seed}` : "没有特别的事，就是随便聊聊；按对方的性格、心情和记忆即兴。");
   } else t += "\n玩家还没决定找谁说话。";
   t += `\n【营地规则】这是夜里的休息时间，节奏慢、私人，适合聊心事。不要推进主线：不要写 advance、combat。对话自然告一段落（对方回去休息、话题聊完）时写 talk_end: true。`;
@@ -3340,7 +3355,7 @@ function talkTo(target) {
     if (k.plan.important === ev.id) k.plan.important = null;
     k.plan.banter = k.plan.banter.filter(x => x !== ev.id);
   }
-  const name = ev?.group ? "大家" : ev?.pair ? ev.pair.map(id => PEOPLE[id].name).join("和") : PEOPLE[target].name;
+  const name = eventWho(ev) || PEOPLE[target].name;
   gm(`（我${ev?.group || ev?.pair ? "加入" : "走向"}${name}${ev ? "" : "，随便聊聊"}。描写对方此刻的样子，开始对话，给出 3~4 条建议。）`, `你走向${name}。`);
 }
 function endTalk() {
@@ -3438,7 +3453,7 @@ function renderCamp(box) {
   wrap.append(grid);
   const acts = el("div", "cb-acts");
   for (const gid of [imp?.group ? imp.id : null, ...k.plan.banter].filter(Boolean)) {
-    const e = eventFor(gid), b = el("button", "btn small", (e.group ? "★ " : "") + e.title);
+    const e = eventFor(gid), b = el("button", "btn small", eventLabel(e));
     b.type = "button"; b.disabled = busy; b.onclick = () => talkTo("event:" + gid); acts.append(b);
   }
   acts.append(el("span", "sp"));

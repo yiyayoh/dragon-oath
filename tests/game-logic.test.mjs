@@ -382,7 +382,7 @@ test('营地事件的数据完整：同伴存在、条件能执行', () => {
   const run = game();
   const result = run(`(() => {
     state=newGame(freshDraft());state.act=2;state.scene='act2_hub';
-    const bad=CAMP_EVENTS.filter(e=>{try{ if(e.group) e.when(); else if(e.pair) return !e.pair.every(id=>COMPANIONS[id]); else { if(!COMPANIONS[e.who]) return true; e.when(state.companions[e.who]); } return !e.seed||!KIND_ORDER.hasOwnProperty(e.kind)&&e.kind!=='banter'; }catch(x){return true;}}).map(e=>e.id);
+    const bad=CAMP_EVENTS.filter(e=>{try{ if(e.group) e.when(); else if(e.pair) return !e.pair.every(id=>COMPANIONS[id]); else { if(!COMPANIONS[e.who]) return true; e.when(state.companions[e.who]); } return !e.seed||!KIND_ORDER.hasOwnProperty(e.kind)&&!LISTED.includes(e.kind)||e.kind==='farewell'&&!COMPANIONS[e.who]; }catch(x){return true;}}).map(e=>e.id);
     const ids=CAMP_EVENTS.map(e=>e.id);return {bad,dup:ids.length-new Set(ids).size,count:ids.length};
   })()`);
   assert.deepEqual(result.bad, []); assert.equal(result.dup, 0); assert.ok(result.count >= 55, String(result.count));
@@ -715,4 +715,27 @@ test('DS 扩充：新支线的场景、奖励与事件链都合法', () => {
     return { missing, badAt, badFields, badItems, badFlags, badLinks, blocked, taken, badState, offer2, offer3 };
   })()`);
   assert.deepEqual(result, { missing: [], badAt: [], badFields: [], badItems: [], badFlags: [], badLinks: [], blocked: null, taken: 'taken', badState: [], offer2: true, offer3: true });
+});
+
+test('最后一夜的告别列成按钮、可以有好几个；结局尾声素材按同伴的处境塞进终章提示', () => {
+  const run = game();
+  const result = run(`(() => {
+    const calls=[];gm=(a,s)=>{calls.push(a);};state=newGame(freshDraft());state.act=3;state.scene='act3_whisper';
+    for(const id of ['selene','borin']){state.companions[id].recruited=true;state.companions[id].approval=30;}
+    CAMP_EVENTS.push({id:'t_fw_selene',who:'selene',kind:'farewell',when:()=>state.scene==='act3_whisper',seed:'赛勒涅的告别'},
+      {id:'t_fw_borin',who:'borin',kind:'farewell',title:'屋顶上的最后一桶',when:()=>state.scene==='act3_whisper',seed:'博林的告别'});
+    state.campSeen=[];const plan=planNight();state.camp={plan,done:[],talk:null};
+    const labels=plan.banter.filter(id=>id.startsWith('t_fw')).map(id=>eventLabel(eventFor(id)));
+    talkTo('event:t_fw_selene');const brief=campBrief();
+    EPILOGUES.selene={ending:{seven:'她成了新守誓人的第一人'},lover:{seven:'她在酒馆门口等你'},choice:{reforged:'骑士团重立'},gone:{dead:'墓前的剑'}};
+    state.companions.selene.romance='together';state.flags['quest.selene']='reforged';state.flags['act3.ending']=null;
+    chooseEnding('seven');const end=calls.pop();
+    state.companions.selene.alive=false;const dead=epilogueNote('selene','seven');
+    return {important:plan.important,labels,brief:/赛勒涅单独说话/.test(brief)&&/赛勒涅的告别/.test(brief),
+      end:['新守誓人的第一人','在酒馆门口等你','骑士团重立'].every(x=>end.includes(x)),dead};
+  })()`);
+  assert.ok(!String(result.important).startsWith('t_fw'));
+  assert.deepEqual(result.labels, ['告别 · 赛勒涅', '屋顶上的最后一桶']);
+  assert.equal(result.brief, true); assert.equal(result.end, true);
+  assert.equal(result.dead, '（尾声素材：墓前的剑）');
 });
