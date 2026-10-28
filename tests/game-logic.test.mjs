@@ -856,3 +856,69 @@ test('神殿试炼的素材：勇气试炼按玩家背景，真相之厅按在�
   })()`);
   assert.deepEqual(result, { fear: true, selene: true, vex: true, elsewhere: true });
 });
+
+test('DS 第三轮：勇气幻象八背景、真相秘密六同伴、老鳗链三步与前置条件', () => {
+  const run = game();
+  const result = run(`(() => {
+    state = newGame(freshDraft()); state.act = 2;
+    const bgKeys = Object.keys(BACKGROUNDS).sort().join(',');
+    const fearKeys = Object.keys(TRIALS.fears).sort().join(',');
+    const badFears = Object.keys(BACKGROUNDS).filter(k => !TRIALS.fears[k]?.vision || !TRIALS.fears[k]?.ways);
+    const extraFears = Object.keys(TRIALS.fears).filter(k => !BACKGROUNDS[k]);
+    const comps = ['selene','vex','kassian','borin','lyra','naia'];
+    const badSecrets = comps.filter(id => !TRIALS.secrets[id]?.refuse || !TRIALS.secrets[id]?.tell);
+    const extraSecrets = Object.keys(TRIALS.secrets).filter(id => !COMPANIONS[id]);
+
+    state.player.bg = 'soldier'; state.scene = 'act2_temple';
+    const fearPrompt = buildPrompt('x');
+    const fearHit = fearPrompt.includes(TRIALS.fears.soldier.vision) && fearPrompt.includes(TRIALS.fears.soldier.ways);
+    state.scene = 'act2_temple_truth';
+    for (const id of comps) state.companions[id].recruited = true;
+    state.companions.selene.approval = 10; state.companions.vex.approval = 30;
+    const lowPrompt = buildPrompt('x');
+    state.companions.selene.approval = 30;
+    const highPrompt = buildPrompt('x');
+    const trial = {
+      low: lowPrompt.includes(TRIALS.secrets.selene.refuse) && lowPrompt.includes(TRIALS.secrets.selene.tell),
+      high: highPrompt.includes(TRIALS.secrets.selene.tell) && !highPrompt.includes(TRIALS.secrets.selene.refuse),
+      vex: lowPrompt.includes(TRIALS.secrets.vex.tell) && !lowPrompt.includes(TRIALS.secrets.vex.refuse),
+    };
+
+    const ids = ['eel_clerk','eel_wreck','eel_last_crew'];
+    const missing = ids.filter(id => !SIDE[id]);
+    const badAt = ids.flatMap(id => (SIDE[id]?.at || []).filter(a => !SCENES[a]).map(a => id + ':' + a));
+    const badReward = ids.filter(id => !SIDE[id]?.reward || !SIDE[id]?.rewardText);
+    const badItems = ids.flatMap(id => (SIDE[id]?.reward?.items || []).filter(n => !ITEMS[n] && n !== '黑潮会的账本').map(n => id + ':' + n));
+    const eelDealNeed = Object.prototype.hasOwnProperty.call(SIDE.eel_deal, 'need');
+
+    state.flags['act1.eel'] = 'enemy'; delete state.flags['quest.kassian'];
+    const enemy = SIDE.eel_clerk.need();
+    state.flags['act1.eel'] = 'deal';
+    const deal = SIDE.eel_clerk.need();
+    state.flags['quest.kassian'] = 'killed_eel';
+    const killed = SIDE.eel_clerk.need();
+    delete state.flags['quest.kassian']; delete state.flags['side.eel_clerk'];
+    const step2Before = SIDE.eel_wreck.need();
+    state.flags['side.eel_clerk'] = 'done';
+    const step2After = SIDE.eel_wreck.need();
+    delete state.flags['side.eel_wreck'];
+    const step3Before = SIDE.eel_last_crew.need();
+    state.flags['side.eel_wreck'] = 'done';
+    const step3After = SIDE.eel_last_crew.need();
+    state.flags['quest.kassian'] = 'killed_eel';
+    const step3Killed = SIDE.eel_last_crew.need();
+    return { bgKeys, fearKeys, badFears, extraFears, badSecrets, extraSecrets, fearHit, trial, missing, badAt, badReward, badItems, eelDealNeed, enemy, deal, killed, step2Before, step2After, step3Before, step3After, step3Killed };
+  })()`);
+  assert.equal(result.bgKeys, 'acolyte,entertainer,noble,outlander,sage,sailor,soldier,urchin');
+  assert.equal(result.fearKeys, result.bgKeys);
+  assert.deepEqual(result.badFears, []); assert.deepEqual(result.extraFears, []);
+  assert.deepEqual(result.badSecrets, []); assert.deepEqual(result.extraSecrets, []);
+  assert.equal(result.fearHit, true);
+  assert.deepEqual(result.trial, { low: true, high: true, vex: true });
+  assert.deepEqual(result.missing, []); assert.deepEqual(result.badAt, []);
+  assert.deepEqual(result.badReward, []); assert.deepEqual(result.badItems, []);
+  assert.equal(result.eelDealNeed, false);
+  assert.equal(result.enemy, false); assert.equal(result.deal, true); assert.equal(result.killed, false);
+  assert.equal(result.step2Before, false); assert.equal(result.step2After, true);
+  assert.equal(result.step3Before, false); assert.equal(result.step3After, true); assert.equal(result.step3Killed, false);
+});
