@@ -3022,7 +3022,7 @@ function leaveInterlude() {
   if (sc.dream && state.hestiaTrust >= 20 && state.player.inspiration < 4) { state.player.inspiration++; push("sys", "赫斯提雅的祝福：醒来时精神格外好，获得 1 点灵感", { cls: "appr-up" }); }
   if (it.next) {
     goScene(it.next, false, true);
-    state.pendingWake = { prompt: `（玩家从梦里醒来，然后到了下一夜，按新场景的锚点开始。${it.after || ""}）` };
+    state.pendingWake = { prompt: `（玩家从梦里醒来，按新场景的锚点开始；时间以新场景的锚点为准，不要自己写成天亮或下一夜。${it.after || ""}）` };
     return;
   }
   state.scene = it.from; state.location = it.location;
@@ -3287,7 +3287,7 @@ function chooseEnding(id) {
   const lines = Object.keys(COMPANIONS).filter(cid => inAct(cid) && (state.companions[cid].recruited || state.companions[cid].taken || state.companions[cid].betrayed || !state.companions[cid].alive))
     .map(cid => { const c = state.companions[cid], q = QUESTS[cid], pick = state.flags[q.choice.flag];
       return `${PEOPLE[cid].name}：${!c.alive ? "已死" : c.betrayed ? "投向了烬王" : c.taken ? "仍被困" : "同行"}，赞同 ${c.approval}${c.romance !== "none" ? "，恋爱：" + ROMANCE[c.romance].name : ""}，个人任务：${pick ? q.choice.options[pick] : "没有了结"}${epilogueNote(cid, id)}`; });
-  gm(`（最终结局：${e.name}——${e.text}${e.act ? "玩家的抉择是：" + e.act + "。" : ""}按这个结局写终章：先写结局发生的那一刻，再为每位同伴写一段尾声（由结局、个人任务结果、赞同度决定；恋人单独写、写得更长）。同伴情况：${lines.join("；")}。括号里的尾声素材是参考，要按实际发生过的事改写，和剧情对不上的就别用。）`, null);
+  gm(`（最终结局：${e.name}——${e.text}${e.act ? "玩家的抉择是：" + e.act + "。" : ""}按这个结局写终章：先写结局发生的那一刻，再为每位同伴写一段尾声（由结局、个人任务结果、赞同度决定）；恋人的尾声放在最后、单独成段，篇幅至少是其他同伴的两倍，写你们两个人之间具体的画面和以后的日子。同伴情况：${lines.join("；")}。括号里的尾声素材是参考，要按实际发生过的事改写，和剧情对不上的就别用。）`, null);
 }
 
 // 场景进入时由代码处理的剧情后果
