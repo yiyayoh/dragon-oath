@@ -163,6 +163,7 @@ GitHub Pages（`https://yiyayoh.github.io/dragon-oath/`）没有开启，用户�
 | 本次提交 | 10-28 | DS | 补立绘提示词（分支 `ds-content`，只改 `docs/剧本设定集.md`）：5 个还没有提示词的 NPC（奥斯瓦尔德、瑟拉、伊芙、阿登、清醒后的达林 `darin_woke`）；莉拉 4 张、奈雅伪装/真身 8 张表情差分说明；六位同伴龙化 40 / 80 的变体表（12 条，写清鳞片颜色跟谁的血脉、长在哪里、各人的反应）；六张恋人结局图（横版 16:9，玩家只露背影，场景对应 `EPILOGUES` 的 `lover` 要点）。每条都标了文件名；没动代码和测试，`tests/game-logic.test.mjs` 50 项仍全过。未推送，待 Claude 审核合并 |
 | （隔离副本，未提交） | 10-28 | Codex | 定点复验第二轮 `d978615`（真实 6.1 Terra）：神殿两重试炼用上了 DS 的素材（维克斯先拒绝、被说服后才说，赛勒涅没说破容器），随机航程三晚的结算和叙述一致，黑拳打一次就赢、80 金币和叙述对得上。报告由 Claude 复制进 `docs/试玩报告-定点复验-2.md` |
 | 本次提交 | 10-28 | Claude | 拳赛里对手认输写“摘下拳套，举手认输”（之前是“扔下武器”）；斗场打手的武器也叫“拳套”。合并 DS 的立绘提示词（`cf8c70b`，只改设定集，审核没有要改的）。给 GPT 的立绘第一批任务书 `docs/任务书-立绘-第一批NPC.md`（老鳗、萨丝、总督，额度够再画千面母和主教） |
+| 本次提交 | 10-28 | Codex + Claude | 立绘第一批 5 张 NPC（GPT 内置 imagegen 生成，每张一次；Claude 审过画风、复制进主仓库、在舞台上检查过）：`eel`、`sath`、`governor`、`facemother`、`valdo` 的 `neutral`。提示词和自评在 `docs/立绘-第一批.md`，原图在桌面 `dragon-oath-portraits-v4`。给 GPT 第二批任务书 `docs/任务书-立绘-第二批NPC.md`（达林、奥斯瓦尔德、瑟拉、伊芙） |
 
 **新增提交后，请在这张表末尾补一行。**
 
@@ -184,12 +185,13 @@ GitHub Pages（`https://yiyayoh.github.io/dragon-oath/`）没有开启，用户�
 原图在本地桌面：`dragon-oath-portraits-v2`（第一批 7 张）和 `dragon-oath-portraits-v3`（第二批 21 张，含实际提示词），都是 GPT 内置 imagegen 生成的 1024×1536 PNG。仓库里放的是压缩版：
 
 - `portraits/角色id_表情.webp`，768×1152，`cwebp -q 84 -resize 768 1152` 生成，每张约 70–190 KB，共 28 张约 3.2 MB。`portrait()` 只找 `.webp`。
-- 已有（28 张）：
+- 已有（33 张）：
   - `selene` `vex` `kassian` `borin`：`neutral` `smile` `angry` `sad` `tender` 五种表情齐全
   - `lyra`：只有 `neutral`
   - 奈雅：`naia_disguise.webp`（伪装）、`naia_true.webp`（真身）
+  - 第一批 NPC（10-28，`docs/立绘-第一批.md`）：`eel` 老鳗、`sath` 萨丝、`governor` 总督、`facemother` 千面母、`valdo` 主教。萨丝的戟尖、主教的法杖尖贴着画面上沿，舞台上看不出问题
   - NPC 默认立绘：`martha`（独臂，左袖别起）、`tom`、`hestia`（人形）、`hooded`（奈雅在序幕的兜帽伪装，左掌有印记）、`cultist`（狂信徒和烬火术士共用）
-- 还缺：`lyra` 和奈雅的表情差分；`hestia` 的龙形；龙化值 40/80 的变体立绘；第一幕新 NPC（老鳗、总督、萨丝等）。缺图显示占位剪影，缺表情退回 `neutral`。
+- 还缺：`lyra` 和奈雅的表情差分；`hestia` 的龙形；龙化值 40/80 的变体立绘；第二、三幕 NPC（达林、奥斯瓦尔德、瑟拉、伊芙、烬王）和阿登。缺图显示占位剪影，缺表情退回 `neutral`。
 - Codex 对第二批的自评：差分保留了人物、衣服和姿势，但有细微纹理重绘；微笑和温柔的区别比较含蓄（尤其维克斯、博林）；小汤姆是半身构图，腿上的绷带没有入画；兜帽客遮脸后能否认出是奈雅比较主观。
 - 奈雅的两张形态图代码还没用到。序幕的“兜帽客”戴着兜帽，和伪装立绘（人类吟游诗人）不一样，所以没有套用；接入第一幕时要处理形态切换。
 - 补新图：同样转成 768×1152 的 webp，按 `角色id_表情.webp` 命名放进 `portraits/`。奈雅分伪装和真身，表情差分命名为 `naia_disguise_smile.webp`、`naia_true_smile.webp` 这样；达林被唤醒后（`act2.darin=woke`）优先用 `darin_woke.webp`。表情差分以该角色的 v2 图为唯一人物参考。
