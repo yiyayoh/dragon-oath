@@ -790,7 +790,7 @@ const FLAG_KEYS = {
   "act2.revealed": "bool", "act2.heart": ["hestia", "player", "destroyed", "cult"], "act2.taken": "id",
   // 第三幕。route 和 valdo=convinced 有条件；ending 只由最终抉择的界面写
   "act3.saved_first": ["docks", "academy", "manor"], "act3.route": ["charge", "tunnel", "wings"],
-  "act3.valdo": ["convinced", "killed", "captured", "fled"], "act3.ending": ["hestia", "egg", "seven", "mortal", "dragon", "crown", "fall"],
+  "act3.valdo": ["convinced", "killed", "captured", "fled"], "act3.ritual": "bool", "act3.ending": ["hestia", "egg", "seven", "mortal", "dragon", "crown", "fall"],
 };
 
 /* 阵营声望（设定集“世界状态与后果追踪”），−100 到 +100。
@@ -1186,7 +1186,7 @@ const ENEMIES = {
   // 第三幕。breath：每隔几回合向人最多的区域吐息（敏捷豁免减半）；drain：抽取一名持有者的印记（体质豁免，失败失神一回合，玩家龙化值 +10）；
   // king：烬王的三阶段（见 kingTurn）
   wyrmling: { name: "黑龙幼体", hp: 150, ac: 17, dex: 2, atk: { n: "撕咬", cnt: 2, d: 10, plus: 4, hit: 9 }, multi: 2, breath: { dice: [8, 8], every: 2, dc: 15, n: "酸液吐息" }, unique: true },
-  valdo: { name: "主教瓦尔多", pid: "valdo", hp: 180, ac: 17, dex: 1, atk: { n: "黑龙骨杖", cnt: 2, d: 8, plus: 4, hit: 9, ranged: true }, multi: 2, drain: { dc: 16 }, unique: true },
+  valdo: { name: "主教瓦尔多", pid: "valdo", ritual: true, hp: 180, ac: 17, dex: 1, atk: { n: "黑龙骨杖", cnt: 2, d: 8, plus: 4, hit: 9, ranged: true }, multi: 2, drain: { dc: 16 }, unique: true },
   pillar: { name: "印记石柱", hp: 18, ac: 13, dex: -5, atk: null, object: true, mend: { type: "valdo", n: 4 } },
   ember_king: { name: "烬王", pid: "emberking", hp: 300, ac: 19, dex: 2, atk: { n: "利爪与尾", cnt: 2, d: 10, plus: 7, hit: 11 }, multi: 2, king: true, breath: { dice: [8, 6], every: 1, dc: 18, n: "酸液吐息" }, unique: true },
   facemother: { name: "千面母", pid: "facemother", hp: 70, ac: 15, dex: 4, atk: { n: "淬毒匕首", cnt: 2, d: 4, plus: 4, hit: 7 }, sneak: 3, unique: true, shift: 15 },
@@ -1380,7 +1380,7 @@ const ENCOUNTERS = {
   },
   valdo_altar: {
     title: "主教瓦尔多", lethal: true,
-    brief: "主教瓦尔多（生命 180，AC 17，远程，每回合两击；每回合尝试抽取一名持有者的印记：体质 DC 16，失败失神一回合、玩家龙化值 +10）和 4 根印记石柱（每根每回合给他回 4 点生命，可以打碎）；2 名烬卫士兵护卫",
+    brief: "主教瓦尔多（生命 180，AC 17，远程，每回合两击；每回合尝试抽取一名持有者的印记：体质 DC 16，失败失神一回合、玩家龙化值 +10；生命过半开始献祭仪式，3 回合后烬王提前苏醒、最终战更难，即兴行动可以打断）和 4 根印记石柱（每根每回合给他回 4 点生命，可以打碎）；2 名烬卫士兵护卫",
     props: "七根印记石柱、祖坛中央的黑龙头骨、火山口边缘、仪式用的熔岩槽",
     zones: [
       { n: "祖坛台阶", adj: [1] },
@@ -1390,6 +1390,7 @@ const ENCOUNTERS = {
     ],
     start: 0,
     foes: [["valdo", 1, 2], ["ember_guard", 2, 1], ["pillar", 2, 1], ["pillar", 2, 3]],
+    stops: { ritual: "献祭仪式" },
   },
   ember_king: {
     title: "烬王", lethal: false, final: true,
@@ -1544,6 +1545,7 @@ function toast(text, kind) {
    状态
    ========================================================= */
 const AUTO = "dragon-oath-auto";
+const CHECKPOINT = "dragon-oath-checkpoint"; // 攻山之前的存档点：港口陷落之后可以从这里重新挑战（只存在浏览器里）
 const SLOT = n => "dragon-oath-slot-" + n;
 const PREF = "dragon-oath-pref";
 let state = null;
@@ -2502,7 +2504,7 @@ function applyGM(d, mode) {
     if (k === "act2.sacrifice" && v === "draconic") { if (state.player.draconic < 20 || state.flags[k]) continue; addDraconic("player", -20, notes); }
     if (k === "act2.heart" && (state.flags[k] || v === "cult" || v === "destroyed" && state.flags["act2.tideborn"] !== "ally")) continue; // 抢走由代码写；销毁要潮裔是盟友
     if (k === "act2.heart" && v === "player") addDraconic("player", 30, notes);
-    if (k === "act2.taken" || k === "act2.storm" || k === "act3.ending") continue; // 由代码结算
+    if (k === "act2.taken" || k === "act2.storm" || k === "act3.ending" || k === "act3.ritual") continue; // 由代码结算
     if (k === "act3.route" && !({ charge: () => allies().length >= 2, tunnel: () => state.flags["quest.naia"] === "double" || state.flags["prologue.rat_king"] === "spared", wings: () => state.player.draconic >= 80 })[v]?.()) { console.warn("这条路的条件不满足", v); continue; }
     if (k === "act3.valdo" && v === "convinced" && !((state.flags["act2.eve"] || state.flags["side.eve_letter"] === "done") && state.flags["quest.selene.diary"])) continue; // 说服主教要有证据
     if (rule === "bool") state.flags[k] = !!v;
@@ -2649,6 +2651,7 @@ function goScene(id, keepLocation, rested = false) {
   const need = levelNeed(); // 里程碑升级：场景数据里的 level，第一幕按走完的地点数
   if (need > partyLevel()) levelUp(need);
   if (state.visits[id] === 1) sceneRolls(ns); // 第一次进入时，代码替全队掷的豁免/检定
+  if (id === "act3_climb") try { localStorage.setItem(CHECKPOINT, JSON.stringify(snapshot())); } catch (e) {}
   if (ns.enter) SCENE_ENTER[ns.enter]?.();
   flashScene = !!ns.flash;
 }
@@ -3267,6 +3270,7 @@ function startCombat(id) {
   for (const [type, n, zone] of E.foes) for (let i = 0; i < n; i++) { const u = foeUnit(type, zone, "enemy"); c.units[u.id] = u; }
   for (const u of cbList()) if (u.type && ENEMIES[u.type].shift) disguise(u);
   if (E.final) c.allies = allies().map(a => a.name);
+  if (E.final && state.flags["act3.ritual"]) for (const u of cbList().filter(u => ENEMIES[u.type]?.king)) { u.hp = u.max = Math.round(u.max * 1.25); clog(`献祭让${u.name}提前苏醒，它比预想的更强（生命 ${u.max}）`, "event"); }
   for (const u of cbList()) u.init = rollD20() + u.dexMod + (u.initBonus || 0);
   sortOrder();
   state.suggestions = []; state.pendingCheck = null; pick = null;
@@ -3291,10 +3295,15 @@ function hurt(u, n, o = {}) {
     if (u.saves.f >= 3) { if (lethal()) { u.dead = true; return `${u.name} 没能挺过来……`; } u.stable = true; return `${u.name} 昏死过去`; }
     return `${u.name} 死亡豁免失败 ${u.saves.f}`;
   }
-  if (c && ENCOUNTERS[c.id]?.final && u.type && ENEMIES[u.type].king && u.hp - n <= u.max / 3) { // 烬王坠落：停下来做最终抉择
-    u.hp = Math.max(1, u.hp - n); c.end = "final"; clog(`${u.name}重重地坠落在火山口边缘，鳞片崩裂，熔岩四溅——它抬起头，最后一次看着你。`, "event"); return "";
+  if (c && ENCOUNTERS[c.id]?.final && u.type && ENEMIES[u.type].king) {
+    // 生命降到 1/3：第三阶段“末路”，坠落到火山口边缘，之后每回合崩掉一块平台；玩家随时可以做最终抉择，打到 0 也进入抉择
+    if (!u.fallen && u.hp - n <= u.max / 3) { u.fallen = true; u.aloft = false; u.grounded = false; clog(`${u.name}重重地坠落在火山口边缘，鳞片崩裂，熔岩四溅——它挣扎着撑起身子，平台开始一块块崩塌。现在可以做出最终抉择了。`, "event"); }
+    if (u.hp - n <= 0) { u.hp = 1; c.end = "final"; clog(`${u.name}再也撑不起身子，它抬起头，最后一次看着你。`, "event"); return ""; }
   }
   u.hp -= n;
+  if (c && ENEMIES[u.type]?.ritual && !c.ritualAt && u.hp > 0 && u.hp <= u.max / 2) { // 主教：生命过半开始献祭，3 回合后完成
+    c.ritualAt = c.round + 3; clog(`${u.name}张开双臂，七根石柱同时燃起黑火——献祭仪式开始了！再过 3 回合，烬王就会提前苏醒。（即兴行动可以打断）`, "event");
+  }
   const fl = c && ENCOUNTERS[c.id]?.flee;
   if (fl && u.type === fl.type && u.hp > 0 && u.hp <= u.max * fl.at) { u.out = "fled"; clog(fl.text, "event"); return ""; }
   if (u.hp > 0) {
@@ -3549,6 +3558,17 @@ function comboStrike(me, mate, t) {
   attack(me, t, me.weapons.find(w => w.ranged === (t.zone !== me.zone)) || me.weapons[0], o);
   if (ACTIVE(t)) attack(mate, t, mate.weapons.find(w => w.ranged === (t.zone !== mate.zone)) || mate.weapons[0], o);
 }
+// 平台崩塌：里面的人受 4d6、被甩到相邻还在的区域；这块地从此不存在
+function collapse(zi) {
+  const c = state.combat, z = c.zones[zi];
+  const to = z.adj.find(a => !c.zones[a].gone) ?? c.zones.findIndex((x, i) => i !== zi && !x.gone);
+  z.gone = true;
+  for (const x of c.zones) x.adj = x.adj.filter(a => a !== zi);
+  if (!z.adj.length || to < 0) return;
+  const hit = cbList().filter(v => v.zone === zi && !v.dead && !v.out).map(v => { const n = roll(4, 6), r = hurt(v, n, { area: true }); v.zone = to; return `${v.name} −${n}${r ? "，" + r : ""}`; });
+  if (!c.zones[to].adj.length) c.zones[to].adj = c.zones.map((x, i) => i).filter(i => i !== to && !c.zones[i].gone);
+  clog(`${z.n}在烬王的一击下崩塌，坠进熔岩${hit.length ? "：" + hit.join("；") + "（被甩到" + c.zones[to].n + "）" : ""}`, "hit");
+}
 // 吐息：对人最多的区域，敏捷豁免减半
 function breathe(u, b) {
   const c = state.combat, score = zi => cbList().filter(v => v.zone === zi && hostile(u, v) && ACTIVE(v)).length;
@@ -3575,6 +3595,14 @@ function drainMark(u, dc, ab = "con", what = "抽取印记") {
 function kingTurn(u) {
   const c = state.combat, e = ENEMIES[u.type];
   u.grounded = false;
+  if (u.fallen) { // 末路：每回合崩掉一块平台（优先有人的，不崩它自己所在的地方，至少留两块），然后爪尾两击
+    const left = c.zones.map((z, i) => i).filter(i => !c.zones[i].gone);
+    const crowd = i => cbList().filter(v => v.zone === i && hostile(u, v) && ACTIVE(v)).length;
+    const pick = left.filter(i => i !== u.zone).sort((a, b) => crowd(b) - crowd(a))[0]; // 有人的先崩，没人也崩：空间越打越小
+    if (pick != null && left.length > 2) collapse(pick);
+    for (let i = 0; i < 2 && ACTIVE(u); i++) fightTurn(u);
+    return;
+  }
   if (u.hp > u.max * 2 / 3) { drainMark(u, 16, "wis", "低语"); for (let i = 0; i < 3 && ACTIVE(u); i++) fightTurn(u); return; }
   if (!u.aloft) { u.aloft = true; clog(`${u.name}挣出火山口，巨翼一振升上了天空——近战够不着它了！`, "event"); }
   breathe(u, e.breath);
@@ -3658,6 +3686,10 @@ function nextTurn() {
   c.turn = 0; c.round++;
   for (const z of c.zones) if (z.burning && --z.burning === 0) clog(`${z.n}的火熄灭了`);
   clog(`第 ${c.round} 回合`, "round");
+  if (c.ritualAt && c.round >= c.ritualAt && !c.stopped?.ritual && cbList().some(v => ENEMIES[v.type]?.ritual && ACTIVE(v))) {
+    c.ritualAt = null; state.flags["act3.ritual"] = true;
+    clog("献祭仪式完成了——火山口深处传来一声震天的咆哮，烬王提前苏醒，力量比预想的更强！", "event");
+  }
   // 回合事件：spawn 增援；blast 炸到所有人（或 zones 里的人）；unless 是即兴行动可以阻止的机关（combat.stop）
   for (const ev of ENCOUNTERS[c.id].events || []) if (ev.round === c.round && !(ev.unless && c.stopped?.[ev.unless])) {
     for (const [type, n, zone] of ev.spawn || []) for (let i = 0; i < n; i++) { const u = foeUnit(type, zone, ev.side || "enemy"); u.init = rollD20() + u.dexMod; c.units[u.id] = u; }
@@ -3899,6 +3931,7 @@ function renderCombat(box) {
 
   const zs = el("div", "zones");
   c.zones.forEach((z, zi) => {
+    if (z.gone) { const g = el("div", "zone"); g.append(el("div", "zn", z.n), el("div", "zt", "已经崩塌")); zs.append(g); return; }
     const zb = el("div", "zone" + (me.zone === zi ? " here" : "") + (z.burning ? " fire" : ""));
     const zn = el("div", "zn"); const tags = z.tags.map(t => ZONE_TAGS[t]); if (z.burning) tags.push(`燃烧 ${z.burning}`);
     zn.append(el("span", null, z.n), el("span", "zt", tags.join(" · "))); zb.append(zn);
@@ -3946,6 +3979,7 @@ function renderCombat(box) {
       }
       for (const mate of cbList().filter(v => v.side === "party" && v.ref !== "player" && ACTIVE(v) && v.zone === me.zone && state.companions[v.ref]?.resonance && !c.combos?.[v.ref]))
         add(COMBOS[mate.ref].name, () => setPick({ kind: "combo", ally: mate.id, label: COMBOS[mate.ref].name }), null, `和${mate.name}一起出手：各攻击一次，都有优势，命中各加 2d6`);
+      if (cbList().some(v => v.fallen && ACTIVE(v))) add("★ 最终抉择", () => act((c, me) => { c.res.action = false; c.end = "final"; clog(`${me.name}举起掌心——七片印记同时亮起`, "event"); }), "gold", "烬王已经坠落：现在就做出最终抉择，结束这场战斗");
       if (cbList().some(v => v.guise && ACTIVE(v))) add("识破伪装", () => act((c, me) => { c.res.action = false; trySpot(me); }), null, `用掉动作在人群里找伪装的敌人：察觉 DC ${SPOT_DC}`);
       add("冲刺", () => act((c, me) => { c.res.action = false; c.res.move++; clog(`${me.name} 冲刺`); }), null, "本回合多移动一次");
       add("闪避", () => act((c, me) => { c.res.action = false; me.cond.dodge = true; clog(`${me.name} 摆出防守架势`); }), null, "直到你下回合开始，攻击你的人有劣势");
@@ -4599,6 +4633,11 @@ function openEnd() {
     if (nextSc) {
       const b = el("button", "btn gold", `进入${ACT_NAMES[nextSc.act]}`); b.type = "button";
       b.onclick = () => { if (busy) return; nextAct(); };
+      s.append(b);
+    } else if (act === 3 && state.flags["act3.ending"] === "fall" && readSave(CHECKPOINT)) {
+      s.append(el("p", null, "幸存者在逃亡的船上望着燃烧的港口。也许还有另一种可能……"));
+      const b = el("button", "btn gold", "重新挑战（回到攻山之前）"); b.type = "button";
+      b.onclick = () => { const sv = readSave(CHECKPOINT); if (sv && validState(sv.state)) { closeModal(); loadState(sv.state); toast("回到了攻上烬冠山之前"); } };
       s.append(b);
     } else s.append(el("p", null, act === 3 ? "全剧终。谢谢你陪他们走完这一程。" : `${ACT_NAMES[act + 1] || "后面的故事"}会在下一个版本开放。你的存档会保留，到时可以接着玩。`));
   });

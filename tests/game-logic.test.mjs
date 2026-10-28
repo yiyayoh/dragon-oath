@@ -330,12 +330,12 @@ test('烬王：低语、升空后近战够不着、盟友压制、坠落时进�
     startCombat('ember_king');const c=state.combat,k=Object.values(c.units).find(u=>u.type==='ember_king');
     k.hp=150;kingTurn(k);const air={aloft:k.aloft,grounded:k.grounded,allies:c.allies.length};
     kingTurn(k);const noMelee=validTarget({kind:'attack',w:0},k)===false||state.combat.units.player.weapons[0].ranged;
-    hurt(k,60);const result=combatResult();endCombat(result);
+    hurt(k,60);const fallen=!!k.fallen&&!combatResult();hurt(k,500);const result=combatResult();endCombat(result);
     const pending=!!state.pendingFinal;const egg=ENDINGS.egg.need().length>0, crown=ENDINGS.crown.need().length===0;
     chooseEnding('crown');
-    return {air,noMelee,result,pending,egg,crown,scene:state.scene,ending:state.flags['act3.ending']};
+    return {air,noMelee,fallen,result,pending,egg,crown,scene:state.scene,ending:state.flags['act3.ending']};
   })()`);
-  assert.deepEqual(result, { air: { aloft: true, grounded: true, allies: 0 }, noMelee: true, result: 'final', pending: true, egg: true, crown: true, scene: 'act3_end', ending: 'crown' });
+  assert.deepEqual(result, { air: { aloft: true, grounded: true, allies: 0 }, noMelee: true, fallen: true, result: 'final', pending: true, egg: true, crown: true, scene: 'act3_end', ending: 'crown' });
 });
 
 test('最终战失败就是港口陷落', () => {
@@ -548,4 +548,21 @@ test('阵营声望：关键选择算底数，说书人小幅增减；影响价�
     return {start,watch,price,shut,bought,al,crown,crown2};
   })()`);
   assert.deepEqual(result, { start: { watch: 0, cult: -30 }, watch: 40, price: 23, shut: true, bought: false, al: ['watch'], crown: true, crown2: true });
+});
+
+test('烬王末路崩塌平台；主教生命过半开始献祭，3 回合后烬王更强；攻山前记下存档点', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};const store={};localStorage.setItem=(k,v)=>{store[k]=v;};localStorage.getItem=k=>store[k]??null;
+    state=newGame(freshDraft());state.act=3;state.scene='act3_whisper';state.companions.selene.recruited=true;levelUp(11);
+    goScene('act3_climb');const cp=!!store['dragon-oath-checkpoint'];
+    state.scene='act3_altar';startCombat('valdo_altar');let c=state.combat;c.res={move:1,action:true,bonus:true};const v=Object.values(c.units).find(u=>u.type==='valdo');
+    hurt(v,Math.ceil(v.max/2)+1);const started=c.ritualAt;c.turn=c.order.length;for(let i=0;i<3;i++){c.turn=c.order.length-1;nextTurn();}
+    const ritual=!!state.flags['act3.ritual'];state.combat=null;
+    state.scene='act3_king';startCombat('ember_king');c=state.combat;c.res={move:1,action:true,bonus:true};const k=Object.values(c.units).find(u=>u.type==='ember_king');const bigger=k.max>Math.round(300*1.3);
+    for(const u of Object.values(c.units)) if(u.side==='party') u.zone=1;hurt(k,k.hp-Math.floor(k.max/3)+1);
+    const zonesBefore=c.zones.filter(z=>!z.gone).length;kingTurn(k);const zonesAfter=c.zones.filter(z=>!z.gone).length;
+    return {cp,started:!!started,ritual,bigger,fallen:k.fallen,collapsed:zonesBefore-zonesAfter,partyMoved:Object.values(c.units).filter(u=>u.side==='party').every(u=>!c.zones[u.zone].gone)};
+  })()`);
+  assert.deepEqual(result, { cp: true, started: true, ritual: true, bigger: true, fallen: true, collapsed: 1, partyMoved: true });
 });
