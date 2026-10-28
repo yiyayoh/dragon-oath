@@ -222,3 +222,30 @@ test('可招募的同伴在说书人资料里写明要用 recruit，不能招募
   })()`);
   assert.deepEqual(result, { before: false, after: true, joined: false });
 });
+
+test('个人任务按顺序推进，第二步要赞同度 20，考验通过后才能立誓约', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};state=newGame(freshDraft());state.act=1;state.scene='act1_docks';const k=state.companions.kassian;k.recruited=true;
+    applyGM({flags:{'quest.kassian.poison':true}});const skip=!!state.flags['quest.kassian.poison'];
+    applyGM({flags:{'quest.kassian.arden':true}});applyGM({flags:{'quest.kassian.poison':true}});const lowApproval=!!state.flags['quest.kassian.poison'];
+    k.approval=25;applyGM({flags:{'quest.kassian.poison':true,'quest.kassian':'spared'}});
+    const done={poison:state.flags['quest.kassian.poison'],choice:state.flags['quest.kassian']};
+    applyGM({flags:{'quest.kassian':'exposed'}});const locked=state.flags['quest.kassian'];
+    applyGM({flags:{'quest.selene.truth':true}});const act2=!!state.flags['quest.selene.truth'];
+    k.approval=85;k.romance='together';applyGM({romance:[{id:'kassian',to:'vowed'}]});const noVow=k.romance;
+    applyGM({flags:{'quest.kassian.tested':true}});applyGM({romance:[{id:'kassian',to:'vowed'}]});
+    return {skip,lowApproval,done,locked,act2,noVow,vowed:k.romance,brief:companionBrief('kassian').includes('斗兽场的回声')};
+  })()`);
+  assert.deepEqual(result, { skip: false, lowApproval: false, done: { poison: true, choice: 'spared' }, locked: 'spared', act2: false, noVow: 'together', vowed: 'vowed', brief: true });
+});
+
+test('维克斯独自去交易：赞同不够就带着妹妹和龙蛋消失', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};state=newGame(freshDraft());state.act=1;state.scene='act1_docks';const v=state.companions.vex;v.recruited=true;v.approval=25;
+    applyGM({flags:{'act1.debt_known':true,'quest.vex.egg':true,'quest.vex':'alone'}});
+    return {lise:state.flags['act1.lise'],gone:!party().includes('vex'),left:!!v.left};
+  })()`);
+  assert.deepEqual(result, { lise: 'saved', gone: true, left: true });
+});

@@ -503,7 +503,7 @@ const SCENES = {
   },
   act1_docks: {
     title: "黑潮码头", loc: "灰帆港 · 黑潮码头", bg: "linear-gradient(160deg,#3c4a44,#18201c 60%,#0b0f0d)", loc1: true,
-    anchor: "鱼腥、焦油和赌徒的吆喝。黑潮会控制着这里：仓库、私船、地下斗兽场。老鳗·莫格（笑眉笑眼、毒如蛇蝎的胖老头）在一艘改成赌场的旧船“金鳗”上见客，只认利益。他可以：拿维克斯的债要挟（妹妹莉丝扣在他手里，三天期限；债务被提起时写 act1.debt_known=true）；开价——替他从总督府金库偷出总督的走私账本（总督拿它要挟黑潮会多年），他就借出“黑鳗号”并把维克斯的债减半（写 act1.eel=deal）。玩家也可以与黑潮会为敌（写 act1.eel=enemy），强行救莉丝（写 act1.lise=saved）。斗兽场：卡西安会认出这个地方（他是十年前的头牌“碎潮”），会有人认出他。若维克斯在序幕里离开了队伍，他就在码头躲债，可以用 recruit 劝他回来。真正打起来时在 JSON 写 combat 为 docks_brawl。码头斗殴打过之后，若玩家要强抢黑鳗号（或再跟黑潮会动手），写 combat 为 docks_ship；赢了写 act1.ship=stolen、act1.eel=enemy。离开码头时把 advance 设为 act1_hub。",
+    anchor: "鱼腥、焦油和赌徒的吆喝。黑潮会控制着这里：仓库、私船、地下斗兽场。老鳗·莫格（笑眉笑眼、毒如蛇蝎的胖老头）在一艘改成赌场的旧船“金鳗”上见客，只认利益。他可以：拿维克斯的债要挟（妹妹莉丝扣在他手里，三天期限；债务被提起时写 act1.debt_known=true）；开价——替他从总督府金库偷出总督的走私账本（总督拿它要挟黑潮会多年），他就借出“黑鳗号”并把维克斯的债减半（写 act1.eel=deal）。玩家也可以与黑潮会为敌（写 act1.eel=enemy），强行救莉丝（写 act1.lise=saved）。斗兽场：卡西安会认出这个地方（他是十年前的头牌“碎潮”），会有人认出他——亡友的儿子阿登（年轻的斗士，认定是卡西安毒死了他父亲）当众要求和他生死决斗，写 quest.kassian.arden=true。斗兽场账房的旧账本里记着当年那瓶毒药是老鳗买的（卡西安赞同 ≥ 20 才肯让你帮他查，查到写 quest.kassian.poison=true）；之后卡西安的抉择写 quest.kassian：exposed 当众公布证据（阿登成为盟友，黑潮会颜面扫地）、spared 接受决斗但不杀阿登、killed_eel 让卡西安亲手杀死老鳗（他的誓言破碎）。龙蛋：维克斯赞同 ≥ 20 时，会承认那颗银“宝石”其实是龙蛋，黑潮会和教团都在找它，并说出莉丝被关在金鳗船底的货舱（写 quest.vex.egg=true）；之后救莉丝的方式写 quest.vex：sold 把蛋卖给老鳗换人（同时写 act1.lise=saved、act1.vex_debt=paid）、stormed 强攻救人留下龙蛋（同时写 act1.lise=saved、act1.eel=enemy）、alone 让维克斯独自去交易（结果由程序决定，你只写 quest.vex）。若维克斯在序幕里离开了队伍，他就在码头躲债，可以用 recruit 劝他回来。真正打起来时在 JSON 写 combat 为 docks_brawl。码头斗殴打过之后，若玩家要强抢黑鳗号（或再跟黑潮会动手），写 combat 为 docks_ship；赢了写 act1.ship=stolen、act1.eel=enemy。离开码头时把 advance 设为 act1_hub。",
     next: ["act1_hub"], encounters: ["docks_brawl", "docks_ship"], recruit: ["vex"], meet: ["vex"], act: 1,
   },
   act1_tower: {
@@ -513,7 +513,7 @@ const SCENES = {
   },
   act1_wreck: {
     title: "沉船湾", loc: "灰帆港 · 沉船湾", bg: "linear-gradient(160deg,#5f7380,#212b31 60%,#0c1013)", loc1: true,
-    anchor: "退潮后的沉船湾，礁石间搁浅着坠落的银龙尸体，大得像一座倒下的山，鳞片已经开始黯淡。拾荒者、学者和好奇的平民远远围着；水下有被龙死时的银光惊醒的溺死水手在游荡，天黑后会爬上岸。赛勒涅看到龙尸会非常动摇（晨星骑士团等了百年的召唤，等来的却是一具尸体），这是她个人任务的第一步：她想在龙尸旁找到骑士团的遗物或誓言的线索。抉择：取龙鳞龙血（可以制成道具，写进 items_add；赛勒涅 −10，写 act1.dragon_body=harvested），或者为龙举行葬礼（写 act1.dragon_body=funeral）。印记在龙尸旁会发烫，可以给少量龙化值。溺死水手爬上岸时，如果动手，在 JSON 写 combat 为 wreck_drowned；也可以用宗教检定（DC 13）让它们安息。离开时把 advance 设为 act1_hub。",
+    anchor: "退潮后的沉船湾，礁石间搁浅着坠落的银龙尸体，大得像一座倒下的山，鳞片已经开始黯淡。拾荒者、学者和好奇的平民远远围着；水下有被龙死时的银光惊醒的溺死水手在游荡，天黑后会爬上岸。赛勒涅看到龙尸会非常动摇（晨星骑士团等了百年的召唤，等来的却是一具尸体），这是她个人任务的第一步：她想在龙尸旁找到骑士团的遗物或誓言的线索——龙腹下的礁缝里压着一具穿晨星骑士团铠甲的遗骸（骑士团长），怀里有一本被海水泡坏的日记。找到时写 quest.selene.diary=true；日记的真相第二幕才读得懂，现在只读得出零星字句，不要说破献祭渔村的事。抉择：取龙鳞龙血（可以制成道具，写进 items_add；赛勒涅 −10，写 act1.dragon_body=harvested），或者为龙举行葬礼（写 act1.dragon_body=funeral）。印记在龙尸旁会发烫，可以给少量龙化值。溺死水手爬上岸时，如果动手，在 JSON 写 combat 为 wreck_drowned；也可以用宗教检定（DC 13）让它们安息。离开时把 advance 设为 act1_hub。",
     next: ["act1_hub"], encounters: ["wreck_drowned"], act: 1,
   },
   act1_manor: {
@@ -523,13 +523,13 @@ const SCENES = {
   },
   act1_sewers: {
     title: "下水道迷宫", loc: "灰帆港 · 下水道迷宫", bg: "linear-gradient(160deg,#3c4434,#171a13 60%,#0a0b08)", loc1: true, rescue: true,
-    anchor: "港口底下的古老排水道，是教团在灰帆港的据点。入口可以从酒馆地窖（若序幕放过了鼠王，它会带路，写清楚它的样子）、码头排水口或旧学院下水口找到。深处有教团的祭室，一名教团执事主持；墙上挂着一把刻满符文的矮人战斧——博林认得，那是他“死去”的哥哥达林的斧子（写 act1.darin_axe=true；斧子上的烬火痕迹说明达林可能没死，不要直接说破）。若序幕里有同伴被交给了教团，他就被关在这里，可以用 recruit 救回。动手时在 JSON 写 combat 为 sewers_cult。抓住执事后的抉择：拷问他（写 act1.deacon=tortured，得知“教团在等七片印记聚齐”的线索和教团在港口的眼线），或放他回去当线人（写 act1.deacon=informant）。离开时把 advance 设为 act1_hub。",
+    anchor: "港口底下的古老排水道，是教团在灰帆港的据点。入口可以从酒馆地窖（若序幕放过了鼠王，它会带路，写清楚它的样子）、码头排水口或旧学院下水口找到。深处有教团的祭室，一名教团执事主持；墙上挂着一把刻满符文的矮人战斧——博林认得，那是他“死去”的哥哥达林的斧子（写 act1.darin_axe=true；斧子上的烬火痕迹说明达林可能没死，不要直接说破）。祭室的书架上有一叠写给教团的研究信，笔迹和废塔笔记的抄写者一样：莉拉会认出那是她的导师奥斯瓦尔德（她赞同 ≥ 20 才肯当众承认，写 quest.lyra.oswald=true；信里邀请她“一起完成我们的研究”）。若序幕里有同伴被交给了教团，他就被关在这里，可以用 recruit 救回。动手时在 JSON 写 combat 为 sewers_cult。抓住执事后的抉择：拷问他（写 act1.deacon=tortured，得知“教团在等七片印记聚齐”的线索和教团在港口的眼线），或放他回去当线人（写 act1.deacon=informant）。两种做法都能问出达林还活着、在龙骨群岛的教团据点（博林赞同 ≥ 20 时他才会追问到底，写 quest.borin.alive=true）。离开时把 advance 设为 act1_hub。",
     next: ["act1_hub"], encounters: ["sewers_cult"], act: 1,
   },
   act1_lighthouse: {
     title: "灯塔之夜", loc: "灰帆港 · 灯塔", bg: "linear-gradient(160deg,#6b3a2a,#26140f 60%,#0f0806)", level: 5, camp: false, act: 1,
     split: { flag: "act1.ship_intact", place: "码头", job: "拆掉码头上的炸药" },
-    anchor: "航海图和船都到手的当晚，灰烬教团动手了：酒馆被砸，玛莎被绑走（若 act1.hostage=tom，被绑的是小汤姆；确定人质时写 act1.hostage=martha 或 tom），留话“一个小时内，带着印记持有者到灯塔来交换”。同时米拉的身份暴露：她传给教团的情报让教团知道了你们的航线和船（若 act1.naia_seen 为 true，玩家早已知道，现在她可以选择当面坦白）。把 act1.naia_exposed 设为 true，她从此显出真身（灰白皮肤、水银色头发、没有瞳孔的乳白眼睛），名字是奈雅。玩家必须当场或事后决定怎么处置她：杀掉、关押、接纳（写 act1.naia_fate = killed|imprisoned|recruited；killed 时她死去，imprisoned 时她离队被关在酒馆地窖）。其他同伴会强烈表态：赛勒涅、博林主张严惩，卡西安主张宽恕。教团还在码头埋了炸药，目标是你们的船：队伍可以拆分，一部分人去码头拆炸药，其余人去灯塔。谁去码头由玩家在界面上分派，码头的战斗和拆弹由程序结算并写 act1.ship_intact；你不要替玩家决定谁去哪里，也不要自己写 act1.ship_intact，可以在叙述里提醒玩家要分派。灯塔分底层、旋梯、灯室三层；千面母（教团间谍头子、奈雅的养母，永远不用同一张脸）带着无面刺客混在一群“平民”里等着，开战时她已经变成队伍里某个人的样子。动手时在 JSON 写 combat 为 lighthouse；若奈雅已被接纳且赞同度 ≥ 40，她可以和千面母对话让她动摇退场，用千面母的真名威胁也能让她投降。战后写 act1.martha_alive（人质是否活着），把 advance 设为 act1_dawn。",
+    anchor: "航海图和船都到手的当晚，灰烬教团动手了：酒馆被砸，玛莎被绑走（若 act1.hostage=tom，被绑的是小汤姆；确定人质时写 act1.hostage=martha 或 tom），留话“一个小时内，带着印记持有者到灯塔来交换”。同时米拉的身份暴露：她传给教团的情报让教团知道了你们的航线和船（若 act1.naia_seen 为 true，玩家早已知道，现在她可以选择当面坦白）。把 act1.naia_exposed 设为 true，她从此显出真身（灰白皮肤、水银色头发、没有瞳孔的乳白眼睛），名字是奈雅。玩家必须当场或事后决定怎么处置她：杀掉、关押、接纳（写 act1.naia_fate = killed|imprisoned|recruited；killed 时她死去，imprisoned 时她离队被关在酒馆地窖）。其他同伴会强烈表态：赛勒涅、博林主张严惩，卡西安主张宽恕。教团还在码头埋了炸药，目标是你们的船：队伍可以拆分，一部分人去码头拆炸药，其余人去灯塔。谁去码头由玩家在界面上分派，码头的战斗和拆弹由程序结算并写 act1.ship_intact；你不要替玩家决定谁去哪里，也不要自己写 act1.ship_intact，可以在叙述里提醒玩家要分派。灯塔分底层、旋梯、灯室三层；千面母（教团间谍头子、奈雅的养母，永远不用同一张脸）带着无面刺客混在一群“平民”里等着，开战时她已经变成队伍里某个人的样子。动手时在 JSON 写 combat 为 lighthouse；若奈雅已被接纳且赞同度 ≥ 40，她可以和千面母对话让她动摇退场，用千面母的真名威胁也能让她投降。千面母会当着奈雅说出：她手里握着奈雅的“真名”，教团随时能用它收回她（奈雅在场、赞同度 ≥ 20 时，她事后才会告诉你真名意味着什么，写 quest.naia.name=true）。战后写 act1.martha_alive（人质是否活着），把 advance 设为 act1_dawn。",
     next: "act1_dawn", encounters: ["lighthouse"],
   },
   act1_dawn: {
@@ -560,6 +560,57 @@ const FLAG_KEYS = {
   "act1.naia_seen": "bool", "act1.naia_exposed": "bool", "act1.naia_fate": ["recruited", "imprisoned", "killed"],
   "act1.hostage": ["martha", "tom"], "act1.martha_alive": "bool", "act1.ship_intact": "bool", "act1.departure_ship": ["black_eel", "seagull", "stolen", "fishing"],
 };
+
+/* 同伴的个人任务（设定集各同伴的“个人任务”）。每一步由一个标记完成，按顺序推进；act 是最早哪一幕能做。
+   第一步之后要赞同度 ≥ 20 才肯往下谈，≤ −20 拒绝个人任务。choice 是最后的抉择，on 是代码负责的后果；
+   test 是恋爱的“考验”，过了才能立誓约（quest.id.tested）。第一步有的直接用剧情里现成的标记。 */
+const QUESTS = {
+  selene: { name: "最后的晨星", steps: [
+      { flag: "quest.selene.diary", act: 1, text: "在沉船湾的银龙遗骨旁找到骑士团长的遗体和日记" },
+      { flag: "quest.selene.truth", act: 2, text: "读懂日记：百年前骑士团为加固封印献祭了一整个渔村，幸存者的复仇让骑士团覆灭" },
+    ],
+    choice: { flag: "quest.selene", act: 2, options: { reforged: "公开真相，重立誓言", hidden: "掩盖真相", oathbreaker: "放弃誓言，成为破誓者" } },
+    test: "第二幕的启示里她得知自己只是容器，你告诉她“你不是任何人的容器”" },
+  vex: { name: "债与蛋", steps: [
+      { flag: "act1.debt_known", act: 1, text: "黑潮会在码头堵住维克斯追债，限期三天，不然把他妹妹莉丝卖到外海" },
+      { flag: "quest.vex.egg", act: 1, text: "发现“宝石”其实是龙蛋，黑潮会和教团都在找它；也查到莉丝被关在哪里" },
+    ],
+    choice: { flag: "quest.vex", act: 1, closed: () => state.flags["act1.lise"] === "sold" && "莉丝已经被卖到外海", options: { sold: "把龙蛋卖给老鳗，换回莉丝", stormed: "强攻黑潮会救人，留下龙蛋", alone: "让维克斯独自去交易" },
+      // 独自去交易：赞同度够高他会带着妹妹回来，不然连蛋带妹妹一起消失
+      on: { alone: (c, notes) => { state.flags["act1.lise"] = "saved"; if (c.approval < 40) { c.recruited = false; c.left = true; notes.push(["维克斯带着妹妹和龙蛋消失了", "down"]); } } } },
+    test: "为了他和老鳗翻脸" },
+  kassian: { name: "斗兽场的回声", steps: [
+      { flag: "quest.kassian.arden", act: 1, text: "亡友的儿子阿登找上门来，当众向卡西安发起生死决斗" },
+      { flag: "quest.kassian.poison", act: 1, text: "查到当年那场毒药来自老鳗，证据藏在斗兽场的账本里" },
+    ],
+    choice: { flag: "quest.kassian", act: 1, options: { exposed: "在斗兽场当众公布证据", spared: "接受决斗，但不杀阿登", killed_eel: "让卡西安亲手杀死老鳗" } },
+    test: "你能轻易杀死一个投降的敌人时，选择放过" },
+  borin: { name: "兄弟的斧", steps: [
+      { flag: "act1.darin_axe", act: 1, text: "发现一名教团执事用着哥哥达林的符文战斧" },
+      { flag: "quest.borin.alive", act: 1, text: "从执事那里得知达林还活着，在龙骨群岛的教团据点" },
+    ],
+    choice: { flag: "quest.borin", act: 2, options: { mercy: "给达林一个痛快", woke: "唤醒达林（铁炉堡战歌 + 魅力 DC 18）", abandoned: "放任不管" } },
+    test: "达林的事上站在博林这边，不放任不管" },
+  lyra: { name: "老师的影子", steps: [
+      { flag: "act1.notes_copied", act: 1, text: "在废塔地下室发现研究笔记被人整本抄录过" },
+      { flag: "quest.lyra.oswald", act: 1, text: "认出抄写的是导师奥斯瓦尔德：他已加入教团，还邀请莉拉“一起完成我们的研究”" },
+    ],
+    choice: { flag: "quest.lyra", act: 2, options: { killed: "杀死导师", turned: "说服导师反水", joined: "让莉拉接受邀请" } },
+    test: "在力量和你之间，她看到你不会把她当工具" },
+  naia: { name: "无面之名", steps: [
+      { flag: "act1.naia_fate", act: 1, text: "身份暴露后，你决定了怎么处置她" },
+      { flag: "quest.naia.name", act: 1, text: "千面母来回收她，手里握着她的“真名”：教团可以用真名控制她" },
+    ],
+    choice: { flag: "quest.naia", act: 2, options: { free: "帮她夺回真名，彻底脱离教团", double: "让她做双面间谍", returned: "把她交还教团换取情报" } },
+    test: "她以真面目问“你喜欢的是哪一张脸”时，回答“哪张都是你”或“你自己想用的那张”" },
+};
+// 任务标记登记进 FLAG_KEYS；questKeys 记下每个标记属于谁的第几步（抉择记作最后一步之后）
+const questKeys = {};
+for (const [id, q] of Object.entries(QUESTS)) {
+  q.steps.forEach((st, i) => { questKeys[st.flag] = [id, i]; FLAG_KEYS[st.flag] ||= "bool"; });
+  questKeys[q.choice.flag] = [id, q.steps.length]; FLAG_KEYS[q.choice.flag] = Object.keys(q.choice.options);
+  FLAG_KEYS[`quest.${id}.tested`] = "bool";
+}
 
 /* 战斗数据。武器 d 是伤害骰面数，cantrip 戏法不加属性伤害；ab 决定命中和伤害用的属性。 */
 const W = (n, d, ab, o) => Object.assign({ n, d, ab }, o || {});
@@ -1133,6 +1184,35 @@ function rulesBlock() {
   return `\n\n【玩家的额外要求】在不违反上面的叙述规则、【规则】、输出格式和内容尺度的前提下优先照做；和上面冲突时以上面为准。${l ? "这一局的要求比通用要求优先。" : ""}` +
     (g ? `\n通用要求：${g}` : "") + (l ? `\n这一局的要求：${l}` : "");
 }
+// 个人任务走到第几步（做完的步数，不含抉择）；哪一步还不能写，返回原因
+const questStep = id => { const q = QUESTS[id]; let n = 0; while (n < q.steps.length && state.flags[q.steps[n].flag] && !(q.steps[n].flag === "act1.naia_fate" && state.flags["act1.naia_fate"] === "killed")) n++; return n; };
+function questBlock(k) {
+  const [id, i] = questKeys[k], q = QUESTS[id], c = state.companions[id], st = q.steps[i] || q.choice;
+  if (i === 0 && !k.startsWith("quest.")) return ""; // 剧情里现成的标记照常写
+  if (!c.alive) return "同伴已经死了";
+  if (c.approval <= -20) return "赞同度太低，拒绝个人任务";
+  if (questStep(id) < i) return "前一步还没完成";
+  if (st.act > state.act) return `要到${ACT_NAMES[st.act]}`;
+  if (i > 0 && c.approval < 20) return `赞同度要到 20（现在 ${c.approval}）`;
+  if (st === q.choice && state.flags[k]) return "抉择已经做过了";
+  if (st === q.choice && st.closed?.()) return st.closed();
+  return "";
+}
+function questBrief(id) {
+  const q = QUESTS[id], c = state.companions[id]; if (!q) return "";
+  const n = questStep(id), pick = state.flags[q.choice.flag];
+  let t = `个人任务《${q.name}》：` + (n ? "已完成：" + q.steps.slice(0, n).map(st => st.text).join("；") : "还没开始");
+  if (pick) t += `。抉择：${q.choice.options[pick]}`;
+  else {
+    const next = q.steps[n], key = (next || q.choice).flag, why = questBlock(key);
+    t += next ? `。下一步（还没发生，别提前说破）：${next.text}；做到时写 ${key}=true`
+      : `。最后的抉择：${Object.entries(q.choice.options).map(([v, l]) => `${l}（${v}）`).join(" / ")}；选定时写 ${key}`;
+    if (why) t += `（现在还不能推进：${why}）`;
+  }
+  if (c.romance === "together" && !c.tested) t += `
+  恋爱的考验：${q.test}。玩家做到时写 quest.${id}.tested=true，之后才能立誓约`;
+  return t;
+}
 // 这一场能不能把他招进队伍（和 applyGM 里 recruit 的校验一致）
 function canRecruit(id) {
   const c = state.companions[id], sc = SCENES[state.scene];
@@ -1148,7 +1228,8 @@ function companionBrief(id) {
   性格：${c.personality}
   赞同：${c.likes}；反感：${c.dislikes}
   秘密：${c.secret}
-  加入条件：${c.join}`;
+  加入条件：${c.join}
+  ${questBrief(id)}`;
 }
 // 这一幕会出场的 NPC：[id, 从第几幕起, 说明, 到第几幕为止]
 const NPC_NOTES = [
@@ -1678,9 +1759,18 @@ function applyGM(d, mode) {
     const rule = FLAG_KEYS[k]; if (!rule) { console.warn("未定义的标记被丢弃", k); continue; }
     if (SCENES[state.scene].split?.flag === k) continue; // 分头行动那一边的结果只由代码结算
     if (k === "act1.chart" && !state.flags["act1.key"] && !d.flags["act1.key"]) continue; // 没有守誓人的钥匙打不开地窖暗格
+    if (questKeys[k]) { const why = questBlock(k); if (why) { console.warn("个人任务标记被丢弃", k, why); continue; } }
+    const tid = /^quest\.(\w+)\.tested$/.exec(k)?.[1];
+    if (tid) { // 恋爱的考验：在一起之后才算数
+      const c = state.companions[tid]; if (v && c?.romance === "together" && !c.tested) { c.tested = true; state.flags[k] = true; notes.push([`${PEOPLE[tid].name}看到了你的心意`, "up"]); }
+      continue;
+    }
     if (rule === "bool") state.flags[k] = !!v;
     else if (rule === "id") { if (v === false || COMPANIONS[v]) state.flags[k] = v; }
-    else if (Array.isArray(rule) && rule.includes(v)) state.flags[k] = v;
+    else if (Array.isArray(rule) && rule.includes(v)) {
+      state.flags[k] = v;
+      const [qid] = questKeys[k] || []; if (qid && QUESTS[qid].choice.flag === k) QUESTS[qid].choice.on?.[v]?.(state.companions[qid], notes);
+    }
   }
   const taken = state.flags["prologue.betrayed_companion"];
   if (taken && COMPANIONS[taken] && !state.companions[taken].taken && !state.companions[taken].rescued) {
@@ -3125,6 +3215,19 @@ function openJournal() {
     if (who.length) {
       s.append(el("div", "label", "他们记得的事"));
       for (const id of who) { const d = el("div", "slot"); const t = el("div"); t.append(el("b", null, PEOPLE[id].name), memList(id)); d.append(t); s.append(d); }
+    }
+    const qs = Object.keys(QUESTS).filter(id => state.companions[id].recruited || questStep(id) || state.flags[QUESTS[id].choice.flag]);
+    if (qs.length) {
+      s.append(el("div", "label", "同伴的个人任务"));
+      for (const id of qs) {
+        const q = QUESTS[id], c = state.companions[id], n = questStep(id), pick = state.flags[q.choice.flag];
+        const d = el("div", "slot"), t = el("div"), ul = el("ul", "mem");
+        for (const st of q.steps.slice(0, n)) ul.append(el("li", null, st.text));
+        const next = !c.alive ? "已经结束了。" : pick ? "抉择：" + q.choice.options[pick] : c.approval <= -20 ? `${PEOPLE[id].name}现在不愿意谈这件事。`
+          : n && n < q.steps.length + 1 && c.approval < 20 ? `再和${PEOPLE[id].name}亲近一些（赞同度 20），才会知道更多。` : n ? "还有后续……" : "还没开始。";
+        t.append(el("b", null, `《${q.name}》 · ${PEOPLE[id].name}`), ul, el("div", "meta", next));
+        d.append(t); s.append(d);
+      }
     }
     s.append(el("div", "label", "任务"));
     for (const j of state.journal.slice().reverse()) { const d = el("div", "slot"); const t = el("div"); t.append(el("b", null, j.quest), el("div", "meta", j.note)); d.append(t); s.append(d); }
