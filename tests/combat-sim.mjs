@@ -81,7 +81,7 @@ globalThis.simulate = function(id, level, scene, away = [], allyFlags = {}) {
 const scenarios = [
   ['tavern_ambush', 1, 'prologue_3'],
   ['docks_brawl', 2, 'act1_docks'], ['docks_brawl', 3, 'act1_docks'], ['docks_ship', 3, 'act1_docks'], ['docks_ship', 4, 'act1_docks'],
-  ['arena_bout', 2, 'act1_docks_arena'], ['arena_bout', 3, 'act1_docks_arena'],
+  ['arena_bout', 2, 'act1_docks_arena'], ['arena_bout', 3, 'act1_docks_arena'], ['arena_bout', 2, 'act1_docks_arena', [], { 'side.arena_champion': 'taken' }], ['arena_bout', 3, 'act1_docks_arena', [], { 'side.arena_champion': 'taken' }],
   ['tower_spies', 2, 'act1_tower'], ['tower_spies', 3, 'act1_tower'],
   ['wreck_drowned', 3, 'act1_wreck'],
   ['manor_guards', 3, 'act1_manor'], ['manor_guards', 4, 'act1_manor'],
@@ -106,7 +106,7 @@ if (!scenarios.length) throw new Error('未知遭遇：' + only);
 const results = scenarios.map(([id, level, scene, away = [], allyFlags = {}]) => {
   const rows = Array.from({ length: runs }, () => context.simulate(id, level, scene, away, allyFlags));
   const avg = key => rows.reduce((n, r) => n + (Number(r[key]) || 0), 0) / runs;
-  return { id: id + (away.length ? `（${4 - away.length} 人）` : '') + (id === 'ember_king' ? `（${Object.keys(allyFlags).length} 方盟友）` : ''), level, runs, winRate: avg('win'), avgRounds: avg('rounds'), avgDown: avg('down'), deathRate: avg('died'), playerDeathRate: avg('playerDied'), avgFirstCultists: avg('firstCultists'), avgFirstDown: avg('firstDown') };
+  return { id: id + (away.length ? `（${4 - away.length} 人）` : '') + (id === 'ember_king' ? `（${Object.keys(allyFlags).length} 方盟友）` : '') + (allyFlags['side.arena_champion'] ? '（讲好规矩）' : ''), level, runs, winRate: avg('win'), avgRounds: avg('rounds'), avgDown: avg('down'), deathRate: avg('died'), playerDeathRate: avg('playerDied'), avgFirstCultists: avg('firstCultists'), avgFirstDown: avg('firstDown') };
 });
 if (args.includes('--json')) console.log(JSON.stringify({ seed, results }, null, 2));
 else console.table(results.map(r => ({ 遭遇: r.id, 等级: r.level, 局数: r.runs, 胜率: (r.winRate * 100).toFixed(1) + '%', 平均回合: r.avgRounds.toFixed(2), 平均倒地: r.avgDown.toFixed(2), 阵亡比例: (r.deathRate * 100).toFixed(1) + '%', 首回合狂信徒死亡: r.avgFirstCultists.toFixed(2), 首回合倒地: r.avgFirstDown.toFixed(2) })));

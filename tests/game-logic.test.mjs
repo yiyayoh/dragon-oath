@@ -792,3 +792,56 @@ test('DS 第二轮：告别与恋人最终场景互斥、尾声素材齐全、�
   assert.deepEqual(result.badEp, []); assert.equal(result.full, true); assert.equal(result.onlyDead, true);
   assert.deepEqual(result.intel, { l1: 12, l3: 12, d1: 0, d3: 0, empty: 0 });
 });
+
+test('试玩报告修复：莉丝救出后忘写标记，到期那一轮可以撤销；已定的结局不能再改', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};state=newGame(freshDraft());state.act=1;state.scene='act1_hub';state.act1Day=state.day;
+    state.flags['act1.debt_known']=true;const v=state.companions.vex;v.recruited=true;v.approval=30;state.dreams=[1];
+    const hint=buildPrompt('x').includes('act1.lise=saved');
+    for(let i=0;i<3;i++){state.camp={};restNight(null);}
+    const sold={flag:state.flags['act1.lise'],approval:v.approval};
+    applyGM({flags:{'act1.lise':'saved'}});const undone={flag:state.flags['act1.lise'],approval:v.approval,mem:(memo().people.vex||[]).length};
+    applyGM({flags:{'act1.lise':'sold'}});const locked=state.flags['act1.lise'];
+    state=newGame(freshDraft());state.act=1;state.scene='act1_hub';state.act1Day=state.day;state.flags['act1.debt_known']=true;state.companions.vex.recruited=true;state.dreams=[1];
+    for(let i=0;i<3;i++){state.camp={};restNight(null);}
+    applyGM({});applyGM({flags:{'act1.lise':'saved'}});
+    return {hint,sold,undone,locked,late:state.flags['act1.lise']};
+  })()`);
+  assert.equal(result.hint, true);
+  assert.deepEqual(result.sold, { flag: 'sold', approval: 0 });
+  assert.deepEqual(result.undone, { flag: 'saved', approval: 30, mem: 0 });
+  assert.equal(result.locked, 'saved'); assert.equal(result.late, 'sold');
+});
+
+test('试玩报告修复：正式请柬能进舞会；去不了的地方地点不变并提示；同一轮离开和扎营先换场景', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};state=newGame(freshDraft());state.act=1;state.scene='act1_manor';state.location='总督府';
+    applyGM({location:'总督府舞厅',advance:'act1_manor_ball'});const blocked={scene:state.scene,loc:state.location,note:state.log.at(-1).t};
+    applyGM({flags:{'act1.invite':true},advance:'act1_manor_ball'});const ball={scene:state.scene,invite:state.flags['act1.invite']};
+    state.scene='act1_docks_hold';state.supplies=2;applyGM({camp:true});const holdCamp={pending:!!state.pendingCamp,note:state.log.at(-1).t};
+    applyGM({camp:true,advance:'act1_docks'});return {blocked,ball,holdCamp,moved:state.scene,pending:!!state.pendingCamp};
+  })()`);
+  assert.equal(result.blocked.scene, 'act1_manor'); assert.equal(result.blocked.loc, '总督府'); assert.match(result.blocked.note, /还去不了/);
+  assert.deepEqual(result.ball, { scene: 'act1_manor_ball', invite: 'invited' });
+  assert.equal(result.holdCamp.pending, false); assert.match(result.holdCamp.note, /没法扎营/);
+  assert.equal(result.moved, 'act1_docks'); assert.equal(result.pending, true);
+});
+
+test('试玩报告修复：黑拳只用拳头、打倒就出局，讲好规矩的比赛不放鳄鱼', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};state=newGame(freshDraft());state.act=1;state.scene='act1_docks_arena';state.player.level=3;
+    state.companions.selene.recruited=true;state.flags['side.arena_champion']='taken';
+    startCombat('arena_bout');const c=state.combat,me=c.units.player,s=c.units.selene;
+    const fists=[me,s].every(u=>u.weapons.length===1&&u.weapons[0].n==='拳头'&&u.uses===0&&u.sigUsed);
+    const ko=hurt(s,999);const foe=Object.values(c.units).find(u=>u.side!=='party');hurt(foe,999);
+    const r={fists,fair:!!c.stopped?.fair,ko,selene:{down:!!s.down,out:s.out},foe:foe.out,dead:!!foe.dead};
+    state.combat=null;state.flags['side.arena_champion']=undefined;delete state.fought;startCombat('arena_bout');r.brawl=!!state.combat.stopped?.fair;
+    return r;
+  })()`);
+  assert.equal(result.fists, true); assert.equal(result.fair, true); assert.match(result.ko, /出局/);
+  assert.deepEqual(result.selene, { down: false, out: 'ko' }); assert.equal(result.foe, 'ko'); assert.equal(result.dead, false);
+  assert.equal(result.brawl, false);
+});

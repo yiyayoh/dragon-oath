@@ -590,7 +590,7 @@ const SCENES = {
   },
   act1_docks_hold: {
     title: "金鳗的货舱", loc: "黑潮码头 · 金鳗船底", bg: "linear-gradient(160deg,#2e3a3a,#101616 60%,#060808)", act: 1, camp: false,
-    anchor: "金鳗船底潮湿的货舱，走私的酒桶和香料箱堆到顶，最里面的铁栏后面关着几个“抵债”的人，莉丝（十六岁的提夫林少女，和维克斯一样的尖角，倔得要命）也在里面。两名打手看守，钥匙在老鳗手里，锁可以撬（巧手 DC 15）。若维克斯赞同 ≥ 20、还没说过龙蛋的事，他在这里会说出真相（写 quest.vex.egg=true）。救莉丝的方式就是维克斯个人任务的抉择，写 quest.vex：stormed 强攻救人、留下龙蛋（同时写 act1.lise=saved、act1.eel=enemy）；alone 让维克斯独自去和老鳗交易（结果由程序决定，你只写 quest.vex）；卖蛋要去赌场找老鳗。维克斯个人任务没走到抉择时，也可以直接把人偷出来（写 act1.lise=saved、act1.eel=enemy）。其他被关的人（一个欠债的渔夫、一个被抓来抵债的寡妇的儿子）也可以顺手救出来。动手时写 combat 为 docks_brawl。离开时 advance：act1_docks 或 act1_hub。",
+    anchor: "金鳗船底潮湿的货舱，走私的酒桶和香料箱堆到顶，最里面的铁栏后面关着几个“抵债”的人，莉丝（十六岁的提夫林少女，和维克斯一样的尖角，倔得要命）也在里面。两名打手看守，钥匙在老鳗手里，锁可以撬（巧手 DC 15）。若维克斯赞同 ≥ 20、还没说过龙蛋的事，他在这里会说出真相（写 quest.vex.egg=true）。莉丝一离开货舱（被救走、偷出来、被港卫军带走），同一轮就写 act1.lise=saved，不然维克斯的债到期时程序会当作她被卖了。救莉丝的方式就是维克斯个人任务的抉择，写 quest.vex：stormed 强攻救人、留下龙蛋（同时写 act1.lise=saved、act1.eel=enemy）；alone 让维克斯独自去和老鳗交易（结果由程序决定，你只写 quest.vex）；卖蛋要去赌场找老鳗。维克斯个人任务没走到抉择时，也可以直接把人偷出来（写 act1.lise=saved、act1.eel=enemy）。其他被关的人（一个欠债的渔夫、一个被抓来抵债的寡妇的儿子）也可以顺手救出来。动手时写 combat 为 docks_brawl。离开时 advance：act1_docks 或 act1_hub。",
     next: ["act1_docks", "act1_docks_casino", "act1_hub"], encounters: ["docks_brawl"], recruit: ["vex"], meet: ["vex"], act: 1,
   },
   act1_tower: {
@@ -615,7 +615,7 @@ const SCENES = {
   },
   act1_manor: {
     title: "总督府", loc: "灰帆港 · 总督府", bg: "linear-gradient(160deg,#3f4a6e,#191d2c 60%,#0b0d14)", loc1: true, camp: false,
-    anchor: "总督艾德蒙·科尔（风度翩翩、满口法度的半精灵）的府邸，白天可以访客身份进去。守誓人的钥匙（一枚刻着龙鳞纹的银钥匙）锁在地下金库，十年前从玛莎的亡夫那里没收来的；同一个金库里还有总督的走私账本（老鳗想要）。白天可以试探总督、打听金库；港卫军尉官萨丝·铁锤（正直的青铜龙裔）对印记持有者充满怀疑，但她也在暗中查总督——可以和她合作搜集“总督秘密接受教团资助”的证据（写 act1.sath_trust=true；揭发总督写 act1.key=legal、act1.governor=exposed；勒索总督写 act1.key=blackmail、act1.governor=blackmailed）。钥匙真正交到玩家手里时才写 act1.key（萨丝只是答应“会安排归还”还不算）。萨丝还在头疼一件事：港卫军的巡逻时间表总是提前泄露给教团（支线）。三天后的晚上有月光舞会，需要请柬（伪造、购买、或让米拉变形，写 act1.invite）；有请柬后可以去舞会 act1_manor_ball。夜里潜进金库 advance 设为 act1_manor_vault。船在对方答应借出的那一刻就写标记：萨丝批准借用海鸥号时写 act1.ship=seagull。离开时 advance 回 act1_hub。",
+    anchor: "总督艾德蒙·科尔（风度翩翩、满口法度的半精灵）的府邸，白天可以访客身份进去。守誓人的钥匙（一枚刻着龙鳞纹的银钥匙）锁在地下金库，十年前从玛莎的亡夫那里没收来的；同一个金库里还有总督的走私账本（老鳗想要）。白天可以试探总督、打听金库；港卫军尉官萨丝·铁锤（正直的青铜龙裔）对印记持有者充满怀疑，但她也在暗中查总督——可以和她合作搜集“总督秘密接受教团资助”的证据（写 act1.sath_trust=true；揭发总督写 act1.key=legal、act1.governor=exposed；勒索总督写 act1.key=blackmail、act1.governor=blackmailed）。钥匙真正交到玩家手里时才写 act1.key（萨丝只是答应“会安排归还”还不算）。萨丝还在头疼一件事：港卫军的巡逻时间表总是提前泄露给教团（支线）。三天后的晚上有月光舞会，需要请柬（伪造写 act1.invite=forged、购买 bought、让米拉变形 naia、总督或别人正式发了请柬 invited）；有请柬后可以去舞会 act1_manor_ball。夜里潜进金库 advance 设为 act1_manor_vault。船在对方答应借出的那一刻就写标记：萨丝批准借用海鸥号时写 act1.ship=seagull。离开时 advance 回 act1_hub。",
     next: ["act1_manor_ball", "act1_manor_vault", "act1_hub"], encounters: ["manor_guards"], act: 1,
     gate: { act1_manor_ball: () => !!state.flags["act1.invite"] },
   },
@@ -936,7 +936,7 @@ const FLAG_KEYS = {
   "act1.key": ["stolen", "legal", "blackmail", "eel"], "act1.chart": ["opened", "stolen", "legal", "blackmail", "eel"], "act1.ship": ["black_eel", "seagull", "stolen"],
   "act1.eel": ["deal", "enemy", "ally"], "act1.vex_debt": ["paid", "halved", "defied"], "act1.lise": ["saved", "sold"], "act1.debt_known": "bool",
   "act1.lyra_notes": ["burned", "kept"], "act1.notes_copied": "bool", "act1.dragon_body": ["harvested", "funeral"],
-  "act1.sath_trust": "bool", "act1.invite": ["forged", "bought", "naia"], "act1.governor": ["exposed", "blackmailed", "robbed", "ally"],
+  "act1.sath_trust": "bool", "act1.invite": ["forged", "bought", "naia", "invited"], "act1.governor": ["exposed", "blackmailed", "robbed", "ally"],
   "act1.facemother_seen": "bool", "act1.darin_axe": "bool", "act1.deacon": ["tortured", "informant", "killed"],
   "act1.naia_seen": "bool", "act1.naia_exposed": "bool", "act1.naia_fate": ["recruited", "imprisoned", "killed"],
   "act1.hostage": ["martha", "tom"], "act1.martha_alive": "bool", "act1.ship_intact": "bool", "act1.departure_ship": ["black_eel", "seagull", "stolen", "fishing"],
@@ -1173,7 +1173,7 @@ function sideLine() {
   const can = Object.entries(SIDE).filter(([id, q]) => q.act === state.act && !state.flags[`side.${id}`] && q.at.includes(state.scene) && (!q.need || q.need()));
   const on = Object.entries(SIDE).filter(([id]) => state.flags[`side.${id}`] === "taken");
   return (can.length ? `\n可以接的支线（让找人帮忙的 NPC 自然地开口，玩家答应时写 side.<id>=taken）：${can.map(([id, q]) => `《${q.name}》（side.${id}）：${q.hook}`).join("；")}` : "") +
-    (on.length ? `\n进行中的支线：${on.map(([id, q]) => `《${q.name}》（side.${id}）：${q.goal}；完成时写 side.${id}=done（程序发奖励：${q.rewardText}），做不成写 failed`).join("；")}` : "");
+    (on.length ? `\n进行中的支线：${on.map(([id, q]) => `《${q.name}》（side.${id}）：${q.goal}；完成时写 side.${id}=done（程序当轮就发奖励：${q.rewardText}；所以等东西真的交到玩家手里那一轮再写 done，并在叙述里交代是谁、怎么给的），做不成写 failed`).join("；")}` : "");
 }
 // 任务标记登记进 FLAG_KEYS；questKeys 记下每个标记属于谁的第几步（抉择记作最后一步之后）
 const questKeys = {};
@@ -1486,8 +1486,8 @@ const ENCOUNTERS = {
     events: [{ round: 2, spawn: [["thug", 2, 0]], text: "栈桥上脚步杂乱，两个黑潮会打手听到动静赶了过来！" }],
   },
   arena_bout: {
-    title: "斗兽场的黑拳", lethal: false,
-    brief: "地下斗兽场的黑拳赛：3 名斗场打手（每回合两拳，打到一半会认输）；第 3 回合铁笼被拉开，放出一条铁笼鳄（敌我不分），看台上的赌徒在尖叫",
+    title: "斗兽场的黑拳", lethal: false, bout: true,
+    brief: "地下斗兽场的黑拳赛：3 名斗场打手（每回合两拳，打到一半会认输）。比赛规矩由程序执行：双方只用拳头，不用武器、法术、职业特技和印记，打倒就出局，一方全部出局比赛结束。接了铁颚的黑拳（side.arena_champion=taken）就是讲好规矩的比赛；没讲好规矩、打起来的是一场乱斗，第 3 回合铁笼会被拉开，放出一条铁笼鳄（敌我不分）",
     props: "沙地、四周的铁栅栏、看台边垂下来的绳子、装着鳄鱼的铁笼、地上散落的木棍和铁链",
     zones: [
       { n: "入场口", adj: [1] },
@@ -1497,7 +1497,7 @@ const ENCOUNTERS = {
     ],
     start: 0,
     foes: [["pit_fighter", 2, 1], ["pit_fighter", 1, 2]],
-    events: [{ round: 3, spawn: [["pit_croc", 1, 3]], side: "wild", text: "看台上一阵狂呼——铁笼被拉开了，一条铁笼鳄甩着尾巴冲进了沙地！" }],
+    events: [{ round: 3, unless: "fair", spawn: [["pit_croc", 1, 3]], side: "wild", text: "看台上一阵狂呼——铁笼被拉开了，一条铁笼鳄甩着尾巴冲进了沙地！" }],
   },
   ghost_ship: {
     title: "幽灵船", lethal: true,
@@ -2284,7 +2284,7 @@ function updateDebtJournal() {
   const entry = state.journal.find(j => j.quest === "维克斯的债");
   if (entry) entry.note = note; else state.journal.push({ quest: "维克斯的债", note });
 }
-const debtLine = () => debtOpen() ? `；维克斯的债还剩 ${Math.max(0, state.act1Day + DEBT_DAYS - state.day)} 天（每睡一晚少一天，到期莉丝会被卖到外海）` : "";
+const debtLine = () => debtOpen() ? `；维克斯的债还剩 ${Math.max(0, state.act1Day + DEBT_DAYS - state.day)} 天（每睡一晚少一天，到期莉丝会被卖到外海。若剧情里莉丝其实已经被救出货舱、不在老鳗手里了，这一轮就写 act1.lise=saved，否则到期时程序会当作她被卖了）` : "";
 function buildPrompt(action, mode) {
   const p = state.player, sc = SCENES[state.scene];
   const profs = p.profs.map(k => SKILLS[k][0]).join("、");
@@ -2702,15 +2702,26 @@ async function gm(action, shown, mode) {
 }
 
 function applyGM(d, mode) {
-  const notes = [], inCb = !!state.combat;
+  const notes = [], inCb = !!state.combat, loc0 = state.location;
+  const wantCamp = !inCb && !state.camp && d.camp === true && mode !== "morning"; // 睡醒后不能自动再扎营
   if (d.location) state.location = str(d.location, 30);
   if (Array.isArray(d.speakers)) state.speakers = d.speakers.filter(id => PEOPLE[id]).slice(0, 3);
   state.expressions = {};
   if (d.expressions && typeof d.expressions === "object") for (const [k, v] of Object.entries(d.expressions)) if (PEOPLE[k] && EXPRS.includes(v)) state.expressions[k] = v;
 
   // flags
-  if (d.flags && typeof d.flags === "object") for (const [k, v] of Object.entries(d.flags)) {
+  if (d.flags && typeof d.flags === "object") for (let [k, v] of Object.entries(d.flags)) {
     const rule = FLAG_KEYS[k]; if (!rule) { console.warn("未定义的标记被丢弃", k); continue; }
+    if (k === "act1.invite" && v === true) v = "invited"; // 正式受邀
+    if (k === "act1.lise" && state.flags[k]) { // 莉丝的结局定了就不再改；只有债到期后的那一轮可以撤销误判
+      if (v === "saved" && state.flags[k] === "sold" && state.liseSale) {
+        state.flags[k] = "saved"; const vx = state.companions.vex;
+        vx.approval = clamp(vx.approval + state.liseSale.approval, -100, 100);
+        const mm = memo().people.vex || []; const i = mm.indexOf("你没能在期限内救下莉丝"); if (i >= 0) mm.splice(i, 1);
+        state.liseSale = null; notes.push(["莉丝其实早就救出来了：撤销债务到期，维克斯的赞同度恢复", "up"]);
+      }
+      continue;
+    }
     if (SCENES[state.scene].split?.flag === k) continue; // 分头行动那一边的结果只由代码结算
     if (k === "act1.chart" && !state.flags["act1.key"] && !d.flags["act1.key"]) continue; // 没有守誓人的钥匙打不开地窖暗格
     if (questKeys[k]) { const why = questBlock(k); if (why) { console.warn("个人任务标记被丢弃", k, why); continue; } }
@@ -2835,6 +2846,7 @@ function applyGM(d, mode) {
     if (ex) ex.note = n; else { state.journal.push({ quest: q, note: n }); notes.push(["日志更新：" + q, ""]); }
   }
   updateDebtJournal();
+  if (state.liseSale && !SCENES[state.scene].interlude && mode !== "narrate") state.liseSale = null; // 撤销的机会只有到期后的那一轮
   for (const [t, kind] of notes) push("sys", t, { cls: kind === "up" ? "appr-up" : kind === "down" ? "appr-down" : "" });
 
   // combat
@@ -2850,11 +2862,10 @@ function applyGM(d, mode) {
     const cid = typeof d.combat === "string" ? d.combat : d.combat?.start;
     if (cid && SCENES[state.scene].encounters?.includes(cid) && !state.fought?.[cid]) { state.pendingCombat = cid; return; }
     if (cid) console.warn("忽略说书人的开战请求（不是这一场的遭遇，或已经打过）：", cid);
-    if (d.camp === true && mode !== "morning" && canCamp()) { state.pendingCamp = true; state.suggestions = []; return; } // 要扎营就先不推进场景；睡醒后不能自动再扎营
   }
 
   // check
-  const ck = d.check;
+  const ck = wantCamp ? null : d.check;
   if (ck && typeof ck === "object" && validCheckKey(String(ck.skill || ""))) {
     const who = ck.who === "player" || !ck.who ? "player" : (party().includes(ck.who) || present().includes(ck.who) ? ck.who : "player");
     state.pendingCheck = { skill: String(ck.skill), dc: clamp(Math.round(Number(ck.dc) || 12), 5, 30), who, reason: str(ck.reason, 60), adv: !!ck.advantage, dis: !!ck.disadvantage };
@@ -2869,6 +2880,11 @@ function applyGM(d, mode) {
   const sc = SCENES[state.scene];
   if (d.advance && canGo(sc, d.advance) && splitPending()) { state.pendingAdvance = d.advance; state.suggestions = []; }
   else if (d.advance && canGo(sc, d.advance)) goScene(d.advance, !!d.location);
+  else if (d.advance && SCENES[d.advance] && d.advance !== state.scene && !sc.interlude) {
+    // 去不了：地点不跟着叙述变，并在记录里告诉玩家和说书人
+    state.location = loc0;
+    push("sys", nextOf(sc).includes(d.advance) ? `还去不了「${SCENES[d.advance].title}」：条件还没满足` : `从这里去不了「${SCENES[d.advance].title}」`, { cls: "appr-down" });
+  }
   else if (d.scene_end === true && sc.interlude) {
     const turns = state.log.filter(e => e.k === "you" && chKey(e) === curKey()).length;
     if (turns >= (sc.endNeeds?.turns || 0) && !state.pendingCheck) leaveInterlude();
@@ -2880,6 +2896,11 @@ function applyGM(d, mode) {
     if ((need?.flags || []).every(key => state.flags[key]) && turns >= (need?.turns || 0) && !state.pendingCheck) {
       state.ended = true; state.suggestions = [];
     } else console.warn("本场结束条件未满足，忽略 scene_end", state.scene);
+  }
+  // 扎营放在换场景之后：同一轮写了离开和扎营，就在新地方扎营
+  if (wantCamp && !state.ended) {
+    if (canCamp()) { state.pendingCamp = true; state.suggestions = []; }
+    else push("sys", SCENES[state.scene].camp === false ? "这里没法扎营：先离开这里，再找地方休息" : "补给不够，没法扎营", { cls: "appr-down" });
   }
 }
 // 能不能去这一场：必须是 next 里登记的，且满足 gate（例如灯塔要先拿到航海图和船）
@@ -3312,7 +3333,7 @@ const CAMP_EVENTS = [
     seed: "她第一次以真面目（灰白皮肤、水银色头发、乳白的眼睛）站在你面前，问：“你喜欢的是哪一张脸？”回答“哪张都是你”或“你自己想用的那张”能打动她。如果身份还没暴露，这一幕可以改成她差一点就要说出真相。" },
   { id: "naia_lovers", who: "naia", kind: "romance", when: c => c.romance === "together",
     seed: "成为恋人后的某个夜晚。她会按你的喜好变换样子，又会突然问你：“如果我不变了，你还会这样看我吗？”" },
-  { id: "act1_home", group: true, kind: "main", title: "回到酒馆的夜晚", when: () => state.act === 1 && !SCENES[state.scene].alone,
+  { id: "act1_home", group: true, kind: "main", title: "回到酒馆的夜晚", when: () => state.act === 1 && !!SCENES[state.scene].tavern,
     seed: "在灰帆港奔波一天后回到醉龙酒馆。玛莎留了热汤，小汤姆在擦桌子。大家各自说说今天看到的事：航海图、船、教团的动静、维克斯的债还剩几天。这是商量下一步、也是互相了解的时候。" },
   { id: "lyra_selene_mark", pair: ["lyra", "selene"], kind: "banter", title: "要不要研究印记",
     seed: "莉拉想用赛勒涅的印记做个小实验，赛勒涅认为印记是神圣的托付、不该当玩具，两人吵得越来越凶，要你表态。" },
@@ -3626,7 +3647,8 @@ function restNight(partner) {
   if (debtOpen() && state.day >= state.act1Day + DEBT_DAYS) {
     state.flags["act1.lise"] = "sold";
     const v = state.companions.vex; if (v.alive) { v.approval = clamp(v.approval - 30, -100, 100); remember("vex", "你没能在期限内救下莉丝"); }
-    news.push("维克斯的债到期了：老鳗把莉丝卖到了外海，维克斯赞同度 −30");
+    state.liseSale = { approval: v.alive ? 30 : 0 }; // 说书人下一轮可以撤销：剧情里莉丝其实早就救出来了，只是忘了写标记
+    news.push("维克斯的债到期了：老鳗把莉丝卖到了外海，维克斯赞同度 −30（若最近的剧情里莉丝其实已经被救出来、人就在你们身边，不要写她被卖，改写 act1.lise=saved，程序会撤销这次到期）");
   }
   updateDebtJournal();
   const perks = sc.tavern ? tavernNight() : [];
@@ -3836,6 +3858,7 @@ function startCombat(id) {
   for (const ref of ["player", ...present().filter(id => !state.companions[id].jailed)]) c.units[ref] = partyUnit(ref, E.startAt?.[ref] ?? E.start);
   for (const [type, n, zone] of E.foes) for (let i = 0; i < n; i++) { const u = foeUnit(type, zone, "enemy"); c.units[u.id] = u; }
   for (const u of cbList()) if (u.type && ENEMIES[u.type].shift) disguise(u);
+  if (E.bout) boutRules(c);
   if (E.final) c.allies = allies().map(a => a.name);
   if (E.final && state.flags["act3.ritual"]) for (const u of cbList().filter(u => ENEMIES[u.type]?.king)) { u.hp = u.max = Math.round(u.max * 1.25); clog(`献祭让${u.name}提前苏醒，它比预想的更强（生命 ${u.max}）`, "event"); }
   for (const u of cbList()) u.init = rollD20() + u.dexMod + (u.initBonus || 0);
@@ -3846,6 +3869,17 @@ function startCombat(id) {
   save(); renderPlay(); advanceCombat();
 }
 
+// 拳赛（遭遇写 bout）：只用拳头，不用法术、特技、专属技能、印记和合体技；接了支线、讲好规矩的比赛不放鳄鱼
+function boutRules(c) {
+  for (const u of cbList().filter(u => u.side === "party")) {
+    const st = abOf(u.ref).str;
+    u.weapons = [{ n: "拳头", cnt: 1, d: 6, plus: mod(st), hit: mod(st) + profBonus(u.level) }];
+    u.uses = 0; u.fireball = 0; u.sigUsed = true; u.feats = []; u.marksUsed = Object.fromEntries(MARKS.map(m => [m.id, true]));
+  }
+  c.combos = Object.fromEntries(Object.keys(COMBOS).map(id => [id, true]));
+  if (state.flags["side.arena_champion"] === "taken") c.stopped = { ...(c.stopped || {}), fair: true };
+  clog("比赛规矩：只用拳头，打倒就出局" + (c.stopped?.fair ? "；铁颚答应了不搞花样" : ""), "event");
+}
 // ---------- 伤害、治疗、倒地 ----------
 function hurt(u, n, o = {}) {
   const c = state.combat;
@@ -3878,6 +3912,7 @@ function hurt(u, n, o = {}) {
     if (shift && n >= shift && !u.guise) { disguise(u); return `${u.name} 的脸像水一样流动起来，换了一张面孔钻进人群`; }
     return "";
   }
+  if (c && ENCOUNTERS[c.id]?.bout) { u.hp = 0; u.out = "ko"; return `${u.name} 被打倒在沙地上，出局`; }
   if (u.side === "party") {
     if (u.ref === "player" && state.player.race === "half_orc" && !c.relentless) { c.relentless = true; u.hp = 1; return `${u.name} 凭半兽人的坚韧撑住了（生命 1）`; }
     Object.assign(u, { hp: 0, down: true, stable: false, saves: { s: 0, f: 0 } }); u.cond.prone = true;
@@ -4334,7 +4369,7 @@ function endCombat(r) {
   const tally = list => { const m = {}; for (const u of list) { const n = ENEMIES[u.type].name; m[n] = (m[n] || 0) + 1; } return Object.entries(m).map(([n, k]) => n + "×" + k).join("、"); };
   const R = { victory: "胜利", defeat: "全队倒下", escaped: "撤离战场", talked: "敌人放弃了战斗", final: "烬王坠落在火山口边缘" }[r];
   const parts = [`结果：${R}，共 ${c.round} 回合。`];
-  for (const [label, f] of [["击倒", u => u.dead], ["活捉", u => u.out === "captured"], ["投降", u => u.out === "surrendered"], ["逃走", u => u.out === "fled"], ["被唤醒", u => u.out === "awakened"], ["仍在场", ACTIVE]]) {
+  for (const [label, f] of [["击倒", u => u.dead], ["活捉", u => u.out === "captured"], ["投降", u => u.out === "surrendered"], ["打倒出局", u => u.out === "ko"], ["逃走", u => u.out === "fled"], ["被唤醒", u => u.out === "awakened"], ["仍在场", ACTIVE]]) {
     const l = foes.filter(f); if (l.length) parts.push(`${label}：${tally(l)}。`);
   }
   parts.push("我方：" + us.filter(u => u.side === "party").map(u => `${u.name} ${u.dead ? "阵亡" : u.down ? "倒地" : u.hp + "/" + u.max}`).join("，") + "。");
