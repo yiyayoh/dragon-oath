@@ -518,7 +518,7 @@ const SCENES = {
   },
   act1_manor: {
     title: "总督府", loc: "灰帆港 · 总督府", bg: "linear-gradient(160deg,#3f4a6e,#191d2c 60%,#0b0d14)", loc1: true, camp: false,
-    anchor: "总督艾德蒙·科尔（风度翩翩、满口法度的半精灵）的府邸。守誓人的钥匙（一枚刻着龙鳞纹的银钥匙）锁在地下金库，十年前从玛莎的亡夫那里没收来的；同一个金库里还有总督的走私账本（老鳗想要）。白天可以以访客身份试探总督、打听金库；港卫军尉官萨丝·铁锤（正直的青铜龙裔）对印记持有者充满怀疑，但她也在暗中查总督——可以和她合作搜集“总督秘密接受教团资助”的证据（写 act1.sath_trust=true；揭发后合法取回钥匙、借到“海鸥号”）。重头戏是月光舞会：需要请柬（伪造、购买、或让米拉变形，写 act1.invite）。舞会上可以和同伴跳舞（适合推进恋爱）、和总督交锋、在一旁发现一位举止古怪的贵妇人（其实是千面母伪装，察觉 DC 17，写 act1.facemother_seen=true；不要直接点破身份）。偷钥匙：隐匿 DC 14 + 巧手 DC 15（金库），成功写 act1.key=stolen；揭发总督写 act1.key=legal、act1.governor=exposed；勒索总督写 act1.key=blackmail、act1.governor=blackmailed。钥匙到手不等于航海图到手：航海图要回酒馆地窖才能取出，这里不要写 act1.chart。失败触发守卫：动手时在 JSON 写 combat 为 manor_guards，或者逃跑。船在对方答应借出的那一刻就写标记，不用等到上船：萨丝批准借用海鸥号时写 act1.ship=seagull；替老鳗偷出账本并交给他、他答应借黑鳗号时写 act1.ship=black_eel。离开时把 advance 设为 act1_hub。",
+    anchor: "总督艾德蒙·科尔（风度翩翩、满口法度的半精灵）的府邸。守誓人的钥匙（一枚刻着龙鳞纹的银钥匙）锁在地下金库，十年前从玛莎的亡夫那里没收来的；同一个金库里还有总督的走私账本（老鳗想要）。白天可以以访客身份试探总督、打听金库；港卫军尉官萨丝·铁锤（正直的青铜龙裔）对印记持有者充满怀疑，但她也在暗中查总督——可以和她合作搜集“总督秘密接受教团资助”的证据（写 act1.sath_trust=true；揭发后合法取回钥匙、借到“海鸥号”）。重头戏是月光舞会：需要请柬（伪造、购买、或让米拉变形，写 act1.invite）。舞会上可以和同伴跳舞（适合推进恋爱）、和总督交锋、在一旁发现一位举止古怪的贵妇人（其实是千面母伪装，察觉 DC 17，写 act1.facemother_seen=true；不要直接点破身份）。偷钥匙：隐匿 DC 14 + 巧手 DC 15（金库），成功写 act1.key=stolen；揭发总督写 act1.key=legal、act1.governor=exposed；勒索总督写 act1.key=blackmail、act1.governor=blackmailed。钥匙真正交到玩家手里时才写 act1.key（萨丝只是答应“会安排归还”还不算，等她把钥匙交出来）。钥匙到手不等于航海图到手：航海图要回酒馆地窖才能取出，这里不要写 act1.chart。失败触发守卫：动手时在 JSON 写 combat 为 manor_guards，或者逃跑。船在对方答应借出的那一刻就写标记，不用等到上船：萨丝批准借用海鸥号时写 act1.ship=seagull；替老鳗偷出账本并交给他、他答应借黑鳗号时写 act1.ship=black_eel。离开时把 advance 设为 act1_hub。",
     next: ["act1_hub"], encounters: ["manor_guards"], act: 1,
   },
   act1_sewers: {
@@ -1133,11 +1133,18 @@ function rulesBlock() {
   return `\n\n【玩家的额外要求】在不违反上面的叙述规则、【规则】、输出格式和内容尺度的前提下优先照做；和上面冲突时以上面为准。${l ? "这一局的要求比通用要求优先。" : ""}` +
     (g ? `\n通用要求：${g}` : "") + (l ? `\n这一局的要求：${l}` : "");
 }
+// 这一场能不能把他招进队伍（和 applyGM 里 recruit 的校验一致）
+function canRecruit(id) {
+  const c = state.companions[id], sc = SCENES[state.scene];
+  if (!c || c.recruited || !c.alive || c.left || c.jailed || !inAct(id)) return false;
+  if (c.taken) return !!sc.rescue;
+  return !!sc.recruit?.includes(id) && (!sc.meetIf?.[id] || sc.meetIf[id]());
+}
 function companionBrief(id) {
   const c = COMPANIONS[id], s = state.companions[id], p = PEOPLE[id];
   const love = s.romance && s.romance !== "none" ? `，恋爱：${ROMANCE[s.romance].name}${s.secret ? "（秘密，其他恋人不知道）" : ""}` : "";
   const rule = ROMANCE_RULES[id], gate = [rule?.noLie && s.caughtLie ? "曾发现玩家撒谎，不会接受告白" : "", rule ? `接受多人恋爱需要赞同度 ≥ ${rule.poly}` : ""].filter(Boolean).join("；");
-  return `· ${p.name}（id: ${id}，${c.race}${c.cls}，${partyLevel()} 级）${s.jailed ? "【被关押在酒馆地窖，不在队伍里，不参加战斗】" : s.recruited ? "【已加入队伍】" : "【尚未加入】"} 赞同度 ${s.approval}（${relLabel(s.approval)}）${love}，HP ${s.hp}/${s.hpMax}${gate ? "\n  感情底线：" + gate : ""}
+  return `· ${p.name}（id: ${id}，${c.race}${c.cls}，${partyLevel()} 级）${s.jailed ? "【被关押在酒馆地窖，不在队伍里，不参加战斗】" : s.recruited ? "【已加入队伍】" : canRecruit(id) ? `【尚未加入；这一场可以招募：只要他/她答应同行，就必须在 JSON 写 recruit:["${id}"]，光在叙述里答应不算入队】` : "【尚未加入】"} 赞同度 ${s.approval}（${relLabel(s.approval)}）${love}，HP ${s.hp}/${s.hpMax}${gate ? "\n  感情底线：" + gate : ""}
   性格：${c.personality}
   赞同：${c.likes}；反感：${c.dislikes}
   秘密：${c.secret}
@@ -1734,11 +1741,9 @@ function applyGM(d, mode) {
   const ht = num(d.hestia_trust, 20);
   if (ht && SCENES[state.scene].dream) state.hestiaTrust = clamp(state.hestiaTrust + ht, -100, 100);
   // recruit：只能招募这一场登记过的人（recruit），或者从教团手里救回被带走的同伴（rescue）
-  const sc0 = SCENES[state.scene];
   for (const id of (!inCb && Array.isArray(d.recruit) ? d.recruit : [])) {
     const c = state.companions[id];
-    if (!c || c.recruited || !c.alive || c.left || c.jailed || !inAct(id)) continue;
-    if (c.taken ? !sc0.rescue : !sc0.recruit?.includes(id) || sc0.meetIf?.[id] && !sc0.meetIf[id]()) continue;
+    if (!canRecruit(id)) continue;
     if (id === "vex" && state.flags["prologue.vex_left"]) { if (!state.act) continue; state.flags["prologue.vex_left"] = false; }
     const back = c.taken;
     if (back) { c.taken = false; c.rescued = true; }

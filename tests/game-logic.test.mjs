@@ -211,3 +211,14 @@ test('维克斯的债有结果后可以在酒馆入队；打过的码头斗殴�
   })()`);
   assert.deepEqual(result, { before: { present: false, recruited: false }, after: true, again: null, ship: 'docks_ship', prompt: true });
 });
+
+test('可招募的同伴在说书人资料里写明要用 recruit，不能招募时不写', () => {
+  const run = game();
+  const result = run(`(() => {
+    state=newGame(freshDraft());state.act=1;state.scene='act1_hub';
+    const before=companionBrief('vex').includes('recruit:["vex"]');
+    state.flags['act1.lise']='saved';const after=companionBrief('vex').includes('recruit:["vex"]');
+    state.companions.vex.recruited=true;return {before,after,joined:companionBrief('vex').includes('recruit:')};
+  })()`);
+  assert.deepEqual(result, { before: false, after: true, joined: false });
+});
