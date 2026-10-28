@@ -4,6 +4,21 @@
 
 做法和第一批完全一样，见 `docs/任务书-立绘-第一批NPC.md`（规格、转 webp、在副本里检查、交付），这里只列这一批画谁。继续用你上一批的副本 `D:\Codex\dragon-oath-portrait-work`，开工前先把它更新到包含这份任务书的提交（里面有 DS 新补的提示词）。原图放桌面 `dragon-oath-portraits-v5`。
 
+## 第 0 张（最先画）：用户自己的角色
+
+用户想要一张自己角色的立绘，排在这一批最前面。
+
+- **角色**：佐佐木琲世，男，半精灵法师，背景是街头儿童。游戏里写的外貌：黑色短发，左眼下有一颗泪痣，穿旧皮夹克，总带着漫不经心的笑。
+- **用户的要求**：他是《咒术回战》乙骨忧太的粉丝，想要乙骨的感觉。做法是**把乙骨的气质特点写进提示词，不写乙骨的名字、不照搬他的脸和校服、不画成动漫画风**：一来图片工具多半不肯画现成的角色，二来要和游戏里其他半写实厚涂的立绘放在一起。要让人一眼看出“乙骨那种感觉”，但这是用户自己的角色。
+- **提示词**（风格前缀 + 下面这段 + `, neutral expression`）：
+
+  ```text
+  young male half-elf wizard in his early twenties, slightly messy black hair falling over his eyes, subtly pointed ears, a small tear mole under his left eye, gentle tired dark eyes with a quiet hidden intensity, soft unassuming face that hides great power, faint melancholy half-smile, worn dark leather jacket over a plain dark high-collared shirt, a slender straight-bladed sword in a black sheath held loosely at his side, a faint coiling silver dragon-mist spirit hovering protectively over his shoulder like a guardian presence, glowing silver dragon-scale rune on his left palm
+  ```
+
+- 要点：**左掌一定要有银色龙鳞印记**（他是印记持有者）；身后的银色龙雾要淡，像守护灵，不要画成一条完整的龙、也不要盖住脸；刀和人都完整收在画面里，头顶留 10% 空白。画风参考照旧用 `martha_neutral.webp`。
+- **交付不一样**：这张**不放进 `portraits/`**（玩家的立绘存在各自的存档里，不是游戏文件）。转成 768×1152 的 webp 或 png，放在桌面 `dragon-oath-portraits-v5` 里叫 `player_佐佐木琲世.png`。用户在游戏里打开“角色”，点立绘下面的“更换立绘”选这张图就能换上（Claude 刚加的按钮）。
+
 ## 画哪几张（按顺序）
 
 | 顺序 | 文件名 | 谁 | 提示词在哪里（`docs/剧本设定集.md`） |

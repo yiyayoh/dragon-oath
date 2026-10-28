@@ -4819,7 +4819,8 @@ function renderSummary() {
   box.append(el("div", "label", narratorLabel()));
   const set = el("button", "btn small", "说书人设置"); set.type = "button"; set.onclick = openSettings; box.append(set);
 }
-function loadPortrait(file) {
+// 读图片、裁成 400×600 的 JPEG：done 拿到 data URL（创建角色时存进 draft，游戏中在角色卡里换）
+function loadPortrait(file, done = data => { draft.portraitData = data; renderSummary(); }) {
   if (!file) return;
   const r = new FileReader();
   r.onload = () => {
@@ -4828,8 +4829,7 @@ function loadPortrait(file) {
       const W = 400, H = 600, cv = document.createElement("canvas"); cv.width = W; cv.height = H;
       const s = Math.max(W / im.width, H / im.height), w = im.width * s, h = im.height * s;
       cv.getContext("2d").drawImage(im, (W - w) / 2, (H - h) / 2, w, h);
-      draft.portraitData = cv.toDataURL("image/jpeg", 0.82);
-      renderSummary();
+      done(cv.toDataURL("image/jpeg", 0.82));
     };
     im.src = r.result;
   };
@@ -5009,9 +5009,15 @@ function openSheet(focus) {
       tabs.textContent = "";
       for (const id of ids) { const b = el("button", "btn small", id === "player" ? state.player.name : PEOPLE[id].name); b.type = "button"; b.setAttribute("aria-selected", String(id === cur)); b.onclick = () => { cur = id; draw(); }; tabs.append(b); }
       body.textContent = "";
-      const cs = el("div", "cs"); const im = el("img"); portrait(im, cur, "neutral"); cs.append(im);
-      const info = el("div", "step");
+      const cs = el("div", "cs"); const im = el("img"); portrait(im, cur, "neutral");
       const isP = cur === "player";
+      if (isP) { // 游戏中也能换自己的立绘，存进这一局的存档
+        const side = el("div", "step"), up = el("input"); up.type = "file"; up.accept = "image/*"; up.hidden = true;
+        const ub = el("button", "btn small", state.player.portraitData ? "更换立绘" : "上传立绘"); ub.type = "button"; ub.onclick = () => up.click();
+        up.onchange = () => loadPortrait(up.files[0], data => { state.player.portraitData = data; save(); renderPlay(); draw(); toast("立绘换好了"); });
+        side.append(im, ub, up); cs.append(side);
+      } else cs.append(im);
+      const info = el("div", "step");
       const ab = isP ? state.player.abilities : COMPANIONS[cur].ab;
       if (isP) {
         const p = state.player;
