@@ -48,6 +48,8 @@ globalThis.simulate = function(id, level, scene, away = [], allyFlags = {}) {
   levelUp(level);
   if (state.pendingAsi) applyAsi({ str: 2 });
   Object.assign(state.flags, allyFlags); // 第三幕的盟友由标记算出
+  // 印记：第二幕起同伴各 +15 龙化，玩家按常见进度给一点（第二幕 20、第三幕 40）
+  if (state.act >= 2) { for (const c of Object.values(state.companions)) c.draconic = 15 * (state.act - 1); state.player.draconic = 20 * (state.act - 1); }
   if (away.length) state.split = { scene, away, text: '' }; // 灯塔之夜分头行动：去码头的人不参战
   simDown = 0; simDownFirst = 0; simCultistFirst = 0;
   startCombat(id);

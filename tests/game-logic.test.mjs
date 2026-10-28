@@ -467,3 +467,38 @@ test('同伴生命低时自己喝行囊里的药；炸弹扔向区域', () => {
   })()`);
   assert.equal(result.drank.hp, true); assert.equal(result.bomb, true); assert.equal(result.log, true);
 });
+
+test('印记：龙化值跨过门槛解锁能力、同伴按看法调整赞同；龙之眼识破伪装，龙息烧区域，龙翼飞起来', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};state=newGame(freshDraft());state.act=1;state.scene='act1_lighthouse';
+    for(const id of ['selene','lyra']) state.companions[id].recruited=true;
+    applyGM({draconic:15});applyGM({draconic:15});applyGM({draconic:15});
+    const unlocked=marksOf('player').map(m=>m.id),appr={selene:state.companions.selene.approval,lyra:state.companions.lyra.approval};
+    state.split={scene:'act1_lighthouse',away:[],text:''};startCombat('lighthouse');const c=state.combat,me=c.units.player;
+    const fm=Object.values(c.units).find(u=>u.type==='facemother');const eye=useMark(me,'eye')&&!fm.guise&&c.eye;
+    const again=useMark(me,'eye');const z=c.units.assassin1.zone,hp=c.units.assassin1.hp;useMark(me,'breath',z);
+    const burned=c.units.assassin1.hp<hp||c.units.assassin1.dead;const wings=useMark(me,'wings');
+    return {unlocked,appr,eye,again,burned,wings,drac:state.player.draconic};
+  })()`);
+  assert.deepEqual(result.unlocked, ['eye', 'breath']);
+  assert.deepEqual(result.appr, { selene: -3, lyra: 3 });
+  assert.equal(result.eye, true); assert.equal(result.again, false); assert.equal(result.burned, true);
+  assert.equal(result.wings, false); assert.equal(result.drac, 60);
+});
+
+test('共鸣：营地里看过共鸣事件后解锁合体技；进入第二幕同伴龙化 +15；莉拉接受邀请 +30', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};state=newGame(freshDraft());state.act=1;state.scene='act1_hub';const s=state.companions.selene;s.recruited=true;s.approval=45;
+    state.campSeen=['act1_home','selene_hint'];state.camp={plan:planNight(),done:[],talk:null};const planned=state.camp.plan.important;
+    talkTo('selene');const res=!!s.resonance;
+    startCombat('docks_brawl');const c=state.combat,me=c.units.player,mate=c.units.selene;mate.zone=me.zone;
+    const foe=Object.values(c.units).find(u=>u.side!=='party');c.res={move:1,action:true,bonus:true};comboStrike(me,mate,foe);const used=!!c.combos.selene;state.combat=null;
+    state.scene='act1_dawn';state.ended=true;closeModal=()=>{};render=()=>{};nextAct();
+    state.flags['quest.lyra.oswald']=true;state.flags['act1.notes_copied']=true;state.companions.lyra.approval=30;state.scene='act2_ember_study';
+    applyGM({flags:{'quest.lyra':'joined'}});
+    return {planned,res,used,selene:s.draconic,lyra:state.companions.lyra.draconic};
+  })()`);
+  assert.deepEqual(result, { planned: 'selene_resonance', res: true, used: true, selene: 15, lyra: 45 });
+});

@@ -829,7 +829,7 @@ const QUESTS = {
       { flag: "act1.notes_copied", act: 1, text: "在废塔地下室发现研究笔记被人整本抄录过" },
       { flag: "quest.lyra.oswald", act: 1, text: "认出抄写的是导师奥斯瓦尔德：他已加入教团，还邀请莉拉“一起完成我们的研究”" },
     ],
-    choice: { flag: "quest.lyra", act: 2, options: { killed: "杀死导师", turned: "说服导师反水", joined: "让莉拉接受邀请" } },
+    choice: { flag: "quest.lyra", act: 2, options: { killed: "杀死导师", turned: "说服导师反水", joined: "让莉拉接受邀请" }, on: { joined: (c, notes) => addDraconic("lyra", 30, notes) } },
     test: "在力量和你之间，她看到你不会把她当工具" },
   naia: { name: "无面之名", steps: [
       { flag: "act1.naia_fate", act: 1, text: "身份暴露后，你决定了怎么处置她" },
@@ -1080,6 +1080,43 @@ function openShop() {
     };
     draw();
   });
+}
+/* 印记（设定集“印记系统”）。龙化值 0–100：到 at 解锁能力，每场战斗每种能力用一次，用一次龙化值 +cost。
+   同伴也有龙化值（state.companions[id].draconic），进入第二、三幕时各 +15，自动战斗会用龙之眼和龙息。 */
+const MARKS = [
+  { at: 20, id: "eye", name: "龙之眼", cost: 5, act: "action", desc: "看穿伪装和遮蔽：伪装的敌人全部现形，本场全队的远程攻击不再受遮蔽影响" },
+  { at: 40, id: "breath", name: "龙息", cost: 10, act: "action", desc: "向一个区域喷出银焰：(2 + 等级的一半)d6，敏捷豁免减半（同伴也会被烧）" },
+  { at: 60, id: "awe", name: "龙威", cost: 10, act: "action", desc: "你所在和相邻区域的敌人做感知豁免，失败恐惧 2 回合（攻击有劣势）" },
+  { at: 80, id: "wings", name: "龙翼", cost: 15, act: "bonus", desc: "张开龙翼 2 回合：多移动一次、可以飞到任意区域、不会被借机攻击，近战够不着你" },
+];
+const dracOf = ref => ref === "player" ? state.player.draconic : state.companions[ref]?.draconic || 0;
+const marksOf = ref => MARKS.filter(m => dracOf(ref) >= m.at);
+// 玩家的龙化越深，同伴的态度越不同（每跨过 40 / 60 / 80 一次，在场的同伴赞同度这样变）
+const DRAGON_VIEW = {
+  selene: [-3, "担心：印记是托付，不是力量；她怕你变成龙的容器"], vex: [0, "觉得有点帅，又有点害怕，嘴上开玩笑"],
+  kassian: [-2, "心疼：他见过力量怎么吞掉一个人"], borin: [-1, "警惕：龙就是龙，再好的龙也会烧掉铁炉堡"],
+  lyra: [3, "着迷：想研究你身上的每一片鳞"], naia: [1, "好奇：一个人可以变成另一种东西，她最懂"],
+};
+// 共鸣：和同伴赞同度到 40 后，营地里会有一段印记共鸣，之后解锁两人的合体技（每场战斗一次）
+const COMBOS = {
+  selene: { name: "晨星双剑", memory: "骑士团覆灭那一夜：她躲在祭坛下，听着同袍一个个倒下" },
+  vex: { name: "影中双刃", memory: "第一次偷东西：为了给发烧的莉丝买药，他偷了一个面包，被打断了两根手指" },
+  kassian: { name: "潮汐守护", memory: "那场比赛的最后一拳：他看着好友的眼睛慢慢失去光" },
+  borin: { name: "铁炉堡冲锋", memory: "达林把他推出着火的矿坑，自己转身回去救人" },
+  lyra: { name: "星烬双咒", memory: "学院的审判庭：导师在台下看着她，一句话都没说" },
+  naia: { name: "千面之舞", memory: "一面镜子：小时候她第一次变成别人，千面母为她鼓掌" },
+};
+// 改龙化值的唯一入口：跨过门槛时解锁能力、在场同伴按看法调整赞同度
+function addDraconic(ref, n, notes) {
+  const before = dracOf(ref), after = clamp(before + n, 0, 100); if (after === before) return;
+  if (ref === "player") state.player.draconic = after; else state.companions[ref].draconic = after;
+  const who = ref === "player" ? "" : PEOPLE[ref].name;
+  const line = (t, cls = "") => notes ? notes.push([t, cls]) : push("sys", t, { cls: cls === "up" ? "appr-up" : cls === "down" ? "appr-down" : "" });
+  line(`${who}龙化值 ${sgn(after - before)}（${after}）`);
+  for (const m of MARKS.filter(m => before < m.at && after >= m.at)) line(`${who || "你"}的印记觉醒了：${m.name}——${m.desc}`, "up");
+  if (ref !== "player") return;
+  for (const t of [40, 60, 80].filter(t => before < t && after >= t))
+    for (const id of party()) { const [d] = DRAGON_VIEW[id] || [0]; if (d) { state.companions[id].approval = clamp(state.companions[id].approval + d, -100, 100); line(`${PEOPLE[id].name}看着你掌心蔓延的鳞片，赞同度 ${sgn(d)}`, d > 0 ? "up" : "down"); } }
 }
 const FIREBALL = { name: "火球术", dice: 8, desc: "动作，每场一次：炸向一个区域，里面的所有人（包括同伴）受 8d6 火焰伤害，敏捷豁免成功减半" };
 // 数值取自设定集“普通敌人”表；atk：cnt d 面骰 + plus，命中加值 hit
@@ -1849,6 +1886,7 @@ function companionBrief(id) {
   赞同：${c.likes}；反感：${c.dislikes}
   秘密：${c.secret}
   加入条件：${c.join}
+  印记：龙化值 ${s.draconic || 0}${s.resonance ? "，已经和玩家共鸣过" : ""}；对玩家龙化（现在 ${state.player.draconic}）的看法：${DRAGON_VIEW[id]?.[1] || "说不清"}
   ${questBrief(id)}`;
 }
 // 这一幕会出场的 NPC：[id, 从第几幕起, 说明, 到第几幕为止]
@@ -1972,7 +2010,7 @@ function buildPrompt(action, mode) {
     (state.combat ? combatBrief(mode) : state.camp ? campBrief() : encs.length || done.length ? (encs.length ? `\n可开战的遭遇：${encs.map(id => id + "（" + ENCOUNTERS[id].brief + "）").join("；")}` : "") + (done.length ? `\n这一场已经打完的遭遇（不能再写 combat）：${done.join("、")}。玩家再要动手，就用检定或叙述处理，不要写成一直对峙` : "") : "") +
     `\n\n【玩家角色】${p.name}，${p.gender}，${p.level} 级${RACES[p.race].name}${CLASSES[p.cls].name}，背景：${BACKGROUNDS[p.bg].name}（灵感条件：${BACKGROUNDS[p.bg].insp}）。外貌：${p.appearance}` +
     `\n属性：${AB_KEYS.map(k => AB[k] + p.abilities[k] + "(" + sgn(mod(p.abilities[k])) + ")").join(" ")}；熟练技能：${profs}` +
-    `\nHP ${p.hp}/${p.hpMax}，AC ${acTotal("player")}，金币 ${p.gold}，灵感 ${p.inspiration}，龙化值 ${p.draconic}，装备：${gearLine("player")}，行囊：${p.inventory.join("、") || "无"}` +
+    `\nHP ${p.hp}/${p.hpMax}，AC ${acTotal("player")}，金币 ${p.gold}，灵感 ${p.inspiration}，龙化值 ${p.draconic}${marksOf("player").length ? "（印记能力：" + marksOf("player").map(m => m.name).join("、") + "）" : ""}，装备：${gearLine("player")}，行囊：${p.inventory.join("、") || "无"}` +
     `\n\n【在场同伴】\n${pres.length ? pres.map(companionBrief).join("\n") : "（无，玩家独自一人）"}` +
     `\n\n【NPC】\n${npcLines()}` +
     `\n\n【世界标记】${JSON.stringify(state.flags)}；赫斯提雅信任 ${state.hestiaTrust}；第 ${state.day} 天，营地补给 ${state.supplies ?? 0}${debtLine()}${allyLine()}` +
@@ -2413,9 +2451,9 @@ function applyGM(d, mode) {
       if (v === cur + 1 && v <= 3) { state.flags[k] = v; notes.push([v === 3 ? "龙蛋的壳上出现了一道裂纹" : `龙蛋保温了 ${v}/3 次`, "up"]); }
       continue;
     }
-    if (k === "act2.sacrifice" && v === "draconic") { if (state.player.draconic < 20 || state.flags[k]) continue; state.player.draconic -= 20; notes.push(["龙化值 −20", ""]); }
+    if (k === "act2.sacrifice" && v === "draconic") { if (state.player.draconic < 20 || state.flags[k]) continue; addDraconic("player", -20, notes); }
     if (k === "act2.heart" && (state.flags[k] || v === "cult" || v === "destroyed" && state.flags["act2.tideborn"] !== "ally")) continue; // 抢走由代码写；销毁要潮裔是盟友
-    if (k === "act2.heart" && v === "player") { state.player.draconic = clamp(state.player.draconic + 30, 0, 100); notes.push(["龙化值 +30", ""]); }
+    if (k === "act2.heart" && v === "player") addDraconic("player", 30, notes);
     if (k === "act2.taken" || k === "act2.storm" || k === "act3.ending") continue; // 由代码结算
     if (k === "act3.route" && !({ charge: () => allies().length >= 2, tunnel: () => state.flags["quest.naia"] === "double" || state.flags["prologue.rat_king"] === "spared", wings: () => state.player.draconic >= 80 })[v]?.()) { console.warn("这条路的条件不满足", v); continue; }
     if (k === "act3.valdo" && v === "convinced" && !((state.flags["act2.eve"] || state.flags["side.eve_letter"] === "done") && state.flags["quest.selene.diary"])) continue; // 说服主教要有证据
@@ -2481,7 +2519,7 @@ function applyGM(d, mode) {
   }
   // draconic, inspiration
   const dr = num(d.draconic, 15);
-  if (dr) { state.player.draconic = clamp(state.player.draconic + dr, 0, 100); notes.push(["龙化值 " + sgn(dr), ""]); }
+  if (dr) addDraconic("player", dr, notes);
   if (num(d.inspiration, 1) > 0 && state.player.inspiration < 4) { state.player.inspiration++; notes.push(["获得 1 点灵感", "up"]); toast("获得灵感", "up"); }
   // hestia
   const ht = num(d.hestia_trust, 20);
@@ -2664,6 +2702,7 @@ function nextAct() {
     state.act1Day = state.day;
     state.journal.push({ quest: "第一幕：灰帆港", note: "去誓约神殿需要航海图和船。航海图封在酒馆地窖，要先从总督府金库拿回守誓人的钥匙。" });
   }
+  if (state.act >= 2) for (const id of Object.keys(COMPANIONS)) if (state.companions[id].alive) addDraconic(id, 15);
   if (state.act === 3) state.journal.push({ quest: "第三幕：烬冠", note: "回到被围的灰帆港，召集盟友，攻上烬冠山，在主教唤醒烬王之前赶到祖坛。" });
   if (state.act === 2) {
     state.supplies = Math.max(state.supplies || 0, 4); // 出海带足补给
@@ -2831,7 +2870,9 @@ const CAMP_EVENTS = [
   { id: "borin_lyra_axe", pair: ["borin", "lyra"], kind: "banter", title: "符文与咒语",
     seed: "莉拉对达林战斧上的矮人符文很感兴趣，想拓下来研究；博林舍不得让人碰哥哥的斧子，最后还是一边嘟囔一边教她念符文的发音。" },
 ];
-const KIND_ORDER = { main: 0, romance: 1, quest: 2, friend: 3 };
+const KIND_ORDER = { main: 0, romance: 1, resonance: 2, quest: 3, friend: 4 };
+for (const [id, cb] of Object.entries(COMBOS)) CAMP_EVENTS.push({ id: `${id}_resonance`, who: id, kind: "resonance", when: c => c.approval >= 40 && !c.resonance,
+  seed: `印记共鸣：你和${PEOPLE[id].name}的掌心同时发烫，两人一起看见了对方最深的记忆。${PEOPLE[id].name}的记忆是：${cb.memory}。你的记忆由玩家的背景决定，写一段具体的。醒过来之后两人都很沉默，然后聊起各自看到的东西。之后战斗里你们可以使用合体技“${cb.name}”。` });
 // 多人恋爱：玩家已有恋人，又和别人走到暧昧以上时，现任会想找你谈（还没表态过才会出现）
 function loverTalks() {
   const out = [];
@@ -2924,6 +2965,7 @@ function talkTo(target) {
   k.talk = target; k.event = ev?.id || null;
   if (ev) {
     state.campSeen = [...(state.campSeen || []), ev.id];
+    if (ev.kind === "resonance") { state.companions[ev.who].resonance = true; push("sys", `印记共鸣：解锁和${PEOPLE[ev.who].name}的合体技“${COMBOS[ev.who].name}”`, { cls: "appr-up" }); }
     if (k.plan.important === ev.id) k.plan.important = null;
     k.plan.banter = k.plan.banter.filter(x => x !== ev.id);
   }
@@ -3129,7 +3171,8 @@ function partyUnit(ref, zone) {
   const s = isP ? state.player : state.companions[ref];
   return {
     id: ref, ref, side: "party", pid: ref, name: whoName(ref), zone, dexMod: mod(ab.dex),
-    hp: Math.max(1, s.hp), max: s.hpMax, ac: acTotal(ref), level: lvl, initBonus: gearBonus(ref).init,
+    hp: Math.max(1, s.hp), max: s.hpMax, ac: acTotal(ref), level: lvl, initBonus: gearBonus(ref).init, marksUsed: {},
+    breathDc: 8 + g.pb + mod(ab.con),
     weapons: gearWeapons(ref, kit.weapons.map(w => ({ n: w.n, cnt: w.cantrip ? g.cantrip : 1, d: w.d, plus: w.cantrip ? 0 : mod(ab[w.ab]), hit: mod(ab[w.ab]) + g.pb, ranged: !!w.ranged, mock: !!w.mock, cantrip: !!w.cantrip })), ab, g.pb),
     feat: kit.feat, uses: g.uses, healMod: kit.healAb ? mod(ab[kit.healAb]) : 0,
     sneakDice: g.sneak, extra: g.extra, fireball: g.fireball ? 1 : 0, spellDc: 8 + g.pb + mod(ab.int),
@@ -3240,13 +3283,14 @@ function attackMods(a, t, w) {
   if (w.ranged) {
     if (cbList().some(v => hostile(v, a) && seen(v) && v.zone === a.zone)) dis++;
     if (az.tags.includes("high") && !tz.tags.includes("high")) adv++;
-    if (tz.tags.includes("obscured")) dis++;
+    if (tz.tags.includes("obscured") && !(a.side === "party" && state.combat.eye)) dis++;
     if (tz.tags.includes("cover") && a.zone !== t.zone) ac += 2;
   }
   return { adv: adv > 0 && !dis, dis: dis > 0 && !adv, ac };
 }
 function attack(a, t, w, o = {}) {
   const m = attackMods(a, t, w);
+  if (o.adv) { m.adv = true; m.dis = false; }
   const [d, rs] = d20x(m.adv, m.dis, a.ref === "player" && state.player.race === "halfling");
   delete a.cond.mocked;
   const total = d + w.hit, crit = d === 20, hit = crit || (d !== 1 && total >= m.ac);
@@ -3260,6 +3304,7 @@ function attack(a, t, w, o = {}) {
   if (o.smite && !w.ranged && a.uses > 0) { a.uses--; n += roll(2 * k, 8); extra.push("至圣斩"); }
   if (w.mock) { t.cond.mocked = true; extra.push("对方下次攻击劣势"); }
   if (w.extra && !(w.extra.fire && ENEMIES[t.type]?.immune === "fire")) { n += roll(w.extra.cnt * k, w.extra.d); extra.push(w.extra.n); }
+  if (o.bonusDice) { n += roll(o.bonusDice[0] * k, o.bonusDice[1]); extra.push(o.bonusName); }
   n = Math.max(1, n);
   const r = hurt(t, n, { crit, spare: o.spare && !w.ranged });
   clog(head + (crit ? "暴击！" : "命中，") + `${n} 点伤害` + (extra.length ? "（" + extra.join("、") + "）" : "") + (r ? "。" + r : ""), crit ? "crit" : "hit");
@@ -3267,7 +3312,7 @@ function attack(a, t, w, o = {}) {
 }
 function moveUnit(u, to, free) {
   const c = state.combat;
-  if (!free) for (const v of cbList()) {
+  if (!free && !u.aloft) for (const v of cbList()) { // 飞在天上的人不会被借机攻击
     if (!seen(v) || v.reacted || !hostile(v, u) || v.zone !== u.zone) continue;
     const w = v.weapons.find(x => !x.ranged); if (!w) continue;
     v.reacted = true; clog(`${u.name} 离开${c.zones[u.zone].n}时，${v.name} 趁机出手`);
@@ -3356,6 +3401,42 @@ function foeTurn(u) {
   if (e.frenzy && u.hp <= u.max / 2 && !u.raged) { u.raged = true; clog(`${u.name}的盔甲缝里喷出烈焰——他陷入了狂怒！`, "event"); }
   for (let i = 1; i < times && ACTIVE(u); i++) fightTurn(u); // multi：每回合攻击几次
 }
+// 印记能力
+function useMark(u, id, arg) {
+  const c = state.combat, m = MARKS.find(x => x.id === id); if (!m || u.marksUsed[id] || dracOf(u.ref) < m.at) return false;
+  u.marksUsed[id] = true;
+  if (id === "eye") {
+    c.eye = true; const hid = cbList().filter(v => v.guise && ACTIVE(v));
+    for (const v of hid) reveal(v, u);
+    clog(`${u.name}的瞳孔竖成一条银线——${hid.length ? "伪装在龙之眼下无所遁形！" : "雾和阴影都挡不住视线了。"}`, "event");
+  } else if (id === "breath") {
+    const dice = 2 + Math.floor(u.level / 2), n = roll(dice, 6), hit = [];
+    for (const v of cbList().filter(v => v.zone === arg && !v.dead && !v.out)) {
+      const save = rollD20() + (v.dexMod || 0) >= u.breathDc, dmg = save ? Math.floor(n / 2) : n, r = hurt(v, dmg);
+      hit.push(`${v.name} ${dmg}${save ? "（躲开一半）" : ""}${r ? "，" + r : ""}`);
+    }
+    clog(`${u.name}张口喷出银色的龙焰，席卷${c.zones[arg].n}，${n} 点伤害（敏捷 DC ${u.breathDc}）` + (hit.length ? "：" + hit.join("；") : ""), "crit");
+  } else if (id === "awe") {
+    const zs = [u.zone, ...c.zones[u.zone].adj], hit = [];
+    for (const v of cbList().filter(v => hostile(u, v) && ACTIVE(v) && zs.includes(v.zone) && !ENEMIES[v.type]?.object)) {
+      if (rollD20() >= u.breathDc) continue; v.cond.frightened = 2; hit.push(v.name);
+    }
+    clog(`${u.name}身上腾起龙的威压——${hit.length ? hit.join("、") + "恐惧了" : "敌人咬牙顶住了"}`, "event");
+  } else if (id === "wings") {
+    u.aloft = true; u.wingsUntil = c.round + 2; c.res.move++; c.res.free = true;
+    clog(`${u.name}背上撕开一对银黑色的龙翼，腾空而起！`, "event");
+  }
+  addDraconic(u.ref, m.cost);
+  return true;
+}
+// 合体技：玩家和共鸣过的同伴（同区、能行动）一起出手，各打一次，都有优势，命中各加 2d6
+function comboStrike(me, mate, t) {
+  const c = state.combat; c.res.action = false; c.combos = { ...(c.combos || {}), [mate.ref]: true };
+  clog(`${COMBOS[mate.ref].name}！${me.name}和${mate.name}掌心的印记同时亮起`, "event");
+  const o = { adv: true, bonusDice: [2, 6], bonusName: "共鸣" };
+  attack(me, t, me.weapons.find(w => w.ranged === (t.zone !== me.zone)) || me.weapons[0], o);
+  if (ACTIVE(t)) attack(mate, t, mate.weapons.find(w => w.ranged === (t.zone !== mate.zone)) || mate.weapons[0], o);
+}
 // 吐息：对人最多的区域，敏捷豁免减半
 function breathe(u, b) {
   const c = state.combat, score = zi => cbList().filter(v => v.zone === zi && hostile(u, v) && ACTIVE(v)).length;
@@ -3375,7 +3456,7 @@ function drainMark(u, dc, ab = "con", what = "抽取印记") {
   const t = ts[Math.floor(Math.random() * ts.length)], b = bonusFor(t.ref, "save_" + ab).total, d = rollD20();
   if (d + b >= dc) { clog(`${u.name}试图${what}，${t.name}咬牙顶住了（${AB[ab]}豁免 ${d + b} 对 DC ${dc}）`); return; }
   t.cond.stunned = true;
-  if (t.ref === "player" && what === "抽取印记") state.player.draconic = clamp(state.player.draconic + 10, 0, 100);
+  if (t.ref === "player" && what === "抽取印记") state.player.draconic = clamp(state.player.draconic + 10, 0, 100); // 战斗中不弹提示，战后摘要里能看到
   clog(`${u.name}${what}——${t.name}失神了（${AB[ab]}豁免 ${d + b} 对 DC ${dc}）${t.ref === "player" && what === "抽取印记" ? "，龙化值 +10" : ""}`, "hit");
 }
 // 烬王：生命 > 2/3 时陷在火山口，爪尾两击 + 低语；之后升空吐息，盟友每方能把它压下来一次；生命 ≤ 1/3 时战斗停下，进入最终抉择（见 hurt）
@@ -3405,6 +3486,11 @@ function wakeTurn(u) {
 function allyTurn(u) {
   const c = state.combat, mates = cbList().filter(v => v.side === "party" && !v.dead && !v.out);
   if (wakeTurn(u)) return;
+  if (cbList().some(v => v.guise && ACTIVE(v)) && useMark(u, "eye")) return;
+  if (dracOf(u.ref) >= 40 && !u.marksUsed.breath) { // 龙息：找一个至少两个敌人、没有自己人的区域
+    const zi = c.zones.map((z, i) => i).find(i => cbList().filter(v => v.zone === i && hostile(u, v) && seen(v) && !ENEMIES[v.type]?.object).length >= 2 && !mates.some(v => v.zone === i));
+    if (zi != null && useMark(u, "breath", zi)) return;
+  }
   if (u.cond.prone) { delete u.cond.prone; c.res.move = 0; clog(`${u.name} 爬了起来`); }
   if (u.feat === "heal" && u.uses > 0) {
     const t = mates.find(v => v.down) || mates.find(v => !v.down && v.hp <= v.max * .35);
@@ -3439,6 +3525,7 @@ function beginTurn(u) {
   c.res = { action: true, bonus: true, move: 1, free: false, attackOnly: false }; // attackOnly：额外攻击的第二击还没用
   u.reacted = false; u.sneakUsed = false; delete u.cond.dodge; delete u.cond.exposed;
   u.skip = !!u.cond.stunned; delete u.cond.stunned; // 失神：这一回合什么也做不了
+  if (u.wingsUntil && c.round > u.wingsUntil) { u.aloft = false; delete u.wingsUntil; clog(`${u.name}收起了龙翼`); }
   if (u.skip) { c.res = { action: false, bonus: false, move: 0, free: false, attackOnly: false }; clog(`${u.name}失神了，这一回合动弹不得`); }
   for (const k of ["frightened", "restrained"]) if (u.cond[k] && --u.cond[k] <= 0) delete u.cond[k];
   const z = c.zones[u.zone];
@@ -3627,6 +3714,7 @@ function validTarget(p, u) {
   const me = state.combat.units.player;
   if (p.kind === "heal") return u.side === "party" && !u.dead && !u.out;
   if (p.kind === "fireball") return false; // 火球选的是区域
+  if (p.kind === "combo") return hostile(me, u) && seen(u);
   if (!hostile(me, u) || !seen(u)) return false;
   return p.kind !== "attack" || me.weapons[p.w].ranged || u.zone === me.zone && !aloft(u);
 }
@@ -3638,12 +3726,14 @@ function doPick(u) {
       if (me.extra && !c.res.attackOnly) c.res.attackOnly = true; else { c.res.action = false; c.res.attackOnly = false; }
       attack(me, u, me.weapons[p.w], { smite: p.smite, spare: c.spare });
     }
+    else if (p.kind === "combo") comboStrike(me, c.units[p.ally], u);
     else if (p.kind === "missile") { c.res.action = false; me.uses--; const n = roll(3, 4) + 3, r = hurt(u, n); clog(`${me.name} 射出三枚魔法飞弹，${u.name} 受到 ${n} 点力场伤害` + (r ? "。" + r : ""), "hit"); }
     else if (p.kind === "mark") { c.res.bonus = false; me.uses--; u.cond.marked = me.id; clog(`${me.name} 对 ${u.name} 施加了${FEATS[me.feat].name}`); }
     else if (p.kind === "heal") { c.res.bonus = false; me.uses--; clog(`${me.name} 念出治疗之语：` + heal(u, Math.max(1, roll(1, 4) + me.healMod)), "up"); }
   });
 }
 function castFireball(zi) {
+  if (pick?.mark === "breath") { act((c, me) => { c.res.action = false; useMark(me, "breath", zi); }); return; }
   const item = pick?.item, bl = item && ITEMS[item].use.blast;
   act((c, me) => {
     c.res.action = false;
@@ -3693,10 +3783,10 @@ function renderCombat(box) {
     for (const u of cbList().filter(u => u.zone === zi && !u.dead && !u.out && !u.guise)) zb.append(unitChip(u));
     const gone = cbList().filter(u => u.zone === zi && (u.dead || u.out)).length;
     if (gone) zb.append(el("div", "zt", `倒下或离场 ${gone}`));
-    if (turn && !pick && r.move > 0 && !me.cond.prone && !me.cond.restrained && c.zones[me.zone].adj.includes(zi)) {
+    if (turn && !pick && r.move > 0 && !me.cond.prone && !me.cond.restrained && zi !== me.zone && (c.zones[me.zone].adj.includes(zi) || me.aloft)) {
       const b = el("button", "btn small", "移动到这里"); b.type = "button"; b.onclick = () => act((c, me) => { c.res.move--; moveUnit(me, zi, c.res.free); }); zb.append(b);
     }
-    if (turn && pick?.kind === "fireball") { const b = el("button", "btn small gold", pick.item ? "扔到这里" : "火球砸向这里"); b.type = "button"; b.onclick = () => castFireball(zi); zb.append(b); }
+    if (turn && pick?.kind === "fireball") { const b = el("button", "btn small gold", pick.mark ? "龙焰喷向这里" : pick.item ? "扔到这里" : "火球砸向这里"); b.type = "button"; b.onclick = () => castFireball(zi); zb.append(b); }
     zs.append(zb);
   });
   wrap.append(zs);
@@ -3726,6 +3816,12 @@ function renderCombat(box) {
       if (me.feat === "missile" && me.uses > 0) add("魔法飞弹", () => setPick({ kind: "missile", label: "魔法飞弹" }), null, feat.desc);
       if (me.fireball) add("火球术", () => setPick({ kind: "fireball", label: "火球术" }), null, FIREBALL.desc);
       for (const n of [...new Set(state.player.inventory)].filter(n => ITEMS[n]?.use?.blast)) add(`扔${n}`, () => setPick({ kind: "fireball", item: n, label: n }), null, ITEMS[n].desc);
+      for (const m of marksOf("player").filter(m => m.act === "action" && !me.marksUsed[m.id])) {
+        if (m.id === "breath") add(m.name, () => setPick({ kind: "fireball", mark: "breath", label: m.name }), null, `${m.desc}；龙化值 +${m.cost}`);
+        else add(m.name, () => act((c, me) => { c.res.action = false; useMark(me, m.id); }), null, `${m.desc}；龙化值 +${m.cost}`);
+      }
+      for (const mate of cbList().filter(v => v.side === "party" && v.ref !== "player" && ACTIVE(v) && v.zone === me.zone && state.companions[v.ref]?.resonance && !c.combos?.[v.ref]))
+        add(COMBOS[mate.ref].name, () => setPick({ kind: "combo", ally: mate.id, label: COMBOS[mate.ref].name }), null, `和${mate.name}一起出手：各攻击一次，都有优势，命中各加 2d6`);
       if (cbList().some(v => v.guise && ACTIVE(v))) add("识破伪装", () => act((c, me) => { c.res.action = false; trySpot(me); }), null, `用掉动作在人群里找伪装的敌人：察觉 DC ${SPOT_DC}`);
       add("冲刺", () => act((c, me) => { c.res.action = false; c.res.move++; clog(`${me.name} 冲刺`); }), null, "本回合多移动一次");
       add("闪避", () => act((c, me) => { c.res.action = false; me.cond.dodge = true; clog(`${me.name} 摆出防守架势`); }), null, "直到你下回合开始，攻击你的人有劣势");
@@ -3735,6 +3831,7 @@ function renderCombat(box) {
       if (me.feat === "second_wind" && me.uses > 0) add("回气", () => act((c, me) => { c.res.bonus = false; me.uses--; clog(`${me.name} 使出回气：` + heal(me, roll(1, 10) + me.level), "up"); }), null, feat.desc);
       if ((me.feat === "mark" || me.feat === "hex") && me.uses > 0) add(feat.name, () => setPick({ kind: "mark", label: feat.name }), null, feat.desc);
       if (me.feat === "heal" && me.uses > 0) add("治疗之语", () => setPick({ kind: "heal", label: "治疗之语" }), null, feat.desc);
+      if (marksOf("player").some(m => m.id === "wings") && !me.marksUsed.wings) add("龙翼", () => act((c, me) => { c.res.bonus = false; useMark(me, "wings"); }), null, `${MARKS[3].desc}；龙化值 +${MARKS[3].cost}`);
       if (me.feat === "sneak") add("灵巧移动", () => act((c, me) => { c.res.bonus = false; c.res.move++; c.res.free = true; clog(`${me.name} 身形一闪，准备脱离`); }), null, "多移动一次，本回合移动不引发借机攻击");
       for (const n of [...new Set(state.player.inventory)].filter(n => ITEMS[n]?.use?.heal)) add(`喝${n}`, () => act((c, me) => { c.res.bonus = false; state.player.inventory.splice(state.player.inventory.indexOf(n), 1); clog(`${me.name} 灌下${n}：` + useHeal(ITEMS[n], me), "up"); }), null, ITEMS[n].desc);
       for (const t of cbList().filter(v => v.side === "party" && v.down && !v.dead && v.zone === me.zone)) add(`扶起${t.name}`, () => act((c, me) => { c.res.bonus = false; raise(me, t); }));
@@ -3936,7 +4033,7 @@ function renderPlay() {
     for (const id of pt) { const c = state.companions[id]; card(id, PEOPLE[id].name, `HP ${c.hp}/${c.hpMax} · ${ROMANCE[c.romance]?.name || relLabel(c.approval)} ${sgn(c.approval)}`, c.hp, c.hpMax); }
     if (!pt.length) rail.append(el("div", "note", "还没有同伴。酒馆里的人，也许会成为你的伙伴。"));
   }
-  rail.append(el("div", "note", `金币 ${p.gold} · 补给 ${state.supplies ?? 0} · 灵感 ${p.inspiration} · 龙化 ${p.draconic}`));
+  rail.append(el("div", "note", `金币 ${p.gold} · 补给 ${state.supplies ?? 0} · 灵感 ${p.inspiration} · 龙化 ${p.draconic}${marksOf("player").length ? "（" + marksOf("player").map(m => m.name).join("、") + "）" : ""}`));
   if (state.flags["act1.debt_known"] && debtOpen()) rail.append(el("div", "note", `莉丝：还剩 ${debtDays()} 天`));
   if (sc.hub && sc.goals?.length) rail.append(el("div", "note", "目标：" + sc.goals.map(g => `${g.name} ${state.flags[g.flag] ? "✓" : "✗"}`).join(" · ")));
 
