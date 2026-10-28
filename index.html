@@ -871,6 +871,23 @@ function dreamDue(sc, nextId) {
   if (a === 2 && !ACT2_LOCS.some(id => state.log.some(e => e.s === id))) return null;
   return DREAMS[a];
 }
+// 神殿试炼的素材（填数据见 docs/任务书-内容扩充-DS-3.md）：fears[玩家背景] = { vision 勇气试炼的幻象, ways 过关的办法 }；
+// secrets[同伴] = { refuse 赞同不到 20 时怎么拒绝, tell 肯说时说出的秘密 }。说书人在这两场的提示词里看到对应的一段
+const TRIALS = { fears: {}, secrets: {} };
+function trialLine() {
+  if (state.scene === "act2_temple") {
+    const f = TRIALS.fears[state.player.bg]; if (!f) return "";
+    return `
+【勇气试炼的素材】玩家的背景是${BACKGROUNDS[state.player.bg].name}。幻象：${f.vision}${f.ways ? "。过关的办法（可以有别的）：" + f.ways : ""}`;
+  }
+  if (state.scene !== "act2_temple_truth") return "";
+  const l = present().filter(id => TRIALS.secrets[id]).map(id => {
+    const x = TRIALS.secrets[id], low = state.companions[id].approval < 20;
+    return `${PEOPLE[id].name}：${low ? `（赞同不到 20，先拒绝）${x.refuse || ""}；被说服之后：` : ""}${x.tell || ""}`;
+  });
+  return l.length ? `
+【真相之厅的素材】${l.join("；")}` : "";
+}
 const dreamLine = sc => sc.trust ? `\n【这一次梦的走向】（赫斯提雅信任 ${state.hestiaTrust}，程序按信任选定）${state.hestiaTrust >= 20 ? sc.trust.high : state.hestiaTrust <= -20 ? sc.trust.low : sc.trust.mid}` : "";
 const ACT2_LOCS = Object.keys(SCENES).filter(id => SCENES[id].loc2);
 // 酒馆升级（设定集“玛莎”）：花金币，效果由代码给；第三幕酒馆成了避难所，同样用得上
@@ -2293,7 +2310,7 @@ function buildPrompt(action, mode) {
   const pres = present();
   const encs = (sc.encounters || []).filter(id => !state.fought?.[id]), done = (sc.encounters || []).filter(id => state.fought?.[id]);
   return SYSTEM + rulesBlock() +
-    `\n\n【当前场景】${state.scene}「${sc.title}」，地点：${state.location}\n场景锚点（GM 可见）：${sc.anchor}${dreamLine(sc)}${intelLine(sc)}\n${nextLine(sc)}${splitLine(sc)}${sideLine()}` +
+    `\n\n【当前场景】${state.scene}「${sc.title}」，地点：${state.location}\n场景锚点（GM 可见）：${sc.anchor}${dreamLine(sc)}${trialLine()}${intelLine(sc)}\n${nextLine(sc)}${splitLine(sc)}${sideLine()}` +
     (state.combat ? combatBrief(mode) : state.camp ? campBrief() : encs.length || done.length ? (encs.length ? `\n可开战的遭遇：${encs.map(id => id + "（" + ENCOUNTERS[id].brief + "）").join("；")}` : "") + (done.length ? `\n这一场已经打完的遭遇（不能再写 combat）：${done.join("、")}。玩家再要动手，就用检定或叙述处理，不要写成一直对峙` : "") : "") +
     `\n\n【玩家角色】${p.name}，${p.gender}，${p.level} 级${RACES[p.race].name}${CLASSES[p.cls].name}，背景：${BACKGROUNDS[p.bg].name}（灵感条件：${BACKGROUNDS[p.bg].insp}）。外貌：${p.appearance}` +
     `\n属性：${AB_KEYS.map(k => AB[k] + p.abilities[k] + "(" + sgn(mod(p.abilities[k])) + ")").join(" ")}；熟练技能：${profs}` +

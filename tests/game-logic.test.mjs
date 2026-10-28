@@ -845,3 +845,14 @@ test('试玩报告修复：黑拳只用拳头、打倒就出局，讲好规矩�
   assert.deepEqual(result.selene, { down: false, out: 'ko' }); assert.equal(result.foe, 'ko'); assert.equal(result.dead, false);
   assert.equal(result.brawl, false);
 });
+
+test('神殿试炼的素材：勇气试炼按玩家背景，真相之厅按在场同伴和赞同度', () => {
+  const run = game();
+  const result = run(`(() => {
+    state=newGame(freshDraft());state.act=2;state.scene='act2_temple';state.companions.selene.recruited=true;state.companions.vex.recruited=true;state.companions.vex.approval=5;state.companions.selene.approval=40;
+    TRIALS.fears[state.player.bg]={vision:'测试幻象',ways:'测试办法'};TRIALS.secrets.selene={refuse:'S拒绝',tell:'S秘密'};TRIALS.secrets.vex={refuse:'V拒绝',tell:'V秘密'};
+    const a=buildPrompt('x');state.scene='act2_temple_truth';const b=buildPrompt('x');state.scene='act2_hub';const c=buildPrompt('x');
+    return {fear:a.includes('测试幻象')&&a.includes('测试办法'),selene:b.includes('S秘密')&&!b.includes('S拒绝'),vex:b.includes('V拒绝')&&b.includes('V秘密'),elsewhere:!c.includes('试炼的素材')&&!c.includes('真相之厅的素材')};
+  })()`);
+  assert.deepEqual(result, { fear: true, selene: true, vex: true, elsewhere: true });
+});
