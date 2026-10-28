@@ -1846,8 +1846,13 @@ const failed = new Set();
 function portrait(img, id, expr) {
   if (id === "player" && state?.player?.portraitData) { img.src = state.player.portraitData; return; }
   const cands = [];
-  if (id === "naia") cands.push(`portraits/naia_${naiaTrue() ? "true" : "disguise"}.webp`); // 奈雅只有伪装和真身两张，没有表情差分
+  if (id === "naia") { // 奈雅分伪装和真身两种样子，表情差分命名为 naia_true_smile.webp 这样
+    const form = naiaTrue() ? "true" : "disguise";
+    if (expr && expr !== "neutral") cands.push(`portraits/naia_${form}_${expr}.webp`);
+    cands.push(`portraits/naia_${form}.webp`);
+  }
   else if (id !== "player") {
+    if (id === "darin" && state?.flags?.["act2.darin"] === "woke") cands.push("portraits/darin_woke.webp"); // 被战歌唤醒之后的样子
     if (expr && expr !== "neutral") cands.push(`portraits/${id}_${expr}.webp`);
     cands.push(`portraits/${id}_neutral.webp`);
   }
@@ -3965,12 +3970,12 @@ function startCombat(id) {
 function boutRules(c) {
   for (const u of cbList().filter(u => u.side === "party")) {
     const st = abOf(u.ref).str;
-    u.weapons = [{ n: "拳头", cnt: 1, d: 6, plus: mod(st), hit: mod(st) + profBonus(u.level) }];
+    u.weapons = [{ n: "拳套", cnt: 1, d: 6, plus: mod(st), hit: mod(st) + profBonus(u.level) }];
     u.uses = 0; u.fireball = 0; u.sigUsed = true; u.feats = []; u.marksUsed = Object.fromEntries(MARKS.map(m => [m.id, true]));
   }
   c.combos = Object.fromEntries(Object.keys(COMBOS).map(id => [id, true]));
   if (state.flags["side.arena_champion"] === "taken") c.stopped = { ...(c.stopped || {}), fair: true };
-  clog("比赛规矩：只用拳头，打倒就出局" + (c.stopped?.fair ? "；铁颚答应了不搞花样" : ""), "event");
+  clog("比赛规矩：双方都戴拳套，只用拳头，打倒就出局" + (c.stopped?.fair ? "；铁颚答应了不搞花样" : ""), "event");
 }
 // ---------- 伤害、治疗、倒地 ----------
 function hurt(u, n, o = {}) {

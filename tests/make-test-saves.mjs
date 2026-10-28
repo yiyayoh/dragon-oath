@@ -62,6 +62,19 @@ const SAVES = {
       'quest.kassian': 'exposed', 'quest.borin': 'woke', 'act2.darin': 'woke', 'quest.lyra': 'turned', 'quest.naia': 'free', 'act2.heart': 'hestia', 'act2.taken': false, 'act3.route': 'charge', 'act1.eel': 'ally' });
     state.dreams = [1, 2, 3]; state.pendingFinal = true;
     story('烬王', '烬王从天上坠落在火山口边缘，鳞片崩裂，平台一块块塌下去。它抬起头看着你。最终抉择就在眼前。');`,
+  '08-誓约神殿-勇气与真相': `
+    begin(2, 'act2_temple', 9); state.day = 9;
+    team({ selene: 40, vex: 10, borin: 35, lyra: 25 }); // 维克斯赞同不到 20：真相之厅里会先拒绝
+    Object.assign(state.flags, { 'act2.temple_key': 'given', 'act2.tideborn': 'ally', 'act2.murals': true, 'act2.ritual_plan': true, 'quest.selene.diary': true, 'quest.selene.truth': true,
+      'quest.vex.egg': true, 'act1.debt_known': true, 'act1.lise': 'saved', 'act1.darin_axe': true, 'quest.borin.alive': true, 'quest.lyra.oswald': true, 'act1.departure_ship': 'seagull' });
+    state.dreams = [1, 2]; state.hestiaTrust = 15;
+    story('誓约神殿', '你们走遍了三座岛：骨骼岛的壁画说封印靠献祭维持，潮裔的瑟拉长老交出了潮汐石。退潮时神殿浮出海面，你们走进了门厅。维克斯最近和你闹得很僵。');`,
+  '09-斗兽场-黑拳-4级': `
+    begin(1, 'act1_docks_arena', 4); state.day = 3; state.act1Day = 1;
+    team({ kassian: 30, borin: 30, selene: 20 });
+    Object.assign(state.flags, { 'act1.vex_debt': 'paid', 'act1.lise': 'saved' });
+    state.player.gold = 20;
+    story('地下斗兽场', '你们缺钱。斗场主管铁颚看中了你们的身手，想请你们打一场黑拳，赢了分一大笔赌金。');`,
 };
 const HELPERS = `
   function begin(act, scene, level) {

@@ -835,7 +835,7 @@ test('试玩报告修复：黑拳只用拳头、打倒就出局，讲好规矩�
     gm=()=>{};state=newGame(freshDraft());state.act=1;state.scene='act1_docks_arena';state.player.level=3;
     state.companions.selene.recruited=true;state.flags['side.arena_champion']='taken';
     startCombat('arena_bout');const c=state.combat,me=c.units.player,s=c.units.selene;
-    const fists=[me,s].every(u=>u.weapons.length===1&&u.weapons[0].n==='拳头'&&u.uses===0&&u.sigUsed);
+    const fists=[me,s].every(u=>u.weapons.length===1&&u.weapons[0].n==='拳套'&&u.uses===0&&u.sigUsed);
     const ko=hurt(s,999);const foe=Object.values(c.units).find(u=>u.side!=='party');hurt(foe,999);
     const r={fists,fair:!!c.stopped?.fair,ko,selene:{down:!!s.down,out:s.out},foe:foe.out,dead:!!foe.dead};
     state.combat=null;state.flags['side.arena_champion']=undefined;delete state.fought;startCombat('arena_bout');r.brawl=!!state.combat.stopped?.fair;
