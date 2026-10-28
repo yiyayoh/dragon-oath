@@ -578,3 +578,49 @@ test('支线的前置条件：没满足时不出现、接不了', () => {
   })()`);
   assert.deepEqual(result, { hidden: true, blocked: null, shown: true, taken: 'taken' });
 });
+
+test('DS 扩充：新支线的场景、奖励与事件链都合法', () => {
+  const run = game();
+  const result = run(`(() => {
+    state = newGame(freshDraft()); state.act = 1; state.scene = 'act1_hub'; gm = () => {};
+    const ids = ['martha_letters','tom_errand','sath_ledger','pearl_diver','ribs_smuggler','ember_cook','siren_verse','ghost_letters','eve_bundle','cistern_water','bell_tower','deserters','ash_urn','last_cask','martha_last_letter','sath_stand','eve_witness'];
+    const junk = ['玛莎的银坠'];
+    const missing = ids.filter(id => !SIDE[id]);
+    const badAt = [], badFields = [], badItems = [], badFlags = [];
+    for (const id of ids) {
+      const q = SIDE[id]; if (!q) continue;
+      for (const a of q.at) if (!SCENES[a]) badAt.push(id + ':' + a);
+      if (!q.hook || !q.goal || !q.rewardText || !q.reward) badFields.push(id);
+      for (const n of q.reward.items || []) if (!ITEMS[n] && !junk.includes(n)) badItems.push(id + ':' + n);
+      for (const [k, v] of Object.entries(q.reward.flags || {})) {
+        const r = FLAG_KEYS[k];
+        const ok = r === 'bool' ? typeof v === 'boolean' : r === 'count' ? Number.isInteger(v) : Array.isArray(r) ? r.includes(v) : r === 'id' ? !!(PEOPLE[v] || COMPANIONS[v]) : false;
+        if (!ok) badFlags.push(id + ':' + k + '=' + v);
+      }
+    }
+    const links = [['martha_letters','side.martha_relic'],['tom_errand','side.tom_leg'],['sath_ledger','side.watch_mole'],['eve_bundle','side.eve_letter'],['martha_last_letter','side.martha_letters'],['sath_stand','side.sath_ledger'],['eve_witness','side.eve_bundle'],['tom_courage','side.tom_errand']];
+    const badLinks = [];
+    for (const [id, prev] of links) {
+      delete state.flags[prev];
+      if (SIDE[id].need() !== false) badLinks.push(id + ' 提前出现');
+      state.flags[prev] = 'taken';
+      if (id === 'eve_bundle' && SIDE[id].need() !== true) badLinks.push(id + ' 接下信后不出现');
+      state.flags[prev] = 'done';
+      if (SIDE[id].need() !== true) badLinks.push(id + ' 完成后不出现');
+    }
+    delete state.flags['side.martha_relic'];
+    delete state.flags['side.martha_letters'];
+    applyGM({ flags: { 'side.martha_letters': 'taken' } });
+    const blocked = state.flags['side.martha_letters'] ?? null;
+    state.flags['side.martha_relic'] = 'done';
+    applyGM({ flags: { 'side.martha_letters': 'taken' } });
+    const taken = state.flags['side.martha_letters'] || null;
+    const badState = ids.filter(id => !(FLAG_KEYS['side.' + id] || []).includes('done'));
+    state.act = 2; state.scene = 'act2_hub';
+    const offer2 = buildPrompt('看看').includes('《沉船下的采珠人》');
+    state.act = 3; state.scene = 'act3_haven';
+    const offer3 = buildPrompt('看看').includes('《干涸的蓄水池》');
+    return { missing, badAt, badFields, badItems, badFlags, badLinks, blocked, taken, badState, offer2, offer3 };
+  })()`);
+  assert.deepEqual(result, { missing: [], badAt: [], badFields: [], badItems: [], badFlags: [], badLinks: [], blocked: null, taken: 'taken', badState: [], offer2: true, offer3: true });
+});
