@@ -2202,6 +2202,7 @@ const SYSTEM = `你是奇幻跑团游戏《醉龙酒馆：龙誓》的游戏主�
 【规则】
 - 检定：d20 + 属性调整值 + 熟练加值 ≥ DC。DC：5 很简单，10 简单，15 中等，20 困难，25 极难。自然 20 必成，自然 1 必败。
 - 结果不确定且有风险时才要求检定。要求检定时，叙述只写到行动发起的一刻，结果留到下一轮。一次只要求一个检定。
+- 检定失败了，结果就成立：不要让玩家换个说法对同一件事再掷一次，局面要因为失败而变化（被发现、打起来、付出代价、只能换别的路）。对方拔出武器冲上来、玩家选择迎战时，有可开战的遭遇就写 combat；没有就在一两轮内用检定或叙述分出结果，不要一直对峙。
 - 正式战斗由程序接管：双方真正动手时，在 JSON 写 "combat":"遭遇 id"（只能用【当前场景】列出的可开战遭遇），叙述只写到拔刀的一刻，不要写战斗过程。战斗中程序负责掷骰、伤害和敌人行动，你只描写战况、裁定玩家的即兴行动。
 - 战斗之外的一次性攻击（偷袭熟睡的守卫等）用 skill "attack" 检定，DC 写目标的 AC。
 - 失败不能让剧情卡死，而是带来代价或另一条路。
@@ -2370,6 +2371,14 @@ function openSplit() {
     s.append(go);
   });
 }
+// 枢纽：各地点里面的小场景也能直接去，那里的遭遇也能直接开打
+function hubLine(sc) {
+  const subs = hubSubs(sc).filter(([x, y]) => route(sc, y));
+  if (!subs.length) return "";
+  const encs = [...new Set([...nextOf(sc).filter(id => route(sc, id)), ...subs.map(([, y]) => y)].flatMap(id => SCENES[id]?.encounters || []))].filter(id => !state.fought?.[id]);
+  return `\n各地点里面的小场景，玩家直接去时也可以直接 advance 过去（程序会先经过地点入口）：${subs.map(([, y]) => `${y}「${SCENES[y].title}」`).join("、")}。` +
+    (encs.length ? `玩家在那些地方真动起手来，就写那里的遭遇 id 作为 combat，程序会把场景一起带过去：${encs.join("、")}。` : "");
+}
 function nextLine(sc) {
   if (sc.interlude) return `下一个场景：无（这是一段插曲：结束时写 scene_end: true，程序会把玩家带回原来的地方${sc.endNeeds?.turns ? `；玩家在本场至少回应 ${sc.endNeeds.turns} 次之后才能结束` : ""}）`;
   const ids = nextOf(sc);
@@ -2383,7 +2392,7 @@ function nextLine(sc) {
   return "可以 advance 到的场景 id：" + ids.map(id => {
     const missing = (sc.goals || []).filter(g => !state.flags[g.flag]).map(g => g.flag);
     return `${id}「${SCENES[id].title}」${sc.gate?.[id] && !sc.gate[id]() ? `（条件还没满足，不能去${missing.length ? "；还缺 " + missing.join("、") : ""}）` : ""}`;
-  }).join("、") + "。玩家一动身去这些地方，就在同一轮写 advance（只改 location 不会换场景，下一轮你拿到的还是这一场的锚点）";
+  }).join("、") + "。玩家一动身去这些地方，就在同一轮写 advance（只改 location 不会换场景，下一轮你拿到的还是这一场的锚点）" + hubLine(sc);
 }
 // 第一幕：维克斯欠老鳗的债限期三天（按长休计）
 const DEBT_DAYS = 3;
@@ -2976,6 +2985,11 @@ function applyGM(d, mode) {
   } else {
     const cid = typeof d.combat === "string" ? d.combat : d.combat?.start;
     if (cid && SCENES[state.scene].encounters?.includes(cid) && !state.fought?.[cid]) { state.pendingCombat = cid; return; }
+    const near = id => [SCENES[id].title, SCENES[id].loc.split(" · ").pop()].some(t => String(d.location || "").includes(t)) ? 1 : 0;
+    const hub = SCENES[state.scene], there = cid && hub.hub && !state.fought?.[cid] && [...nextOf(hub), ...hubSubs(hub).map(([, y]) => y)]
+      .filter(id => SCENES[id]?.encounters?.includes(cid) && route(hub, id))
+      .sort((a, b) => near(b) - near(a))[0]; // 叙述里写的地点对得上哪一场，就去哪一场
+    if (there) { for (const id of route(hub, there)) goScene(id, !!d.location); state.pendingCombat = cid; return; }
     if (cid) console.warn("忽略说书人的开战请求（不是这一场的遭遇，或已经打过）：", cid);
   }
 
@@ -2994,11 +3008,11 @@ function applyGM(d, mode) {
   // scene flow
   const sc = SCENES[state.scene];
   if (d.advance && canGo(sc, d.advance) && splitPending()) { state.pendingAdvance = d.advance; state.suggestions = []; }
-  else if (d.advance && canGo(sc, d.advance)) goScene(d.advance, !!d.location);
+  else if (d.advance && route(sc, d.advance)) for (const id of route(sc, d.advance)) goScene(id, !!d.location);
   else if (d.advance && SCENES[d.advance] && d.advance !== state.scene && !sc.interlude) {
     // 去不了：地点不跟着叙述变，并在记录里告诉玩家和说书人
     state.location = loc0;
-    push("sys", nextOf(sc).includes(d.advance) ? `还去不了「${SCENES[d.advance].title}」：条件还没满足` : `从这里去不了「${SCENES[d.advance].title}」`, { cls: "appr-down" });
+    push("sys", nextOf(sc).includes(d.advance) || hubSubs(sc).some(([, y]) => y === d.advance) ? `还去不了「${SCENES[d.advance].title}」：条件还没满足` : `从这里去不了「${SCENES[d.advance].title}」`, { cls: "appr-down" });
   }
   else if (d.scene_end === true && sc.interlude) {
     const turns = state.log.filter(e => e.k === "you" && chKey(e) === curKey()).length;
@@ -3020,6 +3034,14 @@ function applyGM(d, mode) {
 }
 // 能不能去这一场：必须是 next 里登记的，且满足 gate（例如灯塔要先拿到航海图和船）
 const canGo = (sc, id) => nextOf(sc).includes(id) && (!sc.gate?.[id] || sc.gate[id]());
+// 港口这样的枢纽可以直接去某个地点里面的小场景：先经过地点入口（算走过这个地点），再进去
+function route(sc, id) {
+  if (canGo(sc, id)) return [id];
+  if (!sc.hub) return null;
+  const via = nextOf(sc).find(x => SCENES[x]?.loc1 && canGo(sc, x) && canGo(SCENES[x], id));
+  return via ? [via, id] : null;
+}
+const hubSubs = sc => sc.hub ? nextOf(sc).filter(x => SCENES[x]?.loc1).flatMap(x => nextOf(SCENES[x]).filter(y => y !== state.scene && !nextOf(sc).includes(y)).map(y => [x, y])) : [];
 function goScene(id, keepLocation, rested = false) {
   state.scene = id;
   state.visits = { ...(state.visits || {}), [id]: (state.visits?.[id] || 1) + (state.log.some(e => e.s === id) ? 1 : 0) };

@@ -989,3 +989,22 @@ test('完整通关报告修复：米拉揭露前不变形、不会识破自己�
   assert.equal(result.spotted, false); assert.equal(result.still, true);
   assert.equal(result.chart, 'opened'); assert.equal(result.ship, 'hired');
 });
+
+test('完整通关报告修复：从港口能直接进金鳗货舱；在港口打起来会把场景带过去；提示里列出小场景和遭遇', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};state=newGame(freshDraft());state.act=1;state.scene='act1_hub';state.flags['act1.debt_known']=true;
+    const hint=buildPrompt('x');
+    applyGM({advance:'act1_docks_hold'});const deep={scene:state.scene,visitedDocks:!!state.visits.act1_docks};
+    state.scene='act1_hub';delete state.flags['act1.debt_known'];applyGM({advance:'act1_docks_hold'});const gated=state.scene;
+    state.flags['act1.debt_known']=true;applyGM({location:'金鳗船底的货舱',combat:'docks_brawl'});
+    const fight={scene:state.scene,combat:state.pendingCombat};
+    state.scene='act1_tower_vault';state.pendingCombat=null;applyGM({combat:'docks_brawl'});
+    return {hold:hint.includes('act1_docks_hold'),enc:hint.includes('docks_brawl'),rule:SYSTEM.includes('不要让玩家换个说法'),deep,gated,fight,far:{scene:state.scene,combat:state.pendingCombat}};
+  })()`);
+  assert.equal(result.hold, true); assert.equal(result.enc, true); assert.equal(result.rule, true);
+  assert.deepEqual(result.deep, { scene: 'act1_docks_hold', visitedDocks: true });
+  assert.equal(result.gated, 'act1_hub');
+  assert.deepEqual(result.fight, { scene: 'act1_docks_hold', combat: 'docks_brawl' });
+  assert.deepEqual(result.far, { scene: 'act1_tower_vault', combat: null });
+});
