@@ -566,7 +566,7 @@ const SCENES = {
   },
   act1_hub: {
     title: "灰帆港", loc: "灰帆港 · 醉龙酒馆", bg: "linear-gradient(160deg,#4f5a63,#1f252b 60%,#0e1114)", campFree: true, hub: true, jail: true, tavern: true,
-    anchor: "醉龙酒馆是队伍的据点；在这里可以和玛莎、小汤姆、米拉说话，打听消息，商量下一步。本幕目标：拿到航海图和一艘船。航海图封在酒馆地窖的“龙息”酒桶底下，要先从总督府金库拿回守誓人的钥匙（act1.key 有值）；拿到钥匙后回到酒馆，下地窖打开暗格取出航海图时写 act1.chart=opened（没有钥匙打不开，硬撬也不行）。港口各处可以按任意顺序去，玩家说要去哪里时，把 advance 设为对应的场景 id：黑潮码头 act1_docks（老鳗、维克斯的债、斗兽场）；旧学院废塔 act1_tower（第七道银光落在那里，有人看见教团在围塔）；沉船湾 act1_wreck（银龙的尸体搁浅在那里）；总督府 act1_manor（守誓人的钥匙锁在金库里；三天后的晚上有月光舞会，需要请柬）；下水道迷宫 act1_sewers（教团在港口底下的据点）；鱼市与灯笼街 act1_market（买东西、打听消息，有人在找人帮忙）。每个地点里面还有几处小场景，到了那里再走。两条路线：潜进金库时顺手替老鳗偷出总督的走私账本，换“黑鳗号”和维克斯债务减半；或者帮港卫军尉官萨丝搜集总督通教的证据，揭发后合法取回钥匙、借到“海鸥号”。两条路互斥，也可以都不选，自己偷一艘船。航海图和船都到手后（act1.chart 和 act1.ship 都有值），教团会在当晚动手：把 advance 设为 act1_lighthouse。在酒馆里睡觉不消耗补给（写 camp: true）；每睡一晚就是一天，维克斯的债有期限。玛莎的酒馆可以花金币升级（修缮客房、请吧女、开地下情报站；玩家在界面上选，程序结算，升级过的写在世界标记 tavern.* 里），描写酒馆时要体现出来。",
+    anchor: "醉龙酒馆是队伍的据点；在这里可以和玛莎、小汤姆、米拉说话，打听消息，商量下一步。本幕目标：拿到航海图和一艘船。航海图封在酒馆地窖的“龙息”酒桶底下，要先从总督府金库拿回守誓人的钥匙（act1.key 有值）；拿到钥匙后回到酒馆，下地窖打开暗格取出航海图时写 act1.chart=opened（没有钥匙打不开，硬撬也不行）。港口各处可以按任意顺序去，玩家说要去哪里时，把 advance 设为对应的场景 id：黑潮码头 act1_docks（老鳗、维克斯的债、斗兽场）；旧学院废塔 act1_tower（第七道银光落在那里，有人看见教团在围塔）；沉船湾 act1_wreck（银龙的尸体搁浅在那里）；总督府 act1_manor（守誓人的钥匙锁在金库里；三天后的晚上有月光舞会，需要请柬）；下水道迷宫 act1_sewers（教团在港口底下的据点）；鱼市与灯笼街 act1_market（买东西、打听消息，有人在找人帮忙）。每个地点里面还有几处小场景，到了那里再走。两条路线：潜进金库时顺手替老鳗偷出总督的走私账本，换“黑鳗号”和维克斯债务减半；或者帮港卫军尉官萨丝搜集总督通教的证据，揭发后合法取回钥匙、借到“海鸥号”。两条路互斥，也可以都不选，自己偷一艘船，或者花钱雇船：码头上有肯接活的私船船长，开价 200～500 金币，可以讲价、拿活计抵一部分；付清讲好的钱（用 gold 扣）、船长答应开船的那一刻写 act1.ship=hired。萨丝要的证据只有一件：金库保险室里总督和教团往来的密信（或者总督当众亲口承认）。查过两三份文书还没拿到时，让萨丝或线人直说“能钉死他的只在金库里”，不要让线索一份接一份地指向下一份文件。航海图和船都到手后（act1.chart 和 act1.ship 都有值），教团会在当晚动手：把 advance 设为 act1_lighthouse。在酒馆里睡觉不消耗补给（写 camp: true）；每睡一晚就是一天，维克斯的债有期限。玛莎的酒馆可以花金币升级（修缮客房、请吧女、开地下情报站；玩家在界面上选，程序结算，升级过的写在世界标记 tavern.* 里），描写酒馆时要体现出来。",
     next: ["act1_docks", "act1_tower", "act1_wreck", "act1_manor", "act1_sewers", "act1_market", "act1_lighthouse"], recruit: ["naia", "vex"], meet: ["naia", "vex"], act: 1,
     // 维克斯的债有了结果之后，他会来酒馆找队伍，可以在这里劝他入队
     meetIf: { vex: () => !!(state.flags["act1.lise"] || state.flags["act1.vex_debt"]) },
@@ -576,7 +576,7 @@ const SCENES = {
   // 每个地点是一个入口（loc1，算升级）加几个小场景；小场景之间、和入口之间可以来回走，也可以直接回港口
   act1_docks: {
     title: "黑潮码头", loc: "灰帆港 · 黑潮码头", bg: "linear-gradient(160deg,#3c4a44,#18201c 60%,#0b0f0d)", loc1: true,
-    anchor: "鱼腥、焦油和赌徒的吆喝。黑潮会控制着这里：仓库、私船、地下斗兽场，收保护费的打手在栈桥上晃来晃去，渔妇和搬运工都不敢大声说话。码头上能去的地方（玩家说去哪里就把 advance 设为对应 id）：金鳗赌场 act1_docks_casino（老鳗·莫格在那艘改成赌场的旧船上见客）；地下斗兽场 act1_docks_arena（卡西安十年前在那里打过拳）；金鳗船底的货舱 act1_docks_hold（要先知道维克斯的债和莉丝的事才找得到）；回港口 act1_hub。码头本身：若维克斯在序幕里离开了队伍，他就躲在旧仓库里躲债，可以用 recruit 劝他回来；黑潮会的打手会上门找他（债务被提起时写 act1.debt_known=true：欠老鳗的债限期三天，不然他妹妹莉丝会被卖到外海）。最远的泊位停着老鳗的快船“黑鳗号”。在这里真打起来写 combat 为 docks_brawl；码头斗殴打过之后，若玩家要强抢黑鳗号（或再跟黑潮会动手），写 combat 为 docks_ship；赢了写 act1.ship=stolen、act1.eel=enemy。",
+    anchor: "鱼腥、焦油和赌徒的吆喝。黑潮会控制着这里：仓库、私船、地下斗兽场，收保护费的打手在栈桥上晃来晃去，渔妇和搬运工都不敢大声说话。码头上能去的地方（玩家说去哪里就把 advance 设为对应 id）：金鳗赌场 act1_docks_casino（老鳗·莫格在那艘改成赌场的旧船上见客）；地下斗兽场 act1_docks_arena（卡西安十年前在那里打过拳）；金鳗船底的货舱 act1_docks_hold（要先知道维克斯的债和莉丝的事才找得到）；回港口 act1_hub。码头本身：若维克斯在序幕里离开了队伍，他就躲在旧仓库里躲债，可以用 recruit 劝他回来；黑潮会的打手会上门找他（债务被提起时写 act1.debt_known=true：欠老鳗的债限期三天，不然他妹妹莉丝会被卖到外海）。最远的泊位停着老鳗的快船“黑鳗号”。在这里真打起来写 combat 为 docks_brawl；码头斗殴打过之后，若玩家要强抢黑鳗号（或再跟黑潮会动手），写 combat 为 docks_ship；赢了写 act1.ship=stolen、act1.eel=enemy。码头上也有肯接活的私船船长可以雇（付清讲好的钱、船长答应开船时写 act1.ship=hired）。",
     next: ["act1_docks_casino", "act1_docks_arena", "act1_docks_hold", "act1_hub"], encounters: ["docks_brawl", "docks_ship"], recruit: ["vex"], meet: ["vex"], act: 1,
     gate: { act1_docks_hold: () => !!state.flags["act1.debt_known"] },
   },
@@ -618,7 +618,7 @@ const SCENES = {
   },
   act1_manor: {
     title: "总督府", loc: "灰帆港 · 总督府", bg: "linear-gradient(160deg,#3f4a6e,#191d2c 60%,#0b0d14)", loc1: true, camp: false,
-    anchor: "总督艾德蒙·科尔（风度翩翩、满口法度的半精灵）的府邸，白天可以访客身份进去。守誓人的钥匙（一枚刻着龙鳞纹的银钥匙）锁在地下金库，十年前从玛莎的亡夫那里没收来的；同一个金库里还有总督的走私账本（老鳗想要）。白天可以试探总督、打听金库；港卫军尉官萨丝·铁锤（正直的青铜龙裔）对印记持有者充满怀疑，但她也在暗中查总督——可以和她合作搜集“总督秘密接受教团资助”的证据（写 act1.sath_trust=true；揭发总督写 act1.key=legal、act1.governor=exposed；勒索总督写 act1.key=blackmail、act1.governor=blackmailed）。钥匙真正交到玩家手里时才写 act1.key（萨丝只是答应“会安排归还”还不算）。萨丝还在头疼一件事：港卫军的巡逻时间表总是提前泄露给教团（支线）。三天后的晚上有月光舞会，需要请柬（伪造写 act1.invite=forged、购买 bought、让米拉变形 naia、总督或别人正式发了请柬 invited）；有请柬后可以去舞会 act1_manor_ball。夜里潜进金库 advance 设为 act1_manor_vault。船在对方答应借出的那一刻就写标记：萨丝批准借用海鸥号时写 act1.ship=seagull。离开时 advance 回 act1_hub。",
+    anchor: "总督艾德蒙·科尔（风度翩翩、满口法度的半精灵）的府邸，白天可以访客身份进去。守誓人的钥匙（一枚刻着龙鳞纹的银钥匙）锁在地下金库，十年前从玛莎的亡夫那里没收来的；同一个金库里还有总督的走私账本（老鳗想要）。白天可以试探总督、打听金库；港卫军尉官萨丝·铁锤（正直的青铜龙裔）对印记持有者充满怀疑，但她也在暗中查总督——可以和她合作搜集“总督秘密接受教团资助”的证据（写 act1.sath_trust=true；揭发总督写 act1.key=legal、act1.governor=exposed；勒索总督写 act1.key=blackmail、act1.governor=blackmailed）。萨丝要的证据只有一件：金库保险室里总督和教团往来的密信（或者总督当众亲口承认）。查过两三份文书还没拿到时，让萨丝或线人直说“能钉死他的只在金库里”，不要让线索一份接一份地指向下一份文件。钥匙真正交到玩家手里时才写 act1.key（萨丝只是答应“会安排归还”还不算）。航海图不在总督府：钥匙到手后要回酒馆地窖开暗格，玩家动身时 advance 回 act1_hub，在那里取图写 act1.chart=opened。萨丝还在头疼一件事：港卫军的巡逻时间表总是提前泄露给教团（支线）。三天后的晚上有月光舞会，需要请柬（伪造写 act1.invite=forged、购买 bought、让米拉变形 naia、总督或别人正式发了请柬 invited）；有请柬后可以去舞会 act1_manor_ball。夜里潜进金库 advance 设为 act1_manor_vault。船在对方答应借出的那一刻就写标记：萨丝批准借用海鸥号时写 act1.ship=seagull。离开时 advance 回 act1_hub。",
     next: ["act1_manor_ball", "act1_manor_vault", "act1_hub"], encounters: ["manor_guards"], act: 1,
     gate: { act1_manor_ball: () => !!state.flags["act1.invite"] },
   },
@@ -634,7 +634,7 @@ const SCENES = {
   },
   act1_sewers: {
     title: "下水道迷宫", loc: "灰帆港 · 下水道迷宫", bg: "linear-gradient(160deg,#3c4434,#171a13 60%,#0a0b08)", loc1: true,
-    anchor: "港口底下的古老排水道，岔路像蛛网一样，墙上有教团留下的烬火记号。入口可以从酒馆地窖（若序幕放过了鼠王，它会带路，写清楚它的样子）、码头排水口或旧学院下水口找到。没有带路的话要过几道关：认路（求生或调查 DC 13）、躲开塌陷的地板和一窝巨鼠、听出前面有人巡逻。沿路能找到失踪学徒皮普留下的粉笔箭头和一只掉落的鞋（支线）。走到深处的教团祭室把 advance 设为 act1_sewers_shrine；离开时 advance 回 act1_hub。",
+    anchor: "港口底下的古老排水道，岔路像蛛网一样，墙上有教团留下的烬火记号。入口可以从酒馆地窖（若序幕放过了鼠王，它会带路，写清楚它的样子）、码头排水口或旧学院下水口找到。没有带路的话要过几道关：认路（求生或调查 DC 13）、躲开塌陷的地板和一窝巨鼠、听出前面有人巡逻。沿路能找到失踪学徒皮普留下的粉笔箭头和一只掉落的鞋（支线）。走到深处的教团祭室把 advance 设为 act1_sewers_shrine（被守卫发现后玩家选择拔武器、迎上去或冲进去，就在同一轮 advance，不要反复写对峙）；离开时 advance 回 act1_hub。",
     next: ["act1_sewers_shrine", "act1_hub"], act: 1,
   },
   act1_sewers_shrine: {
@@ -655,14 +655,14 @@ const SCENES = {
   },
   act1_dawn: {
     title: "雾海的黎明", loc: "灰帆港 · 码头", bg: "linear-gradient(160deg,#7d8790,#2d3338 60%,#111416)", camp: false, act: 1, endAct: 1, jail: true,
-    anchor: "灯塔之夜过后的清晨。清点代价：人质是否活着、船是否完好（船被炸毁的话，只能找一艘平民渔船出海，航程会更危险）、奈雅的去留。同伴们各自对昨晚的事表态。玛莎（如果活着）把亡夫的守誓人徽记交给你。船准备出港，驶向雾海深处的龙骨群岛。确定实际出海的船时写 act1.departure_ship：black_eel、seagull、stolen 或 fishing（民用渔船）；原先取得的船记录仍保留在 act1.ship。对话 1~3 轮后，把 scene_end 设为 true，第一幕结束。",
+    anchor: "灯塔之夜过后的清晨。清点代价：人质是否活着、船是否完好（船被炸毁的话，只能找一艘平民渔船出海，航程会更危险）、奈雅的去留。同伴们各自对昨晚的事表态。玛莎（如果活着）把亡夫的守誓人徽记交给你。船准备出港，驶向雾海深处的龙骨群岛。确定实际出海的船时写 act1.departure_ship：black_eel、seagull、stolen、hired（雇来的船）或 fishing（民用渔船）；原先取得的船记录仍保留在 act1.ship。对话 1~3 轮后，把 scene_end 设为 true，第一幕结束。",
     next: null, endNeeds: { turns: 1 }, after: "act2_1",
   },
 
   /* 第二幕：龙骨群岛。航程（每睡一晚一个海上事件）→ 群岛（枢纽）⇄ 三座岛，任意顺序 → 誓约神殿 → 尾声 */
   act2_1: {
     title: "出海", loc: "雾海 · 船上", bg: "linear-gradient(160deg,#55687a,#1d2731 60%,#0b1015)", act: 2, campFree: true, campNext: "act2_siren", voyage: true, level: 6,
-    anchor: "船驶出灰帆港，进入雾海。按 act1.departure_ship 写船（black_eel 黑鳗号、seagull 海鸥号、stolen 偷来的船、fishing 民用渔船——渔船又小又破，同伴挤在一起，航程更危险）。航海图上的墨线在雾里会自己微微发光。同伴们各自适应海上的日子：谁晕船、谁在船头发呆、谁和水手赌钱。若维克斯还带着龙蛋（quest.vex.egg 为 true 且 quest.vex 不是 sold），那颗“宝石”开始发热；卡西安的神术或莉拉的火焰可以替它保温，每保温一次写 act2.egg_warmed（在现有次数上加 1，最多 3 次）。去龙骨群岛要三天三夜，每一夜海上会发生什么由程序安排。天黑后玩家扎营（写 camp: true），睡下后程序会进入海上的第一夜。不要自己写 advance。",
+    anchor: "船驶出灰帆港，进入雾海。按 act1.departure_ship 写船（black_eel 黑鳗号、seagull 海鸥号、stolen 偷来的船、hired 雇来的船、fishing 民用渔船——渔船又小又破，同伴挤在一起，航程更危险）。航海图上的墨线在雾里会自己微微发光。同伴们各自适应海上的日子：谁晕船、谁在船头发呆、谁和水手赌钱。若维克斯还带着龙蛋（quest.vex.egg 为 true 且 quest.vex 不是 sold），那颗“宝石”开始发热；卡西安的神术或莉拉的火焰可以替它保温，每保温一次写 act2.egg_warmed（在现有次数上加 1，最多 3 次）。去龙骨群岛要三天三夜，每一夜海上会发生什么由程序安排。天黑后玩家扎营（写 camp: true），睡下后程序会进入海上的第一夜。不要自己写 advance。",
     next: null,
   },
   act2_siren: {
@@ -846,7 +846,7 @@ const SCENES = {
 const ACT_NAMES = ["序幕 · 暴风之夜", "第一幕 · 灰帆港", "第二幕 · 龙骨群岛", "第三幕 · 烬冠"];
 const nextOf = sc => sc.next == null ? [] : [].concat(sc.next);
 const actGoals = () => Object.values(SCENES).find(sc => sc.act === state.act && sc.goals)?.goals || [];
-const GOAL_VALUES = { opened: "从龙息酒桶底的暗格取出", stolen: "偷来的", legal: "合法取回", given: "潮裔长老交出", taken: "武力夺取", blackmail: "勒索总督", eel: "从老鳗那里拿到", black_eel: "黑鳗号", seagull: "海鸥号" };
+const GOAL_VALUES = { opened: "从龙息酒桶底的暗格取出", stolen: "偷来的", legal: "合法取回", given: "潮裔长老交出", taken: "武力夺取", blackmail: "勒索总督", eel: "从老鳗那里拿到", black_eel: "黑鳗号", seagull: "海鸥号", hired: "雇来的船" };
 // 第一幕的地点，走完的越多等级越高（第二幕的三座岛同理，见 levelNeed）
 const ACT1_LOCS = Object.keys(SCENES).filter(id => SCENES[id].loc1);
 // 第二幕航程：五个海上事件里抽两个，暴风总是最后一夜（它在天亮时把船送到群岛）。旧存档已经走过的事件排在前面
@@ -1018,13 +1018,13 @@ const FLAG_KEYS = {
   "prologue.hestia_answer": ["trust", "question", "refuse"], "prologue.martha_legend": "bool",
   // 第一幕
   // act1.key：守誓人的钥匙怎么拿到的；act1.chart：用钥匙打开地窖暗格取出航海图（旧存档里 chart 记的是拿法）
-  "act1.key": ["stolen", "legal", "blackmail", "eel"], "act1.chart": ["opened", "stolen", "legal", "blackmail", "eel"], "act1.ship": ["black_eel", "seagull", "stolen"],
+  "act1.key": ["stolen", "legal", "blackmail", "eel"], "act1.chart": ["opened", "stolen", "legal", "blackmail", "eel"], "act1.ship": ["black_eel", "seagull", "stolen", "hired"],
   "act1.eel": ["deal", "enemy", "ally"], "act1.vex_debt": ["paid", "halved", "defied"], "act1.lise": ["saved", "sold"], "act1.debt_known": "bool",
   "act1.lyra_notes": ["burned", "kept"], "act1.notes_copied": "bool", "act1.dragon_body": ["harvested", "funeral"],
   "act1.sath_trust": "bool", "act1.invite": ["forged", "bought", "naia", "invited"], "act1.governor": ["exposed", "blackmailed", "robbed", "ally"],
   "act1.facemother_seen": "bool", "act1.darin_axe": "bool", "act1.deacon": ["tortured", "informant", "killed"],
   "act1.naia_seen": "bool", "act1.naia_exposed": "bool", "act1.naia_fate": ["recruited", "imprisoned", "killed"],
-  "act1.hostage": ["martha", "tom"], "act1.martha_alive": "bool", "act1.ship_intact": "bool", "act1.departure_ship": ["black_eel", "seagull", "stolen", "fishing"],
+  "act1.hostage": ["martha", "tom"], "act1.martha_alive": "bool", "act1.ship_intact": "bool", "act1.departure_ship": ["black_eel", "seagull", "stolen", "hired", "fishing"],
   // 第二幕。storm 由代码结算；egg_warmed 是计数（每次最多 +1）；taken 是神殿里被主教掳走的同伴（代码写）
   "act2.storm": ["light", "heavy"], "act2.doldrums": ["ok", "bad"], "act2.castaway": ["saved", "left"],
   "tavern.rooms": "bool", "tavern.barmaid": "bool", "tavern.intel": "bool", "act2.ghost_ship": ["laid", "fought", "fled"], "act2.egg_warmed": "count",
@@ -2929,6 +2929,8 @@ function applyGM(d, mode) {
     if (ITEMS[s]?.rare && !SCENES[state.scene].anchor.includes(s)) { console.warn("说书人给的稀有物品被丢弃", s); continue; } // 稀有物品只从战利品、奖励、商店来
     state.player.inventory.push(s); notes.push(["获得：" + s, "up"]);
   }
+  // 说书人交了航海图却忘了写主线标记：有钥匙就补上
+  if (state.act === 1 && state.flags["act1.key"] && !state.flags["act1.chart"] && state.player.inventory.some(n => n.includes("航海图"))) { state.flags["act1.chart"] = "opened"; notes.push(["航海图到手", "up"]); }
   // draconic, inspiration
   const dr = num(d.draconic, 15);
   if (dr) addDraconic("player", dr, notes);
@@ -3910,9 +3912,11 @@ function reveal(u, by) {
   delete u.guise; u.cond.exposed = true;
   clog(`${by}：顶着那张脸的人是${u.name}！在她下次行动前，攻击她有优势`, "event");
 }
+// 对 u 来说伪装着的敌人（奈雅自己的形变不算）
+const foeGuised = u => cbList().filter(v => hostile(u, v) && v.guise && ACTIVE(v));
 // 识破：察觉检定；奈雅认得养母，自动识破
 function trySpot(who) {
-  const c = state.combat, hid = cbList().filter(v => v.guise && ACTIVE(v));
+  const c = state.combat, hid = foeGuised(who);
   if (!hid.length) return false;
   if (who.ref === "naia") { reveal(hid[0], `${who.name}一眼认出了养母的小动作`); return true; }
   const b = bonusFor(who.ref, "perception").total, d = rollD20(), ok = d === 20 || (d !== 1 && d + b >= SPOT_DC);
@@ -4234,7 +4238,8 @@ function signatureTurn(u) {
     const zi = c.zones.map((z, i) => i).find(i => foes.filter(v => v.zone === i).length >= 2 && !mates.some(v => v.zone === i));
     if (zi != null) { const n = roll(4, 8), l = foes.filter(v => v.zone === zi).map(v => { const r = hurt(v, n); return v.name + (r ? "（" + r + "）" : ""); }); c.res.action = false; return use(`${c.zones[zi].n}炸开奥术，${n} 点力场伤害：${l.join("、")}`); }
   }
-  if (u.ref === "naia" && foes.length && !u.guise) { u.guise = "一名敌人"; c.res.bonus = false; use("她变成了敌人的样子，混进了对方的阵里"); return false; }
+  // 身份揭露前她是“流浪诗人米拉”，不会当众变形
+  if (u.ref === "naia" && naiaTrue() && foes.length && !u.guise) { u.guise = "一名敌人"; c.res.bonus = false; use("她变成了敌人的样子，混进了对方的阵里"); return false; }
   return false;
 }
 // 印记能力
@@ -4242,7 +4247,7 @@ function useMark(u, id, arg) {
   const c = state.combat, m = MARKS.find(x => x.id === id); if (!m || u.marksUsed[id] || dracOf(u.ref) < m.at) return false;
   u.marksUsed[id] = true;
   if (id === "eye") {
-    c.eye = true; const hid = cbList().filter(v => v.guise && ACTIVE(v));
+    c.eye = true; const hid = foeGuised(u);
     for (const v of hid) reveal(v, u);
     clog(`${u.name}的瞳孔竖成一条银线——${hid.length ? "伪装在龙之眼下无所遁形！" : "雾和阴影都挡不住视线了。"}`, "event");
   } else if (id === "breath") {
@@ -4341,7 +4346,7 @@ function wakeTurn(u) {
 function allyTurn(u) {
   const c = state.combat, mates = cbList().filter(v => v.side === "party" && !v.dead && !v.out);
   if (wakeTurn(u)) return;
-  if (cbList().some(v => v.guise && ACTIVE(v)) && useMark(u, "eye")) return;
+  if (foeGuised(u).length && useMark(u, "eye")) return;
   if (dracOf(u.ref) >= 40 && !u.marksUsed.breath) { // 龙息：找一个至少两个敌人、没有自己人的区域
     const zi = c.zones.map((z, i) => i).find(i => cbList().filter(v => v.zone === i && hostile(u, v) && seen(v) && !ENEMIES[v.type]?.object).length >= 2 && !mates.some(v => v.zone === i));
     if (zi != null && useMark(u, "breath", zi)) return;
@@ -4370,7 +4375,7 @@ function allyTurn(u) {
     const to = opts.find(z => foeIn(z) !== ranged) ?? opts[0];
     if (to != null) { c.res.move--; moveUnit(u, to); if (!ACTIVE(u)) return; }
   }
-  if (cbList().some(v => v.guise && ACTIVE(v))) {
+  if (foeGuised(u).length) {
     if (u.ref === "naia") trySpot(u);
     else if (!cbList().some(v => hostile(u, v) && seen(v))) { trySpot(u); return; } // 用掉动作找人
   }
@@ -4695,7 +4700,7 @@ function renderCombat(box) {
       for (const mate of cbList().filter(v => v.side === "party" && v.ref !== "player" && ACTIVE(v) && v.zone === me.zone && state.companions[v.ref]?.resonance && !c.combos?.[v.ref]))
         add(COMBOS[mate.ref].name, () => setPick({ kind: "combo", ally: mate.id, label: COMBOS[mate.ref].name }), null, `和${mate.name}一起出手：各攻击一次，都有优势，命中各加 2d6`);
       if (cbList().some(v => v.fallen && ACTIVE(v))) add("★ 最终抉择", () => act((c, me) => { c.res.action = false; c.end = "final"; clog(`${me.name}举起掌心——七片印记同时亮起`, "event"); }), "gold", "烬王已经坠落：现在就做出最终抉择，结束这场战斗");
-      if (cbList().some(v => v.guise && ACTIVE(v))) add("识破伪装", () => act((c, me) => { c.res.action = false; trySpot(me); }), null, `用掉动作在人群里找伪装的敌人：察觉 DC ${SPOT_DC}`);
+      if (foeGuised(me).length) add("识破伪装", () => act((c, me) => { c.res.action = false; trySpot(me); }), null, `用掉动作在人群里找伪装的敌人：察觉 DC ${SPOT_DC}`);
       add("冲刺", () => act((c, me) => { c.res.action = false; c.res.move++; clog(`${me.name} 冲刺`); }), null, "本回合多移动一次");
       add("闪避", () => act((c, me) => { c.res.action = false; me.cond.dodge = true; clog(`${me.name} 摆出防守架势`); }), null, "直到你下回合开始，攻击你的人有劣势");
       if (c.zones[me.zone].tags.includes("exit")) add("撤离战场", () => act((c, me) => { c.res.action = false; c.end = "escaped"; clog(`${me.name} 招呼众人撤离`); }));

@@ -970,3 +970,22 @@ test('校对报告修复：人质死的是谁、支线前置条件、关键场�
   assert.equal(result.journal, false);
   assert.ok(result.seven.includes('被掳走的同伴已经救回来'));
 });
+
+test('完整通关报告修复：米拉揭露前不变形、不会识破自己；交了航海图补主线标记；可以雇船', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};state=newGame(freshDraft());state.act=1;state.scene='act1_tower';state.companions.naia.recruited=true;
+    startCombat('tower_spies');const n=state.combat.units.naia;
+    beginTurn(n);allyTurn(n);const hidden={guise:!!n.guise,leak:state.combat.feed.some(t=>/形变|养母|顶着那张脸/.test(t))};
+    state.flags['act1.naia_exposed']=true;n.sigUsed=false;beginTurn(n);signatureTurn(n);
+    const shifted=!!n.guise, self=foeGuised(n).length, spotted=trySpot(n), still=!!n.guise;
+    state.combat=null;state.scene='act1_manor';state.flags['act1.key']='legal';
+    applyGM({items_add:['守誓人的航海图']});const chart=state.flags['act1.chart'];
+    state.scene='act1_docks';applyGM({flags:{'act1.ship':'hired'}});
+    return {hidden,shifted,self,spotted,still,chart,ship:state.flags['act1.ship']};
+  })()`);
+  assert.deepEqual(result.hidden, { guise: false, leak: false });
+  assert.equal(result.shifted, true); assert.equal(result.self, 0);
+  assert.equal(result.spotted, false); assert.equal(result.still, true);
+  assert.equal(result.chart, 'opened'); assert.equal(result.ship, 'hired');
+});
