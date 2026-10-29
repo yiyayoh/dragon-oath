@@ -858,6 +858,8 @@ function voyagePlan() {
 }
 // 睡醒后去哪一场：航程按抽好的顺序，其他场景看 campNext
 function campNextOf(sc) {
+  // 第一幕航海图和船都到手了：当晚教团动手，睡下就进灯塔之夜（不靠说书人记得写 advance）
+  if (state.act === 1 && !sc.campNext && state.flags["act1.chart"] && state.flags["act1.ship"] && !state.log.some(e => e.s === "act1_lighthouse")) return "act1_lighthouse";
   if (!sc.voyage) return sc.campNext || null;
   const v = (state.voyage ||= voyagePlan()), i = v.indexOf(state.scene);
   return i >= 0 ? v[i + 1] || null : state.scene === "act2_1" ? v[0] : "act2_storm";
@@ -1575,7 +1577,7 @@ const ENCOUNTERS = {
     events: [{ round: 2, spawn: [["thug", 2, 1]], text: "货箱后面又冲出两个黑潮会打手，手里拎着鱼钩和铁链！" }],
   },
   docks_ship: {
-    title: "强夺黑鳗号", lethal: false,
+    title: "强夺黑鳗号", lethal: false, after: "docks_brawl", // 码头斗殴打过之后才轮到抢船
     brief: "黑鳗号上的 3 名打手和 1 名水手长守着船，水手长每回合打两下；第 2 回合又有 2 名打手从栈桥赶来",
     props: "收起的船帆、缆绳、堆在甲板上的鱼油桶、摇晃的跳板",
     zones: [
@@ -2375,9 +2377,11 @@ function openSplit() {
 function hubLine(sc) {
   const subs = hubSubs(sc).filter(([x, y]) => route(sc, y));
   if (!subs.length) return "";
-  const encs = [...new Set([...nextOf(sc).filter(id => route(sc, id)), ...subs.map(([, y]) => y)].flatMap(id => SCENES[id]?.encounters || []))].filter(id => !state.fought?.[id]);
+  const where = [...nextOf(sc).filter(id => route(sc, id)), ...subs.map(([, y]) => y)];
+  const encs = [...new Set(where.flatMap(id => SCENES[id]?.encounters || []))].filter(id => !state.fought?.[id] && (!ENCOUNTERS[id].after || state.fought?.[ENCOUNTERS[id].after]))
+    .map(id => `${id}「${ENCOUNTERS[id].title}」（${where.filter(w => SCENES[w].encounters?.includes(id)).map(w => SCENES[w].title).join("、")}）`);
   return `\n各地点里面的小场景，玩家直接去时也可以直接 advance 过去（程序会先经过地点入口）：${subs.map(([, y]) => `${y}「${SCENES[y].title}」`).join("、")}。` +
-    (encs.length ? `玩家在那些地方真动起手来，就写那里的遭遇 id 作为 combat，程序会把场景一起带过去：${encs.join("、")}。` : "");
+    (encs.length ? `玩家在那些地方真动起手来，就写那里的遭遇 id 作为 combat，程序会把场景一起带过去（按名字挑和眼下情形对得上的那一场）：${encs.join("；")}。` : "");
 }
 function nextLine(sc) {
   if (sc.interlude) return `下一个场景：无（这是一段插曲：结束时写 scene_end: true，程序会把玩家带回原来的地方${sc.endNeeds?.turns ? `；玩家在本场至少回应 ${sc.endNeeds.turns} 次之后才能结束` : ""}）`;
@@ -2984,9 +2988,10 @@ function applyGM(d, mode) {
     if (!state.camp.talk) { state.suggestions = []; return; }
   } else {
     const cid = typeof d.combat === "string" ? d.combat : d.combat?.start;
-    if (cid && SCENES[state.scene].encounters?.includes(cid) && !state.fought?.[cid]) { state.pendingCombat = cid; return; }
+    const ready = id => !state.fought?.[id] && (!ENCOUNTERS[id]?.after || state.fought?.[ENCOUNTERS[id].after]);
+    if (cid && SCENES[state.scene].encounters?.includes(cid) && ready(cid)) { state.pendingCombat = cid; return; }
     const near = id => [SCENES[id].title, SCENES[id].loc.split(" · ").pop()].some(t => String(d.location || "").includes(t)) ? 1 : 0;
-    const hub = SCENES[state.scene], there = cid && hub.hub && !state.fought?.[cid] && [...nextOf(hub), ...hubSubs(hub).map(([, y]) => y)]
+    const hub = SCENES[state.scene], there = cid && hub.hub && ready(cid) && [...nextOf(hub), ...hubSubs(hub).map(([, y]) => y)]
       .filter(id => SCENES[id]?.encounters?.includes(cid) && route(hub, id))
       .sort((a, b) => near(b) - near(a))[0]; // 叙述里写的地点对得上哪一场，就去哪一场
     if (there) { for (const id of route(hub, there)) goScene(id, !!d.location); state.pendingCombat = cid; return; }
@@ -3806,7 +3811,7 @@ function restNight(partner) {
     // 入睡发生在旧场景，不能算作玩家对梦境开场的回应。
     push("you", partner ? `今晚，你和${PEOPLE[partner].name}在一起。` : state.act >= 2 ? "你在船舱里睡去。" : "你在壁炉边睡去。");
     goScene(nextId, false, true);
-    gm(`（${night}${SCENES[nextId].dream ? "然后玩家沉入梦中" : "然后到了下一夜"}，按新场景的锚点开始。${after}）`, null);
+    gm(`（${night}${SCENES[nextId].dream ? "然后玩家沉入梦中" : nextId === "act1_lighthouse" ? "玩家刚睡下不久，酒馆就出事了" : "然后到了下一夜"}，按新场景的锚点开始。${after}）`, null);
   } else {
     gm(wakePrompt(partner, after, false, night), partner ? `今晚，你和${PEOPLE[partner].name}在一起。` : "你睡下了。", "morning");
   }

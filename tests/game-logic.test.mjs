@@ -1008,3 +1008,23 @@ test('完整通关报告修复：从港口能直接进金鳗货舱；在港口�
   assert.deepEqual(result.fight, { scene: 'act1_docks_hold', combat: 'docks_brawl' });
   assert.deepEqual(result.far, { scene: 'act1_tower_vault', combat: null });
 });
+
+test('完整通关报告修复：航海图和船都到手后睡下就进灯塔之夜；强夺黑鳗号要先打过码头斗殴；港口提示写清遭遇名字和地点', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};state=newGame(freshDraft());state.act=1;state.scene='act1_hub';state.act1Day=state.day;state.dreams=[1];
+    state.flags['act1.chart']='opened';state.camp={};restNight(null);const ready=state.scene;
+    state=newGame(freshDraft());state.act=1;state.scene='act1_hub';state.act1Day=state.day;state.dreams=[1];
+    state.flags['act1.chart']='opened';state.flags['act1.ship']='stolen';state.camp={};restNight(null);const night=state.scene;
+    state=newGame(freshDraft());state.act=1;state.scene='act1_hub';state.flags['act1.debt_known']=true;
+    const hint=buildPrompt('x');
+    applyGM({location:'黑鳗号栈桥',combat:'docks_ship'});const early={scene:state.scene,combat:state.pendingCombat||null};
+    state.scene='act1_docks';state.fought={docks_brawl:'won'};applyGM({combat:'docks_ship'});
+    return {ready,night,early,later:state.pendingCombat,
+      named:hint.includes('docks_brawl「码头斗殴」'),place:/金鳗的货舱/.test(hint.split('程序会把场景一起带过去')[1]||''),noShip:!(hint.split('程序会把场景一起带过去')[1]||'').includes('docks_ship')};
+  })()`);
+  assert.equal(result.ready, 'act1_hub'); assert.equal(result.night, 'act1_lighthouse');
+  assert.deepEqual(result.early, { scene: 'act1_hub', combat: null });
+  assert.equal(result.later, 'docks_ship');
+  assert.equal(result.named, true); assert.equal(result.place, true); assert.equal(result.noShip, true);
+});
