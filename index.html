@@ -2196,6 +2196,7 @@ const SYSTEM = `你是奇幻跑团游戏《醉龙酒馆：龙誓》的游戏主�
 - NPC 和同伴用引号说话，严格符合其资料中的性格、喜恶。同伴会主动插话、吐槽、反对玩家。
 - 玩家的任何行动都可以尝试。永远不说“你不能”，只给出检定或后果。
 - 场景锚点是必然发生的事件，但到达方式由玩家决定。玩家偏离时用世界内的事件自然引导。
+- 主线和支线的目标只认锚点和程序列出的条件。不要另外发明程序不记录的前置手续（凑船员、付定金、修帆、备物资、跑公文之类）：玩家做到了锚点写的事，就让它成立。想加波折，用一两轮就能解决的小麻烦，不要变成新的任务链。
 - 不透露标注“GM 不要透露”的秘密，除非玩家通过剧情或检定发现。
 - 角色有记忆：【往事】是已经结束的各章纪要，【前情提要】是之后更早发生的事，【角色记得的事】是每个人亲身经历、对玩家的印象，【想起的旧事】是玩家这次提到的事当初的原文。让 NPC 和同伴记得玩家以前做过、说过、答应过的事，在合适的时候自然地提起、追问或翻旧账，态度要和这些记忆一致。
 - 恋爱内容要大胆直白：可以具体描写亲吻、拥抱、抚摸、体温和心跳，以及情欲张力和调情台词。所有可恋爱角色都是成年人。不写露骨的性行为过程，到那一步时用一句暗示性的转场结束。
@@ -2212,7 +2213,7 @@ const SYSTEM = `你是奇幻跑团游戏《醉龙酒馆：龙誓》的游戏主�
 - 战斗之外的一次性攻击（偷袭熟睡的守卫等）用 skill "attack" 检定，DC 写目标的 AC。
 - 失败不能让剧情卡死，而是带来代价或另一条路。
 - 你不计算数值。所有数值变化通过 JSON 提出，由程序执行。
-- 赞同度：只有在场的同伴会变化。小事 ±1~3，重大选择 ±5~15，必须按同伴的喜恶判断。
+- 赞同度：只有在场的同伴会变化，必须按同伴的喜恶判断。小事 ±2~4；真心交谈、一起扛过难关、照着对方在意的事做选择 +4~8；重大选择 ±8~15。同伴是会被慢慢打动的：玩家一直善待、照顾某人时，不要很多轮都不给；营地事件、个人任务、恋爱都按赞同度 20 / 30 / 40 / 60 开放，给得太省，这些内容玩家就永远看不到。
 - 当玩家的举动符合其背景的“灵感条件”时，可给 inspiration: 1。
 
 【输出格式】先写叙述正文（纯文本，可分段，不要标题、不要 Markdown）。然后单独一行写 @@@ 。然后写一个 JSON 对象（不要代码块），没有变化的字段可以省略：
@@ -2231,6 +2232,7 @@ const SYSTEM = `你是奇幻跑团游戏《醉龙酒馆：龙誓》的游戏主�
 - relation：同伴之间关系变化，[{"a":"selene","b":"vex","delta":3}]，每次最多 ±10。
 - reputation：阵营声望变化，[{"id":"watch","delta":5,"reason":"帮港卫军抓了小偷"}]，每次最多 ±15、每轮最多 2 条。阵营 id：${Object.entries(FACTIONS).map(([k, f]) => k + " " + f.name).join("、")}。关键抉择（合作、为敌、揭发、背叛）程序已经按标记算进去了，不要重复加；这里只写日常的、小的态度变化。
 - supplies：营地补给变化（拿到干粮、被偷等），最多 ±3。
+- draconic：玩家的龙化值变化，每轮最多 ±15。玩家主动借用印记的力量（在叙述里用印记做事、在龙尸或遗迹旁和印记共鸣、听从低语）时 +5~15；拒绝低语、完成净化仪式时可以降低。不借用就不要写。
 - camp：玩家想扎营、休息、睡觉时写 true，程序会打开营地；不要自己写睡觉的过程。
 - flags 只能用以下键：${Object.keys(FLAG_KEYS).join("、")}。`;
 
@@ -2887,11 +2889,18 @@ function applyGM(d, mode) {
     if (CODE_FLAGS.has(k)) continue; // 由代码结算
     if (k === "act3.route" && !({ charge: () => allies().length >= 2, tunnel: () => state.flags["quest.naia"] === "double" || state.flags["prologue.rat_king"] === "spared" || !!state.flags["tavern.intel"], wings: () => state.player.draconic >= 80 })[v]?.()) { console.warn("这条路的条件不满足", v); continue; }
     if (k === "act3.valdo" && v === "convinced" && !((state.flags["act2.eve"] || state.flags["side.eve_letter"] === "done") && state.flags["quest.selene.diary"])) continue; // 说服主教要有证据
+    const was = state.flags[k];
     if (rule === "bool") state.flags[k] = !!v;
     else if (rule === "id") { if (v === false || COMPANIONS[v]) state.flags[k] = v; }
     else if (Array.isArray(rule) && rule.includes(v)) {
       state.flags[k] = v;
       const [qid] = questKeys[k] || []; if (qid && QUESTS[qid].choice.flag === k) QUESTS[qid].choice.on?.[v]?.(state.companions[qid], notes);
+    }
+    // 个人任务往前走了一步（不含最后的抉择）：赞同度 +5
+    const [sq, si] = questKeys[k] || [];
+    if (sq && !was && state.flags[k] && QUESTS[sq].steps[si]?.flag === k && state.companions[sq].alive) {
+      const c = state.companions[sq]; c.approval = clamp(c.approval + QUEST_STEP_BONUS, -100, 100);
+      notes.push([`${PEOPLE[sq].name}赞同 +${QUEST_STEP_BONUS}（个人任务往前走了一步）`, "up"]);
     }
   }
   const taken = state.flags["prologue.betrayed_companion"];
@@ -3147,7 +3156,7 @@ const ENDINGS = {
     need: () => [state.flags["act2.egg_warmed"] === 3 && eggHere() ? "" : "龙蛋要在身边、并保温满 3 次", state.companions.vex.alive && state.companions.vex.approval >= 40 && party().includes("vex") ? "" : "维克斯在队里且赞同度 ≥ 40"].filter(Boolean) },
   seven: { name: "七人之誓", act: "七人共同承担誓约", text: "七个人各自保留一片印记，成为新一代守誓人。银龙终于安息，醉龙酒馆成了守誓人重聚的地方。",
     need: () => { const met = Object.keys(COMPANIONS).filter(id => inAct(id) && state.companions[id].alive && (state.companions[id].recruited || state.companions[id].betrayed));
-      return [met.some(id => state.companions[id].betrayed) ? "没有人背叛" : "", Object.keys(COMPANIONS).some(id => state.companions[id].alive && state.companions[id].taken) ? "被掳走的同伴已经救回来" : "", met.every(id => state.companions[id].approval >= 40) ? "" : "在世同伴的赞同度都 ≥ 40"].filter(Boolean); } },
+      return [met.some(id => state.companions[id].betrayed) ? "没有人背叛" : "", Object.keys(COMPANIONS).some(id => state.companions[id].alive && state.companions[id].taken) ? "被掳走的同伴已经救回来" : "", met.every(id => state.companions[id].approval >= 30) ? "" : "在世同伴的赞同度都 ≥ 30"].filter(Boolean); } },
   hestia: { name: "银龙重生", act: "把身体献给赫斯提雅", text: "容器的灵魂沉入长眠，赫斯提雅借那具身体重生，封印稳固千年。", need: () => [] },
   mortal: { name: "凡人之世", act: "打碎誓约，以凡人之力斩龙", text: "印记全部消失。盟军与你们七人合力屠龙，世上再也没有龙了。",
     need: () => [state.flags["act2.heart"] === "destroyed" ? "" : "誓约之心已经销毁", allies().length >= 3 ? "" : "最终战有 ≥ 3 方盟友"].filter(Boolean) },
@@ -3411,7 +3420,12 @@ function nextAct() {
     state.act1Day = state.day;
     state.journal.push({ quest: "第一幕：灰帆港", note: "去誓约神殿需要航海图和船。航海图封在酒馆地窖，要先从总督府金库拿回守誓人的钥匙。" });
   }
-  if (state.act >= 2) for (const id of Object.keys(COMPANIONS)) if (state.companions[id].alive) addDraconic(id, 15);
+  if (state.act >= 2) {
+    for (const id of Object.keys(COMPANIONS)) if (state.companions[id].alive) addDraconic(id, 15);
+    addDraconic("player", 15); // 印记每一幕都更深一层，玩家也一样
+    for (const id of party()) { const c = state.companions[id]; c.approval = clamp(c.approval + ACT_BONUS, -100, 100); }
+    if (party().length) push("sys", `一起走过了这一幕：队里的同伴赞同 +${ACT_BONUS}`, { cls: "appr-up" });
+  }
   if (state.act === 3) state.journal.push({ quest: "第三幕：烬冠", note: "回到被围的灰帆港，召集盟友，攻上烬冠山，在主教唤醒烬王之前赶到祖坛。" });
   if (state.act === 2) {
     state.supplies = Math.max(state.supplies || 0, 4); // 出海带足补给
@@ -3771,7 +3785,7 @@ function talkTo(target) {
     gm(`（我跟着${PEOPLE[ev.who].name}离开了篝火。按新场景的锚点开始：只有我们两个人。描写这一刻，给出 3~4 条建议。）`, `你跟着${PEOPLE[ev.who].name}走开了。`);
     return;
   }
-  k.talk = target; k.event = ev?.id || null;
+  k.talk = target; k.event = ev?.id || null; k.talkAt = state.turns;
   if (ev) {
     state.campSeen = [...(state.campSeen || []), ev.id];
     if (ev.kind === "resonance") { state.companions[ev.who].resonance = true; push("sys", `印记共鸣：解锁和${PEOPLE[ev.who].name}的合体技“${COMBOS[ev.who].name}”`, { cls: "appr-up" }); }
@@ -3781,8 +3795,16 @@ function talkTo(target) {
   const name = eventWho(ev) || PEOPLE[target].name;
   gm(`（我${ev?.group || ev?.pair ? "加入" : "走向"}${name}${ev ? "" : "，随便聊聊"}。描写对方此刻的样子，开始对话，给出 3~4 条建议。）`, `你走向${name}。`);
 }
+// 赞同度的固定来源（说书人给的之外）：营地陪聊、个人任务每完成一步、每走完一幕
+const TALK_BONUS = 3, QUEST_STEP_BONUS = 5, ACT_BONUS = 5;
 function endTalk() {
   const k = state.camp; if (!k?.talk) return;
+  // 陪一个人聊过一阵（玩家至少回应过一次）：赞同度 +3。群戏和对手戏不算
+  const ev = k.event ? eventFor(k.event) : null, who = ev ? (ev.group || ev.pair ? null : ev.who) : k.talk;
+  if (COMPANIONS[who] && state.turns >= (k.talkAt ?? Infinity) + 2) {
+    const c = state.companions[who]; c.approval = clamp(c.approval + TALK_BONUS, -100, 100);
+    push("sys", `${PEOPLE[who].name}赞同 +${TALK_BONUS}（你们聊了一阵）`, { cls: "appr-up" });
+  }
   if (!k.talk.startsWith("event:")) k.done.push(k.talk);
   k.talk = null; k.event = null; state.suggestions = [];
 }

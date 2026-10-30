@@ -1122,3 +1122,21 @@ test('收尾：第三幕说书人忘了写打完后的 advance、救人的 recru
   assert.deepEqual(result, { fire: 'act3_haven', slope: 'act3_altar', altar: 'act3_king', borin: { back: true, taken: false },
     pending1: null, pending2: 'ember_king', final: true, seven: [] });
 });
+
+test('数值调整：营地陪聊、个人任务每一步、每走完一幕都加赞同度；进新一幕玩家龙化值 +15；七人之誓门槛 30；说书人规则', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{state.turns++;};state=newGame(freshDraft());state.act=1;state.scene='act1_hub';
+    const k=state.companions.kassian;k.recruited=true;k.approval=10;
+    state.camp={talk:null,event:null,done:[],plan:{important:null,banter:[]}};
+    talkTo('kassian');endTalk();const quiet=k.approval;
+    talkTo('kassian');state.turns++;endTalk();const chatted=k.approval;
+    state.camp=null;k.approval=25;applyGM({flags:{'quest.kassian.arden':true}});const step=k.approval;
+    applyGM({flags:{'quest.kassian.arden':true}});const again=k.approval;
+    state.scene='act1_dawn';state.ended=true;const dr=state.player.draconic;nextAct();
+    const act={approval:k.approval,draconic:state.player.draconic-dr};
+    const rules=['不要另外发明程序不记录的前置手续','- draconic：玩家的龙化值变化','给得太省'].every(t=>SYSTEM.includes(t));
+    return {quiet,chatted,step,again,act,rules,seven:ENDINGS.seven.need.toString().includes('>= 30')};
+  })()`);
+  assert.deepEqual(result, { quiet: 10, chatted: 13, step: 30, again: 30, act: { approval: 35, draconic: 15 }, rules: true, seven: true });
+});
