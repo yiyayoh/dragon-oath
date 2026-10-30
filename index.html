@@ -566,7 +566,7 @@ const SCENES = {
   },
   act1_hub: {
     title: "灰帆港", loc: "灰帆港 · 醉龙酒馆", bg: "linear-gradient(160deg,#4f5a63,#1f252b 60%,#0e1114)", campFree: true, hub: true, jail: true, tavern: true,
-    anchor: "醉龙酒馆是队伍的据点；在这里可以和玛莎、小汤姆、米拉说话，打听消息，商量下一步。本幕目标：拿到航海图和一艘船。航海图封在酒馆地窖的“龙息”酒桶底下，要先从总督府金库拿回守誓人的钥匙（act1.key 有值）；拿到钥匙后回到酒馆，下地窖打开暗格取出航海图时写 act1.chart=opened（没有钥匙打不开，硬撬也不行）。港口各处可以按任意顺序去，玩家说要去哪里时，把 advance 设为对应的场景 id：黑潮码头 act1_docks（老鳗、维克斯的债、斗兽场）；旧学院废塔 act1_tower（第七道银光落在那里，有人看见教团在围塔）；沉船湾 act1_wreck（银龙的尸体搁浅在那里）；总督府 act1_manor（守誓人的钥匙锁在金库里；三天后的晚上有月光舞会，需要请柬）；下水道迷宫 act1_sewers（教团在港口底下的据点）；鱼市与灯笼街 act1_market（买东西、打听消息，有人在找人帮忙）。每个地点里面还有几处小场景，到了那里再走。两条路线：潜进金库时顺手替老鳗偷出总督的走私账本，换“黑鳗号”和维克斯债务减半；或者帮港卫军尉官萨丝搜集总督通教的证据，揭发后合法取回钥匙、借到“海鸥号”。两条路互斥，也可以都不选，自己偷一艘船，或者花钱雇船：码头上有肯接活的私船船长，开价 200～500 金币，可以讲价、拿活计抵一部分；付清讲好的钱（用 gold 扣）、船长答应开船的那一刻写 act1.ship=hired。萨丝要的证据只有一件：金库保险室里总督和教团往来的密信（或者总督当众亲口承认）。查过两三份文书还没拿到时，让萨丝或线人直说“能钉死他的只在金库里”，不要让线索一份接一份地指向下一份文件。航海图和船都到手后（act1.chart 和 act1.ship 都有值），教团会在当晚动手：把 advance 设为 act1_lighthouse。在酒馆里睡觉不消耗补给（写 camp: true）；每睡一晚就是一天，维克斯的债有期限。玛莎的酒馆可以花金币升级（修缮客房、请吧女、开地下情报站；玩家在界面上选，程序结算，升级过的写在世界标记 tavern.* 里），描写酒馆时要体现出来。",
+    anchor: "醉龙酒馆是队伍的据点；在这里可以和玛莎、小汤姆、米拉说话，打听消息，商量下一步。本幕目标：拿到航海图和一艘船。航海图封在酒馆地窖的“龙息”酒桶底下，要先从总督府金库拿回守誓人的钥匙（act1.key 有值）；拿到钥匙后回到酒馆，下地窖打开暗格取出航海图时写 act1.chart=opened（没有钥匙打不开，硬撬也不行）。港口各处可以按任意顺序去，玩家说要去哪里时，把 advance 设为对应的场景 id：黑潮码头 act1_docks（老鳗、维克斯的债、斗兽场）；旧学院废塔 act1_tower（第七道银光落在那里，有人看见教团在围塔）；沉船湾 act1_wreck（银龙的尸体搁浅在那里）；总督府 act1_manor（守誓人的钥匙锁在金库里；三天后的晚上有月光舞会，需要请柬）；下水道迷宫 act1_sewers（教团在港口底下的据点）；鱼市与灯笼街 act1_market（买东西、打听消息，有人在找人帮忙）。每个地点里面还有几处小场景，到了那里再走。两条路线：潜进金库时顺手替老鳗偷出总督的走私账本，换“黑鳗号”和维克斯债务减半；或者帮港卫军尉官萨丝搜集总督通教的证据，揭发后合法取回钥匙、借到“海鸥号”。两条路互斥，也可以都不选，自己偷一艘船，或者花钱雇船：码头上有肯接活的私船船长，开价 120～300 金币，可以讲价、拿活计抵一部分；付清讲好的钱（用 gold 扣）、船长答应开船的那一刻写 act1.ship=hired。萨丝要的证据只有一件：金库保险室里总督和教团往来的密信（或者总督当众亲口承认）。查过两三份文书还没拿到时，让萨丝或线人直说“能钉死他的只在金库里”，不要让线索一份接一份地指向下一份文件。航海图和船都到手后（act1.chart 和 act1.ship 都有值），教团会在当晚动手：把 advance 设为 act1_lighthouse。在酒馆里睡觉不消耗补给（写 camp: true）；每睡一晚就是一天，维克斯的债有期限。玛莎的酒馆可以花金币升级（修缮客房、请吧女、开地下情报站；玩家在界面上选，程序结算，升级过的写在世界标记 tavern.* 里），描写酒馆时要体现出来。",
     next: ["act1_docks", "act1_tower", "act1_wreck", "act1_manor", "act1_sewers", "act1_market", "act1_lighthouse"], recruit: ["naia", "vex"], meet: ["naia", "vex"], act: 1,
     // 维克斯的债有了结果之后，他会来酒馆找队伍，可以在这里劝他入队
     meetIf: { vex: () => !!(state.flags["act1.lise"] || state.flags["act1.vex_debt"]) },
@@ -668,7 +668,7 @@ const SCENES = {
   act2_siren: {
     title: "海妖之歌", loc: "雾海 · 夜里", bg: "linear-gradient(160deg,#3d5470,#141d2a 60%,#080b11)", act: 2, campFree: true, campNext: "act2_storm", voyage: true,
     saves: { ab: "wis", dc: 14, text: "海妖之歌", fail: "梦游着走向船边" },
-    anchor: "午夜，雾里传来海妖的歌声。程序已经替全队掷了感知豁免（结果在最近的系统记录里）：失败的人像梦游一样走向船舷，要被拉回来。玩家可以去拉住某个人——如果是恋人或暧昧对象，这是一个特别的亲密时刻（在海风里抱住对方、对方醒来时的眼神）。玩家自己失败的话，由豁免成功的同伴来拉他，按赞同度最高的人写。可以用 romance 推进。海妖不现身，天亮前歌声停了。之后玩家扎营睡觉（写 camp: true），程序会进入下一夜。",
+    anchor: "午夜，雾里传来海妖的歌声。程序已经替全队掷了感知豁免（结果在最近的系统记录里）：失败的人像梦游一样走向船舷，要被拉回来。玩家可以去拉住某个人——如果是恋人或暧昧对象，这是一个特别的亲密时刻（在海风里抱住对方、对方醒来时的眼神）。玩家自己失败的话，由豁免成功的同伴来拉他，按赞同度最高的人写：开场只写到玩家被歌声牵着走向船舷、同伴扑过来的那一刻，下一轮叙述里明确写出玩家被拉住、歌声从脑子里退开、重新清醒过来——从那一刻起玩家完全自主，可以去拉别人。全队都失败时，由冷水、绳子或船身一晃把最靠近的人惊醒。可以用 romance 推进。海妖不现身，天亮前歌声停了。之后玩家扎营睡觉（写 camp: true），程序会进入下一夜。",
     next: null,
   },
   act2_ghost: {
@@ -963,7 +963,7 @@ const ACT2_LOCS = Object.keys(SCENES).filter(id => SCENES[id].loc2);
 const TAVERN = {
   rooms: { name: "修缮客房", cost: 60, desc: "补好漏雨的屋顶、换新床。在酒馆睡一晚，第二天可以多短休一次（共 3 次）；第三幕伤员有床躺" },
   barmaid: { name: "请个吧女", cost: 40, desc: "玛莎腾出手来。第一幕每在酒馆睡一晚分到 8 金币；第三幕她带着难民熬汤搜罗，每晚补给 +1" },
-  intel: { name: "地下情报站", cost: 120, desc: "地窖里养一群跑腿的眼线。在酒馆时说书人多一条港口的消息；第三幕摸清熔岩隧道，攻山多一条路" },
+  intel: { name: "地下情报站", cost: 90, desc: "地窖里养一群跑腿的眼线。在酒馆时说书人多一条港口的消息；第三幕摸清熔岩隧道，攻山多一条路" },
 };
 const INTEL = {
   1: ["总督府的巡逻每到三更换岗，换岗时金库外的走廊会空出一小段时间", "金鳗号的货舱夜里有动静，像是关着人；老鳗最近在码头加派了人手", "港卫军尉官萨丝在私下打听总督的账目，她缺一个信得过的外人跑腿",
@@ -1822,11 +1822,12 @@ const ENCOUNTERS = {
 };
 // 每场遭遇打赢后的战利品（代码发，只发一次）
 const LOOT = {
-  tavern_ambush: { gold: 10, items: ["治疗药水"] }, rat_king: { items: ["猎鹰羽饰"] },
-  docks_brawl: { gold: 30, items: ["手弩"] }, docks_ship: { gold: 60, items: ["黑潮弯刀", "治疗药水"] }, arena_bout: { items: ["力量护腕"] },
-  tower_spies: { gold: 20, items: ["治疗药水"] }, wreck_drowned: { gold: 25, items: ["海燕吊坠"] },
-  manor_guards: { gold: 40, items: ["港卫军胸甲"] }, sewers_cult: { gold: 30, items: ["火焰炸弹", "治疗药水"] },
-  lighthouse: { gold: 50, items: ["强效治疗药水"] },
+  // 第一幕的金币 10-30 按实测调高约五成（打完全部遭遇原来只有约 265，买不起酒馆升级加装备）
+  tavern_ambush: { gold: 15, items: ["治疗药水"] }, rat_king: { items: ["猎鹰羽饰"] },
+  docks_brawl: { gold: 45, items: ["手弩"] }, docks_ship: { gold: 80, items: ["黑潮弯刀", "治疗药水"] }, arena_bout: { items: ["力量护腕"] },
+  tower_spies: { gold: 30, items: ["治疗药水"] }, wreck_drowned: { gold: 40, items: ["海燕吊坠"] },
+  manor_guards: { gold: 60, items: ["港卫军胸甲"] }, sewers_cult: { gold: 45, items: ["火焰炸弹", "治疗药水"] },
+  lighthouse: { gold: 75, items: ["强效治疗药水"] },
   ghost_ship: { items: ["晨星长剑", "晨星骑士铠"] }, bone_wyrms: { items: ["龙鳞甲"] }, ember_outpost: { gold: 80, items: ["黑曜石巨斧", "强效治疗药水"] },
   darin_forge: { items: ["烬火戒指"] }, mist_kraken: { items: ["潮汐三叉戟"] }, temple_raid: { gold: 100, items: ["银弦长弓", "强效治疗药水"] },
   harbor_wyrmling: { items: ["龙鳞弩", "强效治疗药水"] }, ember_slope: { gold: 80, items: ["烬卫板甲"] }, valdo_altar: { items: ["龙之心坠"] },
@@ -2438,6 +2439,7 @@ function buildPrompt(action, mode) {
     (chapters ? `\n\n【往事】（已经结束的各章纪要）\n${chapters}` : "") +
     `\n\n【前情提要】${m.summary || (chapters ? "（往事之后的事都在下面的最近剧情里）" : "（还没有，更早的剧情都在下面的最近剧情里）")}` +
     (memLines ? `\n\n【角色记得的事】\n${memLines}` : "") +
+    (mode !== "narrate" && winsLines() ? `\n\n【已经成功的检定】（玩家已经查到、做到的事。照着结果往下写，不要当作没发生，也不要为同一件事再要求检定）\n${winsLines()}` : "") +
     (recall ? `\n\n【想起的旧事】（玩家这次提到的人或事，以前发生时的原文片段。用来回忆细节、让角色自然地想起当时，不要整段复述）\n${recall}` : "") +
     `\n\n【最近剧情】\n${recent || "（冒险刚开始）"}` +
     `\n\n【玩家本回合】${action}`;
@@ -2460,6 +2462,16 @@ const memo = () => { const m = (state.memory ||= { summary: "", people: {} }); m
 const LINE_TAG = { gm: "GM：", you: "玩家：", roll: "检定：", sys: "系统：", cb: "战斗：" };
 const entryLine = e => (LINE_TAG[e.k] || "") + e.t.slice(0, 1200);
 const storyPool = () => state.log.filter(e => e.t && !e.live && !e.m && e.k !== "chapter" && e.k !== "cb");
+// 最近检定成功拿到的东西：检定的难点 + 紧接着那段叙述的开头。说书人常忘了自己写过的线索（读出的字、问到的话），反复要求同一件事再检定
+function winsLines(skip = 12) {
+  const log = state.log, out = [];
+  for (let i = 0; i < log.length - skip; i++) {
+    const e = log[i]; if (e.k !== "roll" || !e.ok || !e.why || (SCENES[e.s]?.act ?? state.act) !== state.act) continue; // 只看这一幕的
+    const g = log.slice(i + 1, i + 6).find(x => x.k === "gm");
+    out.push(`· ${e.why}：${g ? str(g.t.replace(/\s+/g, " "), 90) : "成功"}`);
+  }
+  return out.slice(-5).join("\n");
+}
 function recentLines() {
   const pool = storyPool(), out = [];
   let n = 0;
@@ -3966,7 +3978,7 @@ function finishRoll() {
   state.pendingCheck = null; rolled = null;
   const res = x.d === 20 ? "大成功" : x.d === 1 ? "大失败" : x.ok ? "成功" : "失败";
   const who = c.who === "player" ? "" : whoName(c.who) + " · ";
-  push("roll", `${who}${x.label}　d20(${x.d}) ${sgn(x.bonus)} = ${x.total} / DC ${c.dc}　${res}`, { ok: x.ok });
+  push("roll", `${who}${x.label}　d20(${x.d}) ${sgn(x.bonus)} = ${x.total} / DC ${c.dc}　${res}`, { ok: x.ok, why: c.reason || "" });
   gm(`【检定结果】${whoName(c.who)}的${x.label}检定：d20 掷出 ${x.d}，加值 ${sgn(x.bonus)}，总计 ${x.total}，DC ${c.dc}，${res}。请叙述结果并继续。`, null, state.combat?.improv ? "improv" : undefined);
 }
 

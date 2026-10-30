@@ -452,7 +452,7 @@ test('战利品只发一次；商店买卖；说书人给的稀有物品要锚�
     state.scene='act1_manor_vault';applyGM({items_add:['银刃匕首']});
     return {looted,ok,noRare,sold,gold:state.player.gold,rare,junk,dagger:state.player.inventory.includes('银刃匕首')};
   })()`);
-  assert.deepEqual(result, { looted: { gold: 30, bow: true }, ok: true, noRare: false, sold: true, gold: 100, rare: false, junk: true, dagger: true });
+  assert.deepEqual(result, { looted: { gold: 45, bow: true }, ok: true, noRare: false, sold: true, gold: 100, rare: false, junk: true, dagger: true });
 });
 
 test('同伴生命低时自己喝行囊里的药；炸弹扔向区域', () => {
@@ -656,7 +656,7 @@ test('酒馆升级：花金币，说书人写不了；客房多一次短休、�
   const result = run(`(() => {
     gm=()=>{};state=newGame(freshDraft());state.act=1;state.scene='act1_hub';state.act1Day=state.day;state.player.gold=100;
     applyGM({flags:{'tavern.rooms':true}});const forged=!!state.flags['tavern.rooms'];
-    const poor=upgradeTavern('intel');const a=upgradeTavern('rooms'),b=upgradeTavern('barmaid');const gold=state.player.gold;
+    const a=upgradeTavern('rooms'),b=upgradeTavern('barmaid');const gold=state.player.gold;const poor=upgradeTavern('intel');
     state.camp={};restNight(null);const night={gold:state.player.gold-gold,short:state.shortRests};
     let n=0;state.player.hp=1;while(shortRest())n++;
     state.player.gold=200;upgradeTavern('intel');const intel=buildPrompt('x').includes('【情报站】');
@@ -1139,4 +1139,21 @@ test('数值调整：营地陪聊、个人任务每一步、每走完一幕都�
     return {quiet,chatted,step,again,act,rules,seven:ENDINGS.seven.need.toString().includes('>= 30')};
   })()`);
   assert.deepEqual(result, { quiet: 10, chatted: 13, step: 30, again: 30, act: { approval: 35, draconic: 15 }, rules: true, seven: true });
+});
+
+test('小修：说书人提示里列出这一幕已经成功的检定；海妖之歌写清玩家何时清醒；第一幕金币和情报站价格', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};state=newGame(freshDraft());state.act=1;state.scene='act1_sewers_shrine';
+    state.log.push({k:'roll',t:'调查 成功',ok:true,why:'辨认研究信上的批注',s:'act1_sewers_shrine'});
+    state.log.push({k:'gm',t:'莉拉读出了：将抄录的图样与新发现的印记逐一比对。',s:'act1_sewers_shrine'});
+    state.log.push({k:'roll',t:'说服 失败',ok:false,why:'说服守卫',s:'act1_sewers_shrine'});
+    const early=buildPrompt('x').includes('【已经成功的检定】');
+    for(let i=0;i<12;i++) state.log.push({k:'you',t:'走走',s:'act1_hub'});
+    const p=buildPrompt('x');const block=p.split('【已经成功的检定】')[1]||'';
+    state.act=2;const nextAct=buildPrompt('x').includes('【已经成功的检定】');
+    return {early,has:block.includes('辨认研究信上的批注：莉拉读出了'),noFail:!block.split('【')[0].includes('说服守卫'),nextAct,
+      siren:SCENES.act2_siren.anchor.includes('从那一刻起玩家完全自主'),intel:TAVERN.intel.cost,brawl:LOOT.docks_brawl.gold};
+  })()`);
+  assert.deepEqual(result, { early: false, has: true, noFail: true, nextAct: false, siren: true, intel: 90, brawl: 45 });
 });
