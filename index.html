@@ -744,12 +744,12 @@ const SCENES = {
   act2_temple: {
     title: "誓约神殿", loc: "龙骨群岛 · 誓约神殿", bg: "linear-gradient(160deg,#6f8aa0,#25313b 60%,#0d1216)", act: 2, camp: false, level: 9,
     anchor: "退潮时，三座岛中间的海面裂开，一座白石神殿浮了出来，台阶上还挂着海草和发光的水母，潮汐石嵌进大门就开了。门厅的墙上刻着七个空着的掌印。第一重试炼——勇气：每个人都被拉进自己最恐惧之物的幻象，玩家的幻象由玩家的背景决定（按下面【勇气试炼的素材】写，素材之外可以补充），同伴的幻象按他们的秘密写（赛勒涅：骑士团覆灭的那一夜；维克斯：莉丝被带走；卡西安：倒在他拳下的好友；博林：着火的铁炉堡；莉拉：学院的审判庭；奈雅：一面照不出脸的镜子）。可以要求检定，也可以用信念和行动通过；通过写 act2.trial_courage=true，然后 advance 设为 act2_temple_truth。退潮的时间有限，离开神殿要等下一次退潮（这里不能回锚地）。",
-    next: ["act2_temple_truth"], gate: { act2_temple_truth: () => !!state.flags["act2.trial_courage"] },
+    next: ["act2_temple_truth"], gate: { act2_temple_truth: () => !!state.flags["act2.trial_courage"] }, long: true, // long：本来就要很多轮，不提醒推进
   },
   act2_temple_truth: {
     title: "真相之厅", loc: "誓约神殿 · 真相之厅", bg: "linear-gradient(160deg,#5d7a92,#1f2b35 60%,#0b1014)", act: 2, camp: false,
     anchor: "一座圆形的大厅，地面是一整块镜面般的水。第二重试炼——真相：每位同伴必须站到水面中央，说出一个自己的秘密（按下面【真相之厅的素材】写，写得具体、有分量；没有素材的同伴照同伴资料里的“秘密”写），水面才会让路。赞同度低于 20 的同伴会拒绝，玩家要说服他（检定或真心话）；玩家自己也要说出一件从没告诉过任何人的事。说出来的秘密会被其他同伴听到——写出他们的反应，可以用 approval 和 relation 调整。都说完写 act2.trial_truth=true，然后 advance 设为 act2_temple_heart。",
-    next: ["act2_temple_heart"], gate: { act2_temple_heart: () => !!state.flags["act2.trial_truth"] },
+    next: ["act2_temple_heart"], gate: { act2_temple_heart: () => !!state.flags["act2.trial_truth"] }, long: true,
   },
   act2_temple_heart: {
     title: "誓约之心", loc: "誓约神殿 · 核心", bg: "linear-gradient(160deg,#8aa6bc,#2c3a46 60%,#0f1418)", act: 2, camp: false,
@@ -775,17 +775,17 @@ const SCENES = {
   act3_docks_fire: {
     title: "燃烧的码头", loc: "灰帆港 · 燃烧的码头", bg: "linear-gradient(160deg,#7a4022,#2a140a 60%,#100704)", act: 3, camp: false,
     anchor: "码头的仓库一座接一座地烧，鱼油桶在爆炸，黑潮会的打手和渔民挤在栈桥尽头，海里漂着翻倒的船。老鳗（若还活着）在金鳗的甲板上指挥手下救火，看见你们会露出复杂的表情——这是赢回黑潮会的机会。要做的事：把被困在仓库里的人救出来（运动或杂技 DC 15，或者用法术灭火）、挡住扑下来的黑龙幼体（在 JSON 写 combat 为 harbor_wyrmling）。救下码头，黑潮会会记住（即使之前为敌，老鳗（或者他死后黑潮会剩下的人）也愿意谈条件）。之后带人退回醉龙酒馆：advance 设为 act3_haven。",
-    next: ["act3_haven"], encounters: ["harbor_wyrmling"],
+    next: ["act3_haven"], encounters: ["harbor_wyrmling"], doneWhen: () => state.fought?.harbor_wyrmling !== undefined,
   },
   act3_academy_fire: {
     title: "旧学院的结界", loc: "灰帆港 · 旧学院", bg: "linear-gradient(160deg,#5a3f6e,#21162a 60%,#0c0811)", act: 3, camp: false,
     anchor: "旧学院的主楼塌了一半，残余的学者和学徒围着三块发光的结界石死守，结界一灭，整条街都会被酸液吞掉。若奥斯瓦尔德已经反水（quest.lyra=turned），他就在这里指挥，看到莉拉会红了眼眶；否则是学院的老门房在硬撑（若做过他的支线，他会认出你们）。要做的事：稳住结界石（奥秘 DC 15，莉拉在场有优势）、把学徒们从塌楼里救出来、挡住黑龙幼体（在 JSON 写 combat 为 harbor_wyrmling）。救下学院，学院残部会记住。之后带人退回醉龙酒馆：advance 设为 act3_haven。",
-    next: ["act3_haven"], encounters: ["harbor_wyrmling"],
+    next: ["act3_haven"], encounters: ["harbor_wyrmling"], doneWhen: () => state.fought?.harbor_wyrmling !== undefined,
   },
   act3_manor_fire: {
     title: "总督府的防线", loc: "灰帆港 · 总督府前", bg: "linear-gradient(160deg,#3f4a6e,#191d2c 60%,#0b0d14)", act: 3, camp: false,
     anchor: "总督府前的广场成了最后的防线，港卫军用马车和家具堆起路障，平民躲在总督府的地窖里。萨丝（若还信任你们）在最前面，盔甲上全是酸液烧的洞；总督（若还在位）躲在楼上发号施令，没人听他的。要做的事：守住路障（战斗或指挥：说服或威吓 DC 15 让港卫军稳住阵脚）、把地窖里的平民转移到船上、挡住黑龙幼体（在 JSON 写 combat 为 harbor_wyrmling）。救下总督府，港卫军会记住。之后带人退回醉龙酒馆：advance 设为 act3_haven。",
-    next: ["act3_haven"], encounters: ["harbor_wyrmling"],
+    next: ["act3_haven"], encounters: ["harbor_wyrmling"], doneWhen: () => state.fought?.harbor_wyrmling !== undefined,
   },
   act3_haven: {
     title: "避难所", loc: "灰帆港 · 醉龙酒馆", bg: "linear-gradient(160deg,#5a4433,#211812 60%,#0d0907)", act: 3, hub: true, campFree: true, jail: true, tavern: true,
@@ -800,7 +800,7 @@ const SCENES = {
   act3_council: {
     title: "战争会议", loc: "灰帆港 · 醉龙酒馆", bg: "linear-gradient(160deg,#5a4433,#211812 60%,#0d0907)", act: 3, camp: false, jail: true,
     anchor: "醉龙酒馆的大堂清出一张长桌，各方的首领陆续到来。【世界标记】后面列出了程序按之前所有选择算出的盟友（每一方的来由也写在那里）：只让这些盟友出场，没列出的阵营不会来，或者派人来拒绝/冷嘲热讽（例如被你得罪过的黑潮会、被武力夺走钥匙的潮裔）。每位盟友的首领说几句话、提出条件或要求，盟友之间也会吵起来（港卫军和黑潮会互相看不顺眼，潮裔不信任任何陆地上的人），玩家要居中调停（说服 DC 15，失败会有人当场离席——但程序算出的盟友不会真的少）。这一场是“选择有回响”的集中兑现，可以多写几轮。若队伍里还没定的个人任务抉择（例如赛勒涅、奈雅），同伴会在会后找玩家。玩家定下攻山的计划后，把 advance 设为 act3_whisper。",
-    next: ["act3_whisper", "act3_haven"],
+    next: ["act3_whisper", "act3_haven"], long: true,
   },
   act3_whisper: {
     title: "最后一夜", loc: "灰帆港 · 醉龙酒馆", bg: "linear-gradient(160deg,#3b2f3f,#151017 60%,#08060a)", act: 3, campFree: true, campNext: "act3_climb", jail: true,
@@ -817,12 +817,12 @@ const SCENES = {
   act3_charge: {
     title: "正面冲锋", loc: "烬冠山 · 山坡", bg: "linear-gradient(160deg,#6a2e1a,#250e08 60%,#0d0403)", act: 3, camp: false,
     anchor: "盟军在山坡上和教团大军厮杀：按程序列出的盟友写他们各自的样子（港卫军的盾墙、黑潮会的船炮从海上轰山、潮裔的鱼叉手、学院的结界、达林一个人冲在最前面、鼠群从地缝里涌出来）。你们要从中间杀出一条路：动手时写 combat 为 ember_slope。打完把 advance 设为 act3_altar。",
-    next: ["act3_altar"], encounters: ["ember_slope"],
+    next: ["act3_altar"], encounters: ["ember_slope"], doneWhen: () => state.fought?.ember_slope !== undefined,
   },
   act3_tunnel: {
     title: "熔岩隧道", loc: "烬冠山 · 熔岩隧道", bg: "linear-gradient(160deg,#7a3418,#2a1007 60%,#100503)", act: 3, camp: false,
     anchor: "山体里的熔岩隧道，热得让人窒息，岩壁上淌着发光的岩浆。带路的是奈雅（她用教团的暗号骗过哨卡）或者鼠王（它和它的鼠群知道每一条缝）。要过的关：躲开巡逻（隐匿 DC 16）、跳过熔岩沟（运动或杂技 DC 15，失败受 3d6 火焰伤害，用 hp 字段）、认出哪条岔路通往祖坛（求生或调查 DC 15）。被发现就要打（写 combat 为 ember_slope）。出口在祖坛的背面：把 advance 设为 act3_altar。",
-    next: ["act3_altar"], encounters: ["ember_slope"],
+    next: ["act3_altar"], encounters: ["ember_slope"], doneWhen: () => state.fought?.ember_slope !== undefined,
   },
   act3_wings: {
     title: "龙翼飞跃", loc: "烬冠山 · 天空", bg: "linear-gradient(160deg,#4a3a5a,#191422 60%,#08060b)", act: 3, camp: false,
@@ -832,12 +832,13 @@ const SCENES = {
   act3_altar: {
     title: "祖坛", loc: "烬冠山 · 祖坛", bg: "linear-gradient(160deg,#6b2418,#250b07 60%,#0e0403)", act: 3, camp: false, rescue: true,
     anchor: "火山口边缘的黑曜石祖坛，七根刻着印记的石柱围成一圈。神殿里被掳走的同伴（见 act2.taken）被锁在其中一根石柱上，掌心的印记被抽得发灰——可以用 recruit 把他救回队伍。主教瓦尔多在祖坛中央主持仪式，平静地等着你们。可以和他辩论：他是献祭幸存者的后代，认为银龙的守护建立在尸骨上——若玩家拿得出证据（伊芙的证词 act2.eve，和赛勒涅找到的骑士团日记 quest.selene.diary），用魅力 DC 22 可以说服他自我献祭、削弱烬王（写 act3.valdo=convinced；没有这两样证据程序不会接受）。说不动就开打：在 JSON 写 combat 为 valdo_altar（他会尝试抽取持有者的印记，石柱给他回血），打完写 act3.valdo=killed 或 captured。主教倒下，火山口里的烬王就挣脱了封印。之后把 advance 设为 act3_king。",
-    next: "act3_king", encounters: ["valdo_altar"],
+    next: "act3_king", encounters: ["valdo_altar"], doneWhen: () => state.fought?.valdo_altar === "victory" || state.flags["act3.valdo"] === "convinced",
   },
   act3_king: {
     title: "烬王", loc: "烬冠山 · 火山口", bg: "linear-gradient(160deg,#4a1a10,#180605 60%,#070202)", act: 3, camp: false, level: 12,
     anchor: "烬王——远古黑龙——从火山口里撑起身体，熔岩从黑曜石鳞片的裂缝里淌下来，天空被它的翅膀遮住一半。它先开口说话，对玩家提最后一个条件。然后在 JSON 写 combat 为 ember_king 开战（战斗分三个阶段，由程序处理：半身陷在火山口里用爪和尾；升空吐酸，盟友会在空中压制它；坠落到火山口边缘时出现最终抉择）。最终抉择和结局由程序弹出，你不要替玩家选。",
-    next: null, encounters: ["ember_king"],
+    next: null, encounters: ["ember_king"], enter: "altarRescue",
+    fightAfter: 2, // 玩家回应两次之后说书人还没写 combat，就由程序开战
   },
   act3_end: {
     title: "终章", loc: "灰帆港", bg: "linear-gradient(160deg,#6f7480,#272a30 60%,#0e0f12)", act: 3, camp: false, endAct: 3,
@@ -2396,7 +2397,7 @@ function nextLine(sc) {
     return "下一个场景：无（这一场结束时 scene_end 为 true" + (conditions.length ? `；必须先${conditions.join("，并")}` : "") + "）";
   }
   const here = state.log.filter(e => e.k === "you" && chKey(e) === curKey()).length;
-  const long = !sc.hub && !sc.campFree && here >= 10 ? `\n（这一场玩家已经回应了 ${here} 次。这一场要办的事办完了，或者玩家已经在往别处走，就推进；不要让线索一个接一个地拖下去。）` : "";
+  const long = !sc.hub && !sc.campFree && !sc.long && here >= 10 ? `\n（这一场玩家已经回应了 ${here} 次。这一场要办的事办完了，或者玩家已经在往别处走，就推进；不要让线索一个接一个地拖下去。）` : "";
   return long + "\n可以 advance 到的场景 id：" + ids.map(id => {
     const missing = (sc.goals || []).filter(g => !state.flags[g.flag]).map(g => g.flag);
     return `${id}「${SCENES[id].title}」${sc.gate?.[id] && !sc.gate[id]() ? `（条件还没满足，不能去${missing.length ? "；还缺 " + missing.join("、") : ""}）` : ""}`;
@@ -2999,6 +3000,8 @@ function applyGM(d, mode) {
       .filter(id => SCENES[id]?.encounters?.includes(cid) && route(hub, id))
       .sort((a, b) => near(b) - near(a))[0]; // 叙述里写的地点对得上哪一场，就去哪一场
     if (there) { for (const id of route(hub, there)) goScene(id, !!d.location); state.pendingCombat = cid; return; }
+    const fa = hub.fightAfter && hub.encounters?.find(ready);
+    if (!cid && fa && !state.pendingCheck && state.log.filter(e => e.k === "you" && chKey(e) === curKey()).length >= hub.fightAfter) { state.pendingCombat = fa; return; }
     if (cid) console.warn("忽略说书人的开战请求（不是这一场的遭遇，或已经打过）：", cid);
   }
 
@@ -3368,6 +3371,14 @@ function chooseEnding(id) {
 
 // 场景进入时由代码处理的剧情后果
 const SCENE_ENTER = {
+  // 离开祖坛：主教倒下之后，还锁在石柱上的同伴被救下来
+  altarRescue() {
+    for (const id of Object.keys(COMPANIONS)) {
+      const c = state.companions[id]; if (!c.taken || !c.alive) continue;
+      c.taken = false; c.rescued = true; c.recruited = true;
+      push("sys", `${PEOPLE[id].name}从石柱上被救了下来，重新加入队伍`, { cls: "appr-up" });
+    }
+  },
   // 烬王的低语：赞同度低于 0、个人任务又没了结的同伴今晚离开，投向烬王
   emberWhisper() {
     for (const id of party()) {

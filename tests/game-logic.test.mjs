@@ -1061,7 +1061,8 @@ test('收尾：从神殿一路走到终章（七人之誓），神殿打完忘�
     const party6=()=>{for(const id of Object.keys(COMPANIONS)){const c=state.companions[id];c.recruited=true;c.approval=60;}state.flags['act1.naia_exposed']=true;};
     state=newGame(freshDraft());state.act=2;state.scene='act2_temple';levelUp(9);state.dreams=[1,2,3];party6();
     Object.assign(state.flags,{'act2.tideborn':'ally','act2.temple_key':'given','act1.sath_trust':true,'act2.darin':'woke','act1.governor':'exposed'});
-    for(let i=0;i<10;i++) push('you','再看看');const nag=buildPrompt('x').includes('这一场玩家已经回应了 10 次');
+    for(let i=0;i<10;i++) push('you','再看看');const nagTemple=buildPrompt('x').includes('这一场玩家已经回应了 10 次');
+    state.scene='act3_streets';for(let i=0;i<10;i++) push('you','再看看');const nag=buildPrompt('x').includes('这一场玩家已经回应了 10 次')&&!nagTemple;state.scene='act2_temple';
     say({flags:{'act2.trial_courage':true},advance:'act2_temple_truth'});
     say({flags:{'act2.trial_truth':true},advance:'act2_temple_heart'});
     say({flags:{'act2.sacrifice':'memory','act2.revealed':true,'act2.heart':'destroyed'},combat:'temple_raid'});
@@ -1097,4 +1098,27 @@ test('收尾：从神殿一路走到终章（七人之誓），神殿打完忘�
   assert.ok(result.chain.trace.includes('act3_charge') && result.chain.trace.includes('act3_altar'), result.chain.trace);
   for (const id of ['egg', 'hestia', 'crown', 'dragon', 'mortal'])
     assert.deepEqual(result.others[id], { miss: '', scene: 'act3_end', ended: true, ending: id }, id);
+});
+
+test('收尾：第三幕说书人忘了写打完后的 advance、救人的 recruit 和烬王的 combat，程序照样能走到最终抉择且七人之誓可选', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};openFinal=()=>{};render=()=>{};openSplit=()=>{};
+    const say=(d,t='我行动')=>{state.turns++;push('you',t);applyGM(d);return state.scene;};
+    const win=id=>{startCombat(id);for(const u of Object.values(state.combat.units)) if(u.side!=='party'&&!u.dead){u.hp=0;u.dead=true;} endCombat(combatResult());state.pendingCombat=null;applyGM({});};
+    state=newGame(freshDraft());state.act=3;state.scene='act3_1';levelUp(10);state.dreams=[1,2,3];
+    for(const id of Object.keys(COMPANIONS)){const c=state.companions[id];c.recruited=true;c.approval=60;}
+    Object.assign(state.flags,{'act1.naia_exposed':true,'act2.tideborn':'ally','act1.sath_trust':true,'act2.darin':'woke','act2.taken':'borin','act2.heart':'destroyed'});
+    Object.assign(state.companions.borin,{taken:true,recruited:false});
+    say({flags:{'act3.saved_first':'academy'},advance:'act3_academy_fire'});win('harbor_wyrmling');
+    const fire=say({});
+    say({advance:'act3_council'});say({advance:'act3_whisper'});state.camp={};restNight(null);
+    say({flags:{'act3.route':'charge'},advance:'act3_charge'});win('ember_slope');const slope=say({});
+    win('valdo_altar');const altar=say({});const borin={back:!!state.companions.borin.recruited,taken:!!state.companions.borin.taken};
+    const first=say({});const pending1=state.pendingCombat||null;const second=say({});const pending2=state.pendingCombat;
+    startCombat(pending2);hurt(Object.values(state.combat.units).find(u=>u.type==='ember_king'),9999);endCombat(combatResult());
+    return {fire,slope,altar,borin,pending1,pending2,final:!!state.pendingFinal,seven:ENDINGS.seven.need()};
+  })()`);
+  assert.deepEqual(result, { fire: 'act3_haven', slope: 'act3_altar', altar: 'act3_king', borin: { back: true, taken: false },
+    pending1: null, pending2: 'ember_king', final: true, seven: [] });
 });
