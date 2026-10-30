@@ -1050,3 +1050,51 @@ test('完整通关报告修复：只改地点也会跟到能去的地方，第�
   assert.equal(result.deep, 'act2_mist_memorial'); assert.equal(result.sub, 'act2_mist_memorial');
   assert.equal(result.forge.captured, false); assert.ok(!result.forge.line.includes('活捉'));
 });
+
+test('收尾：从神殿一路走到终章（七人之誓），神殿打完忘了 advance 也会进第二幕结尾；其余结局都能选、能结束；一场拖得太久会提醒', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};openFinal=()=>{};render=()=>{};openSplit=()=>{};
+    const trace=[];
+    const say=(d,t='我行动')=>{state.turns++;push('you',t);applyGM(d);trace.push(state.scene);};
+    const win=id=>{startCombat(id);for(const u of Object.values(state.combat.units)) if(u.side!=='party'&&!u.dead){u.hp=0;u.dead=true;} endCombat(combatResult());state.pendingCombat=null;applyGM({});};
+    const party6=()=>{for(const id of Object.keys(COMPANIONS)){const c=state.companions[id];c.recruited=true;c.approval=60;}state.flags['act1.naia_exposed']=true;};
+    state=newGame(freshDraft());state.act=2;state.scene='act2_temple';levelUp(9);state.dreams=[1,2,3];party6();
+    Object.assign(state.flags,{'act2.tideborn':'ally','act2.temple_key':'given','act1.sath_trust':true,'act2.darin':'woke','act1.governor':'exposed'});
+    for(let i=0;i<10;i++) push('you','再看看');const nag=buildPrompt('x').includes('这一场玩家已经回应了 10 次');
+    say({flags:{'act2.trial_courage':true},advance:'act2_temple_truth'});
+    say({flags:{'act2.trial_truth':true},advance:'act2_temple_heart'});
+    say({flags:{'act2.sacrifice':'memory','act2.revealed':true,'act2.heart':'destroyed'},combat:'temple_raid'});
+    win('temple_raid');const stay=state.scene;say({});const auto=state.scene;const taken=state.flags['act2.taken'];
+    say({scene_end:true});const end2=state.ended;nextAct();
+    say({flags:{'act3.saved_first':'docks'},advance:'act3_docks_fire'});win('harbor_wyrmling');
+    say({advance:'act3_haven'});say({location:'灰帆港 · 街巷'});const streets=state.scene;say({location:'灰帆港 · 醉龙酒馆'});const back=state.scene;
+    say({advance:'act3_council'});say({advance:'act3_whisper'});
+    say({camp:true});state.camp={};restNight(null);
+    say({flags:{'act3.route':'charge'},advance:'act3_charge'});win('ember_slope');
+    say({advance:'act3_altar'});say({recruit:[taken]});const rescued=!!state.companions[taken].recruited;
+    win('valdo_altar');say({advance:'act3_king'});
+    startCombat('ember_king');hurt(Object.values(state.combat.units).find(u=>u.type==='ember_king'),9999);const res=combatResult();endCombat(res);
+    const sevenOk=ENDINGS.seven.need().length===0;chooseEnding('seven');say({scene_end:true});
+    const chain={trace:trace.join(' '),stay,auto,end2,walk:streets+'>'+back,rescued,res,sevenOk,scene:state.scene,ended:state.ended};
+    const others={};
+    for(const [id,setup] of Object.entries({
+      egg:()=>{Object.assign(state.flags,{'act2.egg_warmed':3,'quest.vex.egg':true});},
+      hestia:()=>{},crown:()=>{},
+      dragon:()=>{state.player.draconic=80;},
+      mortal:()=>{Object.assign(state.flags,{'act2.heart':'destroyed','act2.tideborn':'ally','act1.sath_trust':true,'act2.darin':'woke'});},
+    })){
+      state=newGame(freshDraft());state.act=3;state.scene='act3_king';levelUp(12);party6();setup();
+      startCombat('ember_king');hurt(Object.values(state.combat.units).find(u=>u.type==='ember_king'),9999);endCombat(combatResult());
+      const miss=ENDINGS[id].need();chooseEnding(id);state.turns++;push('you','尾声');applyGM({scene_end:true});
+      others[id]={miss:miss.join(''),scene:state.scene,ended:state.ended,ending:state.flags['act3.ending']};
+    }
+    return {nag,chain,others};
+  })()`);
+  assert.equal(result.nag, true);
+  assert.equal(result.chain.stay, 'act2_temple_heart'); assert.equal(result.chain.auto, 'act2_end');
+  assert.deepEqual({ ...result.chain, trace: undefined }, { trace: undefined, stay: 'act2_temple_heart', auto: 'act2_end', end2: true, walk: 'act3_streets>act3_haven', rescued: true, res: 'final', sevenOk: true, scene: 'act3_end', ended: true });
+  assert.ok(result.chain.trace.includes('act3_charge') && result.chain.trace.includes('act3_altar'), result.chain.trace);
+  for (const id of ['egg', 'hestia', 'crown', 'dragon', 'mortal'])
+    assert.deepEqual(result.others[id], { miss: '', scene: 'act3_end', ended: true, ending: id }, id);
+});

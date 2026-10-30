@@ -755,6 +755,8 @@ const SCENES = {
     title: "誓约之心", loc: "誓约神殿 · 核心", bg: "linear-gradient(160deg,#8aa6bc,#2c3a46 60%,#0f1418)", act: 2, camp: false,
     anchor: "神殿最深处，一颗心脏大小的银色晶体悬在半空，缓缓跳动——“誓约之心”。第三重试炼——牺牲：必须放弃一件珍贵的东西，写 act2.sacrifice：item 一件珍贵物品（同时在 items_remove 里去掉它）、memory 一段记忆（玩家选一段和某位同伴的回忆，那位同伴会察觉你忘了）、draconic 20 点龙化值（程序扣；不够 20 点不能选）。三重试炼都过了，神殿核心展示全部真相（写 act2.revealed=true）：赫斯提雅拆开誓约寄存在七个人身上，是想借宿主重生——赛勒涅是她原本选中的容器。赫斯提雅现身（银发老妇人，鳞片在脸颊上发光），坦诚地提出交易：“把印记交给我选中的人，我会拯救这片海。”在场的同伴们强烈表态（赛勒涅在场时反应最重；她不在场，赫斯提雅会点出她的名字；若是恋人，玩家可以完成她的考验）。就在这时，主教瓦尔多率众杀入（他通过奈雅的情报或奥斯瓦尔德追踪而来）。玩家要在主教抢到之前决定誓约之心怎么处置，写 act2.heart：hestia 交给赫斯提雅、player 自己吸收（龙化值 +30，程序加）、destroyed 交给潮裔销毁（只有 act2.tideborn=ally 时可以）。动手时在 JSON 写 combat 为 temple_raid。不管打没打赢，主教都会从密道撤走，并且掳走一位同伴（由程序决定是谁，你不要写）；没来得及处置的誓约之心也会被他抢走。之后把 advance 设为 act2_end。",
     next: "act2_end", encounters: ["temple_raid"],
+    // 打完主教之后，说书人忘了 advance 也会往下走（玩家先有一轮收拾残局）
+    doneWhen: () => state.fought?.temple_raid !== undefined,
   },
   act2_end: {
     title: "退潮之后", loc: "龙骨群岛 · 神殿外的礁石", bg: "linear-gradient(160deg,#6e7a86,#262c32 60%,#0e1114)", act: 2, camp: false, endAct: 2,
@@ -791,7 +793,7 @@ const SCENES = {
     next: ["act3_council", "act3_streets"],
   },
   act3_streets: {
-    title: "被围的街巷", loc: "灰帆港 · 街巷", bg: "linear-gradient(160deg,#6a3a28,#24120c 60%,#0e0705)", act: 3, camp: false,
+    title: "被围的街巷", loc: "灰帆港 · 街巷", bg: "linear-gradient(160deg,#6a3a28,#24120c 60%,#0e0705)", act: 3, camp: false, walk: true, // walk：说书人只改地点也能走过来
     anchor: "烟雾弥漫的街巷：倒塌的房子、被酸液腐蚀的石墙、在废墟里翻找的人，偶尔有狂信徒的小队在搜捕“印记持有者”。可以在这里找补给（调查 DC 13，用 supplies 字段加 1~2 份）、救被压在废墟下的人、和小股教团交手（不需要正式战斗时直接叙述，打大仗写 combat 为 ember_slope 太重了，不要用）。支线的目标常常在这里（见“进行中的支线”）。之后 advance 回 act3_haven。",
     next: ["act3_haven"],
   },
@@ -2393,7 +2395,9 @@ function nextLine(sc) {
     if (needs?.flags?.length) conditions.push(`写好 ${needs.flags.join("、")}`);
     return "下一个场景：无（这一场结束时 scene_end 为 true" + (conditions.length ? `；必须先${conditions.join("，并")}` : "") + "）";
   }
-  return "可以 advance 到的场景 id：" + ids.map(id => {
+  const here = state.log.filter(e => e.k === "you" && chKey(e) === curKey()).length;
+  const long = !sc.hub && !sc.campFree && here >= 10 ? `\n（这一场玩家已经回应了 ${here} 次。这一场要办的事办完了，或者玩家已经在往别处走，就推进；不要让线索一个接一个地拖下去。）` : "";
+  return long + "\n可以 advance 到的场景 id：" + ids.map(id => {
     const missing = (sc.goals || []).filter(g => !state.flags[g.flag]).map(g => g.flag);
     return `${id}「${SCENES[id].title}」${sc.gate?.[id] && !sc.gate[id]() ? `（条件还没满足，不能去${missing.length ? "；还缺 " + missing.join("、") : ""}）` : ""}`;
   }).join("、") + "。玩家一动身去这些地方，就在同一轮写 advance（只改 location 不会换场景，下一轮你拿到的还是这一场的锚点）" + hubLine(sc);
@@ -3019,6 +3023,7 @@ function applyGM(d, mode) {
     state.location = loc0;
     push("sys", nextOf(sc).includes(d.advance) || hubSubs(sc).some(([, y]) => y === d.advance) ? `还去不了「${SCENES[d.advance].title}」：条件还没满足` : `从这里去不了「${SCENES[d.advance].title}」`, { cls: "appr-down" });
   }
+  else if (!d.advance && sc.doneWhen && !state.pendingCheck && doneTurn(sc) != null && state.turns > doneTurn(sc) && canGo(sc, nextOf(sc)[0])) goScene(nextOf(sc)[0]);
   else if (!d.advance && d.location && !sc.interlude && walkTarget(sc, String(d.location))) {
     for (const id of route(sc, walkTarget(sc, String(d.location)))) goScene(id, true);
   }
@@ -3042,8 +3047,14 @@ function applyGM(d, mode) {
 }
 // 能不能去这一场：必须是 next 里登记的，且满足 gate（例如灯塔要先拿到航海图和船）
 const canGo = (sc, id) => nextOf(sc).includes(id) && (!sc.gate?.[id] || sc.gate[id]());
+// doneWhen 第一次成立时记下轮数（只记这一场的）
+function doneTurn(sc) {
+  if (!sc.doneWhen?.()) return null;
+  if (state.sceneDone?.scene !== state.scene) state.sceneDone = { scene: state.scene, turn: state.turns };
+  return state.sceneDone.turn;
+}
 // 可以“走过去”的地方：枢纽、各地点入口和入口里面的小场景（灯塔、神殿这类剧情场景不算）
-const isPlace = id => !!(SCENES[id]?.hub || isLoc(id) || Object.keys(SCENES).some(x => isLoc(x) && nextOf(SCENES[x]).includes(id)));
+const isPlace = id => !!(SCENES[id]?.hub || SCENES[id]?.walk || isLoc(id) || Object.keys(SCENES).some(x => isLoc(x) && nextOf(SCENES[x]).includes(id)));
 const placeName = id => SCENES[id].loc.split(" · ").pop();
 // 说书人写了新地点却忘了 advance：地点对得上一个现在能去的地方，就跟过去（叙述里排在后面的地名算数）
 function walkTarget(sc, where) {
