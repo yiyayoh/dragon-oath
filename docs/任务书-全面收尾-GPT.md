@@ -127,4 +127,4 @@ node tests/combat-sim.mjs --runs 300
 3. `HANDOFF.md` 的“已知问题”整理一遍：已经修好或过时的删掉，留下的写清楚影响和绕开的办法。
 4. 问用户后提交并推送：`git -c http.proxy=$HTTPS_PROXY -c https.proxy=$HTTPS_PROXY push origin main`。
 
-**claude.ai 页面**（https://claude.ai/artifact/UvdmR6RYWyiHmS19LVgiKm ，现在是第 41 版）只能由 Claude 的 Artifact 工具发布，你更新不了。最后告诉用户：GitHub 上已经是最新，claude.ai 页面要同步的话，开一个 Claude 会话说“发布 `index.html` 到这个链接，新立绘用 `files` 一起传”就行。
+**claude.ai 页面**（https://claude.ai/artifact/UvdmR6RYWyiHmS19LVgiKm ，现在是第 42 版）只能由 Claude 的 Artifact 工具发布，你更新不了。最后告诉用户：GitHub 上已经是最新，claude.ai 页面要同步的话，开一个 Claude 会话说“发布 `index.html` 到这个链接，新立绘用 `files` 一起传”就行。
