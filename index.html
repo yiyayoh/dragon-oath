@@ -3019,6 +3019,9 @@ function applyGM(d, mode) {
     state.location = loc0;
     push("sys", nextOf(sc).includes(d.advance) || hubSubs(sc).some(([, y]) => y === d.advance) ? `还去不了「${SCENES[d.advance].title}」：条件还没满足` : `从这里去不了「${SCENES[d.advance].title}」`, { cls: "appr-down" });
   }
+  else if (!d.advance && d.location && !sc.interlude && walkTarget(sc, String(d.location))) {
+    for (const id of route(sc, walkTarget(sc, String(d.location)))) goScene(id, true);
+  }
   else if (d.scene_end === true && sc.interlude) {
     const turns = state.log.filter(e => e.k === "you" && chKey(e) === curKey()).length;
     if (turns >= (sc.endNeeds?.turns || 0) && !state.pendingCheck) leaveInterlude();
@@ -3039,14 +3042,26 @@ function applyGM(d, mode) {
 }
 // 能不能去这一场：必须是 next 里登记的，且满足 gate（例如灯塔要先拿到航海图和船）
 const canGo = (sc, id) => nextOf(sc).includes(id) && (!sc.gate?.[id] || sc.gate[id]());
+// 可以“走过去”的地方：枢纽、各地点入口和入口里面的小场景（灯塔、神殿这类剧情场景不算）
+const isPlace = id => !!(SCENES[id]?.hub || isLoc(id) || Object.keys(SCENES).some(x => isLoc(x) && nextOf(SCENES[x]).includes(id)));
+const placeName = id => SCENES[id].loc.split(" · ").pop();
+// 说书人写了新地点却忘了 advance：地点对得上一个现在能去的地方，就跟过去（叙述里排在后面的地名算数）
+function walkTarget(sc, where) {
+  if (!isPlace(state.scene)) return null;
+  const here = where.lastIndexOf(placeName(state.scene));
+  const cands = [...nextOf(sc), ...hubSubs(sc).map(([, y]) => y)].filter(id => id !== state.scene && isPlace(id) && route(sc, id))
+    .map(id => [id, where.lastIndexOf(placeName(id))]).filter(([, i]) => i >= 0 && i > here);
+  return cands.sort((a, b) => b[1] - a[1])[0]?.[0] || null;
+}
 // 港口这样的枢纽可以直接去某个地点里面的小场景：先经过地点入口（算走过这个地点），再进去
 function route(sc, id) {
   if (canGo(sc, id)) return [id];
   if (!sc.hub) return null;
-  const via = nextOf(sc).find(x => SCENES[x]?.loc1 && canGo(sc, x) && canGo(SCENES[x], id));
+  const via = nextOf(sc).find(x => isLoc(x) && canGo(sc, x) && canGo(SCENES[x], id));
   return via ? [via, id] : null;
 }
-const hubSubs = sc => sc.hub ? nextOf(sc).filter(x => SCENES[x]?.loc1).flatMap(x => nextOf(SCENES[x]).filter(y => y !== state.scene && !nextOf(sc).includes(y)).map(y => [x, y])) : [];
+const isLoc = id => !!(SCENES[id]?.loc1 || SCENES[id]?.loc2);
+const hubSubs = sc => sc.hub ? nextOf(sc).filter(isLoc).flatMap(x => nextOf(SCENES[x]).filter(y => y !== state.scene && !nextOf(sc).includes(y)).map(y => [x, y])) : [];
 function goScene(id, keepLocation, rested = false) {
   state.scene = id;
   state.visits = { ...(state.visits || {}), [id]: (state.visits?.[id] || 1) + (state.log.some(e => e.s === id) ? 1 : 0) };
@@ -4063,7 +4078,7 @@ function hurt(u, n, o = {}) {
     return `${u.name} 倒下了！`;
   }
   u.hp = 0;
-  if (o.spare) { u.out = "captured"; return `${u.name} 被打晕，活捉了`; }
+  if (o.spare && !ENEMIES[u.type]?.object) { u.out = "captured"; return `${u.name} 被打晕，活捉了`; } // 熔炉这类物件只会被砸毁
   u.dead = true;
   if (o.blast && ENEMIES[u.type].explode) return `${u.name} 被烬火烧尽`;
   let t = `${u.name} 倒下了`;

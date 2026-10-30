@@ -1028,3 +1028,25 @@ test('完整通关报告修复：航海图和船都到手后睡下就进灯塔�
   assert.equal(result.later, 'docks_ship');
   assert.equal(result.named, true); assert.equal(result.place, true); assert.equal(result.noShip, true);
 });
+
+test('完整通关报告修复：只改地点也会跟到能去的地方，第二幕的岛也能直接进小场景；剧情场景不会被走进去；熔炉不会被活捉', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{};state=newGame(freshDraft());state.act=1;state.scene='act1_docks';
+    applyGM({location:'灰帆港 · 醉龙酒馆'});const home=state.scene;
+    applyGM({location:'灰帆港 · 醉龙酒馆'});const stay=state.scene;
+    state.flags['act1.chart']='opened';state.flags['act1.ship']='stolen';applyGM({location:'灰帆港 · 灯塔'});const lighthouse=state.scene;
+    state.scene='act1_docks';applyGM({location:'灰帆港 · 黑潮码头'});const same=state.scene;
+    state.act=2;state.scene='act2_hub';applyGM({location:'雾隐岛 · 纪念礁'});const memorial={scene:state.scene,mist:!!state.visits.act2_mist};
+    state.scene='act2_hub';applyGM({advance:'act2_mist_memorial'});const deep=state.scene;
+    state.scene='act2_mist';applyGM({location:'雾隐岛 · 纪念礁'});const sub=state.scene;
+    state.scene='act2_ember_forge';state.flags['act2.darin']=null;startCombat('darin_forge');state.combat.spare=true;
+    const forge=Object.values(state.combat.units).find(u=>u.type==='forge');const line=hurt(forge,99,{spare:true});
+    return {home,stay,lighthouse,same,memorial,deep,sub,forge:{captured:forge.out==='captured',line}};
+  })()`);
+  assert.equal(result.home, 'act1_hub'); assert.equal(result.stay, 'act1_hub');
+  assert.equal(result.lighthouse, 'act1_hub'); assert.equal(result.same, 'act1_docks');
+  assert.deepEqual(result.memorial, { scene: 'act2_mist_memorial', mist: true });
+  assert.equal(result.deep, 'act2_mist_memorial'); assert.equal(result.sub, 'act2_mist_memorial');
+  assert.equal(result.forge.captured, false); assert.ok(!result.forge.line.includes('活捉'));
+});
