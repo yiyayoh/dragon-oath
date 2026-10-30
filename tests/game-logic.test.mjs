@@ -1133,12 +1133,13 @@ test('数值调整：营地陪聊、个人任务每一步、每走完一幕都�
     talkTo('kassian');state.turns++;endTalk();const chatted=k.approval;
     state.camp=null;k.approval=25;applyGM({flags:{'quest.kassian.arden':true}});const step=k.approval;
     applyGM({flags:{'quest.kassian.arden':true}});const again=k.approval;
+    const v=state.companions.vex;v.recruited=false;v.approval=0;applyGM({flags:{'act1.debt_known':true}});const away=v.approval;
     state.scene='act1_dawn';state.ended=true;const dr=state.player.draconic;nextAct();
     const act={approval:k.approval,draconic:state.player.draconic-dr};
     const rules=['不要另外发明程序不记录的前置手续','- draconic：玩家的龙化值变化','给得太省'].every(t=>SYSTEM.includes(t));
-    return {quiet,chatted,step,again,act,rules,seven:ENDINGS.seven.need.toString().includes('>= 30')};
+    return {quiet,chatted,step,again,away,act,rules,seven:ENDINGS.seven.need.toString().includes('>= 30')};
   })()`);
-  assert.deepEqual(result, { quiet: 10, chatted: 13, step: 30, again: 30, act: { approval: 35, draconic: 15 }, rules: true, seven: true });
+  assert.deepEqual(result, { quiet: 10, chatted: 13, step: 30, again: 30, away: 0, act: { approval: 35, draconic: 15 }, rules: true, seven: true });
 });
 
 test('小修：说书人提示里列出这一幕已经成功的检定；海妖之歌写清玩家何时清醒；第一幕金币和情报站价格', () => {

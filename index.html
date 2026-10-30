@@ -2400,8 +2400,8 @@ function nextLine(sc) {
     return "下一个场景：无（这一场结束时 scene_end 为 true" + (conditions.length ? `；必须先${conditions.join("，并")}` : "") + "）";
   }
   const here = state.log.filter(e => e.k === "you" && chKey(e) === curKey()).length;
-  const long = !sc.hub && !sc.campFree && !sc.long && here >= 10 ? `\n（这一场玩家已经回应了 ${here} 次。这一场要办的事办完了，或者玩家已经在往别处走，就推进；不要让线索一个接一个地拖下去。）` : "";
-  return long + "\n可以 advance 到的场景 id：" + ids.map(id => {
+  const long = !sc.hub && !sc.campFree && !sc.long && here >= 10 ? `（这一场玩家已经回应了 ${here} 次。这一场要办的事办完了，或者玩家已经在往别处走，就推进；不要让线索一个接一个地拖下去。）` : "";
+  return (long ? long + "\n" : "") + "可以 advance 到的场景 id：" + ids.map(id => {
     const missing = (sc.goals || []).filter(g => !state.flags[g.flag]).map(g => g.flag);
     return `${id}「${SCENES[id].title}」${sc.gate?.[id] && !sc.gate[id]() ? `（条件还没满足，不能去${missing.length ? "；还缺 " + missing.join("、") : ""}）` : ""}`;
   }).join("、") + "。玩家一动身去这些地方，就在同一轮写 advance（只改 location 不会换场景，下一轮你拿到的还是这一场的锚点）" + hubLine(sc);
@@ -2910,7 +2910,7 @@ function applyGM(d, mode) {
     }
     // 个人任务往前走了一步（不含最后的抉择）：赞同度 +5
     const [sq, si] = questKeys[k] || [];
-    if (sq && !was && state.flags[k] && QUESTS[sq].steps[si]?.flag === k && state.companions[sq].alive) {
+    if (sq && !was && state.flags[k] && QUESTS[sq].steps[si]?.flag === k && state.companions[sq].alive && state.companions[sq].recruited) {
       const c = state.companions[sq]; c.approval = clamp(c.approval + QUEST_STEP_BONUS, -100, 100);
       notes.push([`${PEOPLE[sq].name}赞同 +${QUEST_STEP_BONUS}（个人任务往前走了一步）`, "up"]);
     }
@@ -3392,7 +3392,7 @@ function chooseEnding(id) {
 
 // 场景进入时由代码处理的剧情后果
 const SCENE_ENTER = {
-  // 离开祖坛：主教倒下之后，还锁在石柱上的同伴被救下来
+  // 离开祖坛：主教倒下之后，还锁在石柱上的同伴被救下来（神殿里被掳的，和序幕里被交给教团的）
   altarRescue() {
     for (const id of Object.keys(COMPANIONS)) {
       const c = state.companions[id]; if (!c.taken || !c.alive) continue;
