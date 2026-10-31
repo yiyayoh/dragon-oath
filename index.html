@@ -753,7 +753,7 @@ const SCENES = {
   },
   act2_temple_heart: {
     title: "誓约之心", loc: "誓约神殿 · 核心", bg: "linear-gradient(160deg,#8aa6bc,#2c3a46 60%,#0f1418)", act: 2, camp: false,
-    anchor: "神殿最深处，一颗心脏大小的银色晶体悬在半空，缓缓跳动——“誓约之心”。第三重试炼——牺牲：必须放弃一件珍贵的东西，写 act2.sacrifice：item 一件珍贵物品（同时在 items_remove 里去掉它）、memory 一段记忆（玩家选一段和某位同伴的回忆，那位同伴会察觉你忘了）、draconic 20 点龙化值（程序扣；不够 20 点不能选）。三重试炼都过了，神殿核心展示全部真相（写 act2.revealed=true）：赫斯提雅拆开誓约寄存在七个人身上，是想借宿主重生——赛勒涅是她原本选中的容器。赫斯提雅现身（银发老妇人，鳞片在脸颊上发光），坦诚地提出交易：“把印记交给我选中的人，我会拯救这片海。”在场的同伴们强烈表态（赛勒涅在场时反应最重；她不在场，赫斯提雅会点出她的名字；若是恋人，玩家可以完成她的考验）。就在这时，主教瓦尔多率众杀入（他通过奈雅的情报或奥斯瓦尔德追踪而来）。玩家要在主教抢到之前决定誓约之心怎么处置，写 act2.heart：hestia 交给赫斯提雅、player 自己吸收（龙化值 +30，程序加）、destroyed 交给潮裔销毁（只有 act2.tideborn=ally 时可以）。动手时在 JSON 写 combat 为 temple_raid。不管打没打赢，主教都会从密道撤走，并且掳走一位同伴（由程序决定是谁，你不要写）；没来得及处置的誓约之心也会被他抢走。之后把 advance 设为 act2_end。",
+    anchor: "神殿最深处，一颗心脏大小的银色晶体悬在半空，缓缓跳动——“誓约之心”。第三重试炼——牺牲：必须放弃一件珍贵的东西，写 act2.sacrifice：item 一件珍贵物品（同时在 items_remove 里去掉它）、memory 一段记忆（玩家选一段和某位同伴的回忆，那位同伴会察觉你忘了）、draconic 20 点龙化值（程序扣；不够 20 点不能选）。三重试炼都过了，神殿核心展示全部真相（写 act2.revealed=true）：赫斯提雅拆开誓约寄存在七个人身上，是想借宿主重生——赛勒涅是她原本选中的容器。赫斯提雅现身（银发老妇人，鳞片在脸颊上发光），坦诚地提出交易：“把印记交给我选中的人，我会拯救这片海。”在场的同伴们强烈表态（赛勒涅在场时反应最重；她不在场，赫斯提雅会点出她的名字；若是恋人，玩家可以完成她的考验）。就在这时，主教瓦尔多率众杀入（他通过奈雅的情报或奥斯瓦尔德追踪而来）。玩家要在主教抢到之前决定誓约之心怎么处置，写 act2.heart：hestia 交给赫斯提雅、player 自己吸收（龙化值 +30，程序加）、destroyed 潮裔当场销毁（只有 act2.tideborn=ally 时可以；只有确实已经销毁、晶体不再存在时才写 destroyed，不能只写准备带走或以后销毁）。动手时在 JSON 写 combat 为 temple_raid。不管打没打赢，主教都会从密道撤走；撤离途中，他的伏兵掳走一位同伴（由程序在进入下一场时决定是谁；在程序公布结果之前，不要描写同伴被掳或失踪，也不要提出涉及被掳者的后续行动）；没来得及处置的誓约之心也会被他抢走。之后把 advance 设为 act2_end。",
     next: "act2_end", encounters: ["temple_raid"],
     // 打完主教之后，说书人忘了 advance 也会往下走（玩家先有一轮收拾残局）
     doneWhen: () => state.fought?.temple_raid !== undefined,
@@ -821,7 +821,7 @@ const SCENES = {
   },
   act3_tunnel: {
     title: "熔岩隧道", loc: "烬冠山 · 熔岩隧道", bg: "linear-gradient(160deg,#7a3418,#2a1007 60%,#100503)", act: 3, camp: false,
-    anchor: "山体里的熔岩隧道，热得让人窒息，岩壁上淌着发光的岩浆。带路的是奈雅（她用教团的暗号骗过哨卡）或者鼠王（它和它的鼠群知道每一条缝）。要过的关：躲开巡逻（隐匿 DC 16）、跳过熔岩沟（运动或杂技 DC 15，失败受 3d6 火焰伤害，用 hp 字段）、认出哪条岔路通往祖坛（求生或调查 DC 15）。被发现就要打（写 combat 为 ember_slope）。出口在祖坛的背面：把 advance 设为 act3_altar。",
+    anchor: "山体里的熔岩隧道，热得让人窒息，岩壁上淌着发光的岩浆。带路的是奈雅（她用教团的暗号骗过哨卡）或者鼠王（它和它的鼠群知道每一条缝）。要过的关：躲开巡逻（隐匿 DC 16）、跳过熔岩沟（运动或杂技 DC 15；跳沟检定在 check 中写 hazard: lava_jump，失败时程序结算 3d6 火焰伤害，你不要再用 hp 重复扣血）、认出哪条岔路通往祖坛（求生或调查 DC 15）。被发现就要打（写 combat 为 ember_slope）。出口在祖坛的背面：把 advance 设为 act3_altar。",
     next: ["act3_altar"], encounters: ["ember_slope"], doneWhen: () => state.fought?.ember_slope !== undefined,
   },
   act3_wings: {
@@ -1539,7 +1539,7 @@ const ENCOUNTERS = {
   tavern_ambush: {
     title: "教团袭击", lethal: false,
     startFlags: { "prologue.fight_style": "fought" },
-    brief: "6 名狂信徒（濒死自爆，同区 1d6；被自爆烧死不再连锁）和 1 名烬火术士破门而入；第 3 回合地窖门被撞开，巨鼠涌出，敌我不分",
+    brief: "5 名狂信徒（濒死自爆，同区 1d6；被自爆烧死不再连锁）和 1 名烬火术士破门而入；第 3 回合地窖门被撞开，巨鼠涌出，敌我不分",
     props: "大堂中央的炭盆、头顶的铁吊灯、二楼回廊的酒桶、吧台后的烈酒",
     zones: [
       { n: "大门", adj: [1] },
@@ -1549,7 +1549,7 @@ const ENCOUNTERS = {
       { n: "地窖门", adj: [1, 2] },
     ],
     start: 1, startAt: { vex: 2, kassian: 2 },
-    foes: [["cultist", 4, 0], ["mage", 1, 0], ["cultist", 2, 3]],
+    foes: [["cultist", 4, 0], ["mage", 1, 0], ["cultist", 1, 3]],
     events: [{ round: 3, side: "wild", spawn: [["rat", 3, 4]], text: "地窖门被撞开，一群巨鼠涌了出来，见人就咬！" }],
   },
   rat_king: {
@@ -1736,10 +1736,10 @@ const ENCOUNTERS = {
   },
   ember_king: {
     title: "烬王", lethal: false, final: true,
-    brief: "烬王（生命 300，AC 19）。第一阶段：半身陷在火山口，每回合爪尾三击，并向一名持有者低语（感知 DC 16，失败失神一回合）。生命降到 200 以下升空：近战够不着它，每回合向人最多的区域吐酸 8d6（敏捷 DC 18 减半）；每有一方盟友，就能把它压下来一次（被压下的那一轮可以近战）。生命降到 100 以下它坠落到火山口边缘，战斗停下，玩家做出最终抉择",
+    brief: "烬王（生命 300，AC 19）。第一阶段：半身陷在火山口，每回合爪尾三击，并向一名持有者低语（感知 DC 16，失败失神一回合）。生命降到 200 以下升空：近战够不着它，每回合向人最多的区域吐酸 8d6（敏捷 DC 18 减半）；每有一方盟友，就能把它压下来一次（被压下的那一轮可以近战）；盟友支援用尽后，它每隔一轮俯冲到近战范围。生命降到 100 以下它坠落到火山口边缘，战斗停下，玩家做出最终抉择",
     props: "火山口的熔岩湖、崩裂的黑曜石平台、烬王的锁链残骸、盟友的弩炮和船炮（第二阶段）",
     zones: [
-      { n: "平台边缘", adj: [1] },
+      { n: "平台边缘", tags: ["exit"], adj: [1] },
       { n: "崩裂的平台", adj: [0, 2, 3] },
       { n: "锁链残骸", tags: ["cover"], adj: [1] },
       { n: "火山口", adj: [1] },
@@ -2015,8 +2015,12 @@ function tidyLog(s) {
   let cur = Object.keys(SCENES)[0];
   for (const e of s.log) { if (e.k === "chapter" && byTitle[e.t]) cur = byTitle[e.t]; if (!e.s) e.s = cur; }
 }
+function restoreCombatExit(s) {
+  const c = s.combat;
+  if (c?.id === "ember_king" && !c.zones[0].tags.includes("exit")) c.zones[0].tags.push("exit");
+}
 function loadState(s) {
-  state = s; tidyLog(state); catchUpLevel();
+  state = s; restoreCombatExit(state); tidyLog(state); catchUpLevel();
   lastAction = null; pick = null; cbGen++;
   closeModal(); render();
   if (state.pendingCheck) openDice(); else if (state.combat) advanceCombat(); else if (state.levelNote) openLevelUp();
@@ -2214,7 +2218,7 @@ const SYSTEM = `你是奇幻跑团游戏《醉龙酒馆：龙誓》的游戏主�
 - 战斗之外的一次性攻击（偷袭熟睡的守卫等）用 skill "attack" 检定，DC 写目标的 AC。
 - 失败不能让剧情卡死，而是带来代价或另一条路。
 - 你不计算数值。所有数值变化通过 JSON 提出，由程序执行。
-- 赞同度：只有在场的同伴会变化，必须按同伴的喜恶判断。小事 ±2~4；真心交谈、一起扛过难关、照着对方在意的事做选择 +4~8；重大选择 ±8~15。同伴是会被慢慢打动的：玩家一直善待、照顾某人时，不要很多轮都不给；营地事件、个人任务、恋爱都按赞同度 20 / 30 / 40 / 60 开放，给得太省，这些内容玩家就永远看不到。
+- 赞同度：只有在场的同伴会变化，必须按同伴的喜恶判断。小事 ±2~4；真心交谈、一起扛过难关、照着对方在意的事做选择 +4~8；重大选择 ±8~15。同伴是会被慢慢打动的：玩家一直善待、照顾某人时，不要很多轮都不给；营地事件、个人任务、恋爱按不同赞同度逐步开放，给得太省，这些内容玩家就永远看不到。
 - 当玩家的举动符合其背景的“灵感条件”时，可给 inspiration: 1。
 
 【输出格式】先写叙述正文（纯文本，可分段，不要标题、不要 Markdown）。然后单独一行写 @@@ 。然后写一个 JSON 对象（不要代码块），没有变化的字段可以省略：
@@ -2227,7 +2231,7 @@ const SYSTEM = `你是奇幻跑团游戏《醉龙酒馆：龙誓》的游戏主�
 - advance：只能填场景资料里写明的下一个场景 id。scene_end 只在【当前场景】写明“这一场结束时 scene_end 为 true”的场景、或者写明是“插曲”的场景（单独相处、梦）使用，别的场景不要写。
 - combat：开战时写遭遇 id 字符串，例如 "combat":"tavern_ambush"。战斗中即兴行动的效果格式见【即兴行动规则】。
 - remember：本轮发生了某个角色会长久记住的事时写，每轮最多 2 条，每条不超过 40 字，从该角色的角度写关于玩家的事实。只记真正要紧的：承诺、谎言、秘密、恩情、冒犯、救命、亲密时刻、重大分歧。闲聊不要记。id 可用：${MEM_IDS.join(" ")}。
-- romance：恋爱推进，[{"id":"selene","to":"hint"}]。阶段 none → hint（暧昧）→ together（恋人）→ vowed（誓约），一次只能推进一格；门槛是赞同度 40 / 60 / 80，誓约还要先通过个人任务的考验。气氛真的到了才写，不是每次都要推进。分手写 "to":"none"。
+- romance：恋爱推进，[{"id":"selene","to":"hint"}]。阶段 none → hint（暧昧）→ together（恋人）→ vowed（誓约），一次只能推进一格；门槛是赞同度 25 / 40 / 50，誓约还要先通过个人任务的考验。气氛真的到了才写，不是每次都要推进。分手写 "to":"none"。
 - caught_lie：玩家被同伴发现撒谎时写，["selene"]。
 - consent：玩家已有恋人又和别人走近时，现任表态：[{"id":"现任","for":"新对象","ok":true}]，不接受写 false。
 - relation：同伴之间关系变化，[{"a":"selene","b":"vex","delta":3}]，每次最多 ±10。
@@ -2272,7 +2276,7 @@ function questBrief(id) {
     if (why) t += `（现在还不能推进：${why}）`;
     const note = q.note?.(); if (note) t += `。${note}`;
   }
-  if (c.romance === "together" && !c.tested) t += `
+  if (["hint", "together"].includes(c.romance) && !c.tested) t += `
   恋爱的考验：${q.test}。玩家做到时写 quest.${id}.tested=true，之后才能立誓约`;
   return t;
 }
@@ -2871,8 +2875,8 @@ function applyGM(d, mode) {
     if (k === "act1.chart" && !state.flags["act1.key"] && !d.flags["act1.key"]) continue; // 没有守誓人的钥匙打不开地窖暗格
     if (questKeys[k]) { const why = questBlock(k); if (why) { console.warn("个人任务标记被丢弃", k, why); continue; } }
     const tid = /^quest\.(\w+)\.tested$/.exec(k)?.[1];
-    if (tid) { // 恋爱的考验：在一起之后才算数
-      const c = state.companions[tid]; if (v && c?.romance === "together" && !c.tested) { c.tested = true; state.flags[k] = true; notes.push([`${PEOPLE[tid].name}看到了你的心意`, "up"]); }
+    if (tid) { // 暧昧或恋人阶段完成的考验都保留
+      const c = state.companions[tid]; if (v && ["hint", "together"].includes(c?.romance) && !c.tested) { c.tested = true; state.flags[k] = true; notes.push([`${PEOPLE[tid].name}看到了你的心意`, "up"]); }
       continue;
     }
     const sid = /^side\.(\w+)$/.exec(k)?.[1];
@@ -2908,7 +2912,7 @@ function applyGM(d, mode) {
       state.flags[k] = v;
       const [qid] = questKeys[k] || []; if (qid && QUESTS[qid].choice.flag === k) QUESTS[qid].choice.on?.[v]?.(state.companions[qid], notes);
     }
-    // 个人任务往前走了一步（不含最后的抉择）：赞同度 +5
+    // 个人任务往前走了一步（不含最后的抉择）：赞同度 +7
     const [sq, si] = questKeys[k] || [];
     if (sq && !was && state.flags[k] && QUESTS[sq].steps[si]?.flag === k && state.companions[sq].alive && state.companions[sq].recruited) {
       const c = state.companions[sq]; c.approval = clamp(c.approval + QUEST_STEP_BONUS, -100, 100);
@@ -3031,6 +3035,7 @@ function applyGM(d, mode) {
   if (ck && typeof ck === "object" && validCheckKey(String(ck.skill || ""))) {
     const who = ck.who === "player" || !ck.who ? "player" : (party().includes(ck.who) || present().includes(ck.who) ? ck.who : "player");
     state.pendingCheck = { skill: String(ck.skill), dc: clamp(Math.round(Number(ck.dc) || 12), 5, 30), who, reason: str(ck.reason, 60), adv: !!ck.advantage, dis: !!ck.disadvantage };
+    if (state.scene === "act3_tunnel" && !inCb && ["athletics", "acrobatics"].includes(ck.skill) && ck.hazard === "lava_jump") state.pendingCheck.hazard = "lava_jump";
     state.suggestions = [];
   } else if (!inCb) {
     state.suggestions = (Array.isArray(d.suggestions) ? d.suggestions : []).slice(0, 4).map(s =>
@@ -3194,19 +3199,19 @@ const EPILOGUES = {
     ending: {
       egg: "她守着新生的银龙，把骑士团的旧名册收进箱子，开始写一本新的；第一次觉得誓言可以不用血来续。",
       seven: "七片印记各自留下，她成了新守誓人的第一位见证者，把旧徽章熔了，重铸成七枚小扣。",
-      hestia: "若被选作容器的是她，她的身体睡在神殿深处，晨星骑士团的人轮流守夜；若容器是别人，她守着重生的银龙，把那句等了一百年的誓言说完。",
+      hestia: "她守着借玩家身体重生的银龙，把那句等了一百年的誓言说完；玩家的灵魂沉睡在那具身体里。",
       mortal: "印记消失后，她把剑挂上墙，开始教港口的年轻人怎么拿剑、什么时候不该拔剑；若她已放弃誓言，就一个人沿着海岸走，没人知道她去了哪里。",
       dragon: "她没有向你拔剑，也没有留下；旧徽章放在酒馆桌上，压着一张没写完的信，她去了你看不见的地方。",
-      crown: "她死在冲向你的路上，剑断了，手还握着半截；最后的晨星骑士没有输给龙，是输给了你。",
+      crown: "她拒绝效忠烬王，带着晨星徽章离开，继续保护幸存者。",
       fall: "她最后一个上船，站在船尾点了一遍所有人的名字，念到自己的时候停了一下。",
     },
     lover: {
       egg: "她和你一起抚养幼龙，教它骑士礼，也教它怎么在酒馆里偷吃面包；她第一次有了家这个字的具体样子。",
       seven: "你们在醉龙酒馆立下新的誓约，两份誓词写在同一条旧羊皮上，她签名字的时候手很稳。",
-      hestia: "若容器是你，她每天来神殿坐一会儿，跟你说话，像你听得见；若容器是她，她最后的要求是让你别等。",
+      hestia: "她面对借你身体重生的赫斯提雅，轻声向沉睡的你说话，像你听得见。",
       mortal: "你们在海边住下，她学着做一个普通人：种花、睡懒觉、为一件小事生气；她说这比当骑士难。",
       dragon: "她来见你最后一面，没带剑；她说她还是那个赛勒涅，只是不能再站在你身边了。",
-      crown: "她来杀你，失败了；倒下前她叫了你的名字，不是烬王代言人的名字。",
+      crown: "她来见你，恳求你回头；最终她带着断裂的誓言离开，仍叫着你的名字。",
       fall: "她在逃难的船上替人包扎，整夜没睡；天亮时她把手放在你手背上，说至少我们还活着。",
     },
     choice: {
@@ -3257,7 +3262,7 @@ const EPILOGUES = {
       hestia: "若容器是他，他睡在神殿里，脸上没有痛苦；若容器是别人，他在神殿外支了一口锅，给守夜的人做饭。",
       mortal: "他收留了港口战争里的孤儿，教他们做饭、识字、给死者念名字；他不再碰拳头。",
       dragon: "他没有留下，也没有骂你；他走之前把贝壳护身符挂在酒馆门上，说海会记得。",
-      crown: "他没有拿武器来见你，只带着一袋给难民的干粮；后来有人说他死在去难民营的路上。",
+      crown: "他没有拿武器来见你，只带着一袋给难民的干粮；他继续照顾逃难的人。",
       fall: "他守着最后一个伤员上船，自己没走；有人说看见他在火里跪着祈祷。",
     },
     lover: {
@@ -3287,7 +3292,7 @@ const EPILOGUES = {
       hestia: "若容器是他，他睡着前还在讲笑话；若容器是别人，他给重生的银龙敬了一杯，说这龙比传说里能喝。",
       mortal: "他回了铁炉堡，或者回那片废墟，把能修的都修了；每年托人给酒馆送一桶酒，桶上不写名字。",
       dragon: "他拎着斧子来见你，说矮人不给龙下跪；他没有动手，也没有再叫你朋友。",
-      crown: "他提着砍卷了刃的斧子冲上烬冠，倒下前最后一句还是笑话，没人笑得出来。",
+      crown: "他提着砍卷了刃的斧子冲上烬冠，最终撤离，带幸存者远离战火。",
       fall: "他守在地窖门口，让女人和孩子先走；等火烧过来时，他还在唱战歌。",
     },
     lover: {
@@ -3296,7 +3301,7 @@ const EPILOGUES = {
       hestia: "若容器是你，他每天带一壶酒来，坐一会儿，喝一半，留一半；若容器是他，他最后说别哭，酒里有的是眼泪。",
       mortal: "你们在山脚下开了间小酒馆，他酿酒，你管账；他终于不用在酒里藏眼泪了。",
       dragon: "他最后一次来看你，带着一桶酒，喝完就走；他说他认识的那个你，已经死在火山口了。",
-      crown: "他冲上来的时候喝醉了，斧子却拿得很稳；他没能杀你，倒在你脚边。",
+      crown: "他试图阻止你，最后撤离；临走时留下一个没人笑得出来的笑话。",
       fall: "他把最后一批人推上船，自己留下来关门；门板上还刻着你们的名字。",
     },
     choice: {
@@ -3371,11 +3376,15 @@ const EPILOGUES = {
     },
   },
 };
+function loverEpilogue(cid, end) {
+  if (end === "seven" && state.companions[cid].romance !== "vowed") return `你和${PEOPLE[cid].name}以恋人身份继续相伴，也与其他同伴共同守护誓约。`;
+  return EPILOGUES[cid]?.lover?.[end];
+}
 function epilogueNote(cid, end) {
   const ep = EPILOGUES[cid], c = state.companions[cid]; if (!ep) return "";
   const gone = !c.alive ? "dead" : c.betrayed ? "betrayed" : c.taken ? "taken" : "";
   const pick = state.flags[QUESTS[cid].choice.flag];
-  const bits = gone ? [ep.gone?.[gone]] : [ep.ending?.[end], isLover(cid) && ep.lover?.[end], pick && ep.choice?.[pick]];
+  const bits = gone ? [ep.gone?.[gone]] : [ep.ending?.[end], isLover(cid) && loverEpilogue(cid, end), pick && ep.choice?.[pick]];
   const t = bits.filter(Boolean).join("；");
   return t ? `（尾声素材：${t}）` : "";
 }
@@ -3387,7 +3396,7 @@ function chooseEnding(id) {
   const lines = Object.keys(COMPANIONS).filter(cid => inAct(cid) && (state.companions[cid].recruited || state.companions[cid].taken || state.companions[cid].betrayed || !state.companions[cid].alive))
     .map(cid => { const c = state.companions[cid], q = QUESTS[cid], pick = state.flags[q.choice.flag];
       return `${PEOPLE[cid].name}：${!c.alive ? "已死" : c.betrayed ? "投向了烬王" : c.taken ? "仍被困" : "同行"}，赞同 ${c.approval}${c.romance !== "none" ? "，恋爱：" + ROMANCE[c.romance].name : ""}，个人任务：${pick ? q.choice.options[pick] : "没有了结"}${epilogueNote(cid, id)}`; });
-  gm(`（最终结局：${e.name}——${e.text}${e.act ? "玩家的抉择是：" + e.act + "。" : ""}按这个结局写终章：先写结局发生的那一刻，再为每位同伴写一段尾声（由结局、个人任务结果、赞同度决定）；恋人的尾声放在最后、单独成段，篇幅至少是其他同伴的两倍，写你们两个人之间具体的画面和以后的日子。同伴情况：${lines.join("；")}。括号里的尾声素材是参考，要按实际发生过的事改写，和剧情对不上的就别用。）`, null);
+  gm(`（最终结局：${e.name}——${e.text}${e.act ? "玩家的抉择是：" + e.act + "。" : ""}${id === "hestia" ? "赫斯提雅借玩家唯一的身体重生，玩家的灵魂在同一具身体里沉睡；不要另写一具沉睡的玩家身体。" : ""}按这个结局写终章：先写结局发生的那一刻，再为每位同伴写一段尾声（由结局、个人任务结果、赞同度决定）；恋人的尾声放在最后、单独成段，篇幅至少是其他同伴的两倍，写你们两个人之间具体的画面和以后的日子。同伴情况：${lines.join("；")}。同伴的生死以这里的状态为准，同行的人仍然活着，不要在尾声中写他们死亡。括号里的尾声素材是参考，要按实际发生过的事改写，和剧情对不上的就别用。）`, null);
 }
 
 // 场景进入时由代码处理的剧情后果
@@ -3419,7 +3428,7 @@ const SCENE_ENTER = {
     if (pick) {
       const c = state.companions[pick]; c.taken = true; c.recruited = false;
       remember(pick, "在誓约神殿被主教瓦尔多掳走");
-      push("sys", `主教瓦尔多掳走了${PEOPLE[pick].name}`, { cls: "appr-down" });
+      push("sys", `撤离神殿途中，主教瓦尔多的伏兵袭来，掳走了${PEOPLE[pick].name}`, { cls: "appr-down" });
     }
   },
 };
@@ -3456,9 +3465,9 @@ function nextAct() {
    夜谈和恋爱的台词全交给说书人；代码只管：事件给的“处境”素材、恋爱阶段一次一格、赞同度门槛、角色底线、多人恋爱的同意与秘密。
    ========================================================= */
 const ROMANCE = {
-  none: { name: "", next: "hint", need: 40 },
-  hint: { name: "暧昧", next: "together", need: 60 },
-  together: { name: "恋人", next: "vowed", need: 80 },
+  none: { name: "", next: "hint", need: 25 },
+  hint: { name: "暧昧", next: "together", need: 40 },
+  together: { name: "恋人", next: "vowed", need: 50 },
   vowed: { name: "誓约" },
 };
 const ROMANCE_ORDER = ["none", "hint", "together", "vowed"];
@@ -3484,57 +3493,57 @@ const CAMP_EVENTS = [
   { id: "first_night", group: true, kind: "main", title: "壁炉边的第一夜", when: () => state.scene === "prologue_4",
     seed: "袭击过后的深夜，酒馆一片狼藉，大家围着壁炉坐着，谁都睡不着。每个人掌心的印记还在隐隐发烫。有人想聊那只银色的眼睛和看到的记忆碎片，有人只想喝一杯，有人在包扎伤口。这是大家第一次以“同伴”的身份坐在一起。" },
   // 恋爱的关键场景：不在篝火边聊，而是跟着对方走开，进入单独的小场景（scene，见 SCENES 的 love_*）
-  { id: "selene_scene", who: "selene", kind: "romance", scene: "love_selene", title: "月下练剑", when: c => c.approval >= 40 && ["none", "hint"].includes(c.romance), seed: "（单独的场景：月下练剑）" },
-  { id: "vex_scene", who: "vex", kind: "romance", scene: "love_vex", title: "屋顶烟火", when: c => c.approval >= 55 && c.romance === "hint", seed: "（单独的场景：屋顶烟火）" },
-  { id: "kassian_scene", who: "kassian", kind: "romance", scene: "love_kassian", title: "海边篝火", when: c => c.approval >= 40 && ["none", "hint"].includes(c.romance), seed: "（单独的场景：海边篝火）" },
-  { id: "borin_scene", who: "borin", kind: "romance", scene: "love_borin", title: "屋顶醉谈", when: c => c.approval >= 40 && ["none", "hint"].includes(c.romance), seed: "（单独的场景：屋顶醉谈）" },
-  { id: "lyra_scene", who: "lyra", kind: "romance", scene: "love_lyra", title: "深夜研究", when: c => c.approval >= 40 && ["none", "hint"].includes(c.romance), seed: "（单独的场景：深夜研究）" },
-  { id: "naia_scene", who: "naia", kind: "romance", scene: "love_naia", title: "哪一张脸", when: c => naiaTrue() && c.approval >= 50 && ["none", "hint"].includes(c.romance), seed: "（单独的场景：哪一张脸）" },
+  { id: "selene_scene", who: "selene", kind: "romance", scene: "love_selene", title: "月下练剑", when: c => c.approval >= ROMANCE.none.need && ["none", "hint"].includes(c.romance), seed: "（单独的场景：月下练剑）" },
+  { id: "vex_scene", who: "vex", kind: "romance", scene: "love_vex", title: "屋顶烟火", when: c => c.approval >= 35 && c.romance === "hint", seed: "（单独的场景：屋顶烟火）" },
+  { id: "kassian_scene", who: "kassian", kind: "romance", scene: "love_kassian", title: "海边篝火", when: c => c.approval >= ROMANCE.none.need && ["none", "hint"].includes(c.romance), seed: "（单独的场景：海边篝火）" },
+  { id: "borin_scene", who: "borin", kind: "romance", scene: "love_borin", title: "屋顶醉谈", when: c => c.approval >= ROMANCE.none.need && ["none", "hint"].includes(c.romance), seed: "（单独的场景：屋顶醉谈）" },
+  { id: "lyra_scene", who: "lyra", kind: "romance", scene: "love_lyra", title: "深夜研究", when: c => c.approval >= ROMANCE.none.need && ["none", "hint"].includes(c.romance), seed: "（单独的场景：深夜研究）" },
+  { id: "naia_scene", who: "naia", kind: "romance", scene: "love_naia", title: "哪一张脸", when: c => naiaTrue() && c.approval >= 35 && ["none", "hint"].includes(c.romance), seed: "（单独的场景：哪一张脸）" },
   { id: "selene_friend", who: "selene", kind: "friend", when: c => c.approval >= 20,
     seed: "赛勒涅独自擦拭一枚磨旧的骑士徽章。素材：晨星骑士团一夜之间消亡、她等了百年的召唤终于来了；她不习惯被人关心，但会认真回答认真的问题。" },
-  { id: "selene_hint", who: "selene", kind: "romance", when: c => c.approval >= 40 && c.romance === "none" && !(state.campSeen || []).includes("selene_scene"),
+  { id: "selene_hint", who: "selene", kind: "romance", when: c => c.approval >= ROMANCE.none.need && c.romance === "none" && !(state.campSeen || []).includes("selene_scene"),
     seed: "夜深，赛勒涅睡不着，独自在院子里练剑。她开始在意你，但自己还没意识到，也不习惯被人靠近。素材：教你骑士礼；第一次在你面前笑出来；“誓言不是枷锁，是我选择站立的地方。”" },
-  { id: "selene_confess", who: "selene", kind: "romance", when: c => c.approval >= 60 && c.romance === "hint",
+  { id: "selene_confess", who: "selene", kind: "romance", when: c => c.approval >= ROMANCE.hint.need && c.romance === "hint",
     seed: "赛勒涅主动找你，表情比平时更紧张。她心里有一个问题：“你会对我说谎吗？”如果她曾发现你撒谎，她会难过地退回去。" },
   { id: "selene_lovers", who: "selene", kind: "romance", when: c => c.romance === "together",
     seed: "成为恋人后的某个夜晚。赛勒涅还在学着怎么做恋人：笨拙、认真，偶尔冒出一句让人意外的情话，说完自己先脸红。" },
   { id: "vex_friend", who: "vex", kind: "friend", when: c => c.approval >= 20,
     seed: "维克斯在火边数钱，数着数着望向港口发呆。素材：他有个妹妹；他嘴上说一切都是为了钱。" },
-  { id: "vex_hint", who: "vex", kind: "romance", when: c => c.approval >= 40 && c.romance === "none" && !(state.campSeen || []).includes("vex_scene"),
+  { id: "vex_hint", who: "vex", kind: "romance", when: c => c.approval >= ROMANCE.none.need && c.romance === "none" && !(state.campSeen || []).includes("vex_scene"),
     seed: "维克斯拉你到码头尽头的木桩上坐着，教你怎么一眼看出谁是扒手。他平时的调情油滑熟练，今晚却有点认真，玩笑开到一半会停下来。" },
-  { id: "vex_confess", who: "vex", kind: "romance", when: c => c.approval >= 60 && c.romance === "hint",
+  { id: "vex_confess", who: "vex", kind: "romance", when: c => c.approval >= ROMANCE.hint.need && c.romance === "hint",
     seed: "维克斯少见地没有开玩笑。素材：他承认从来没有人等过他；他怕自己只是在演一出很像真心的戏。" },
   { id: "vex_lovers", who: "vex", kind: "romance", when: c => c.romance === "together",
     seed: "成为恋人后的某个夜晚。维克斯又恢复了油嘴滑舌，但会在你睡着后偷偷看你很久。" },
   { id: "kassian_friend", who: "kassian", kind: "friend", when: c => c.approval >= 20,
     seed: "卡西安在火边烤点心，给你留了一块。素材：他手掌上的老伤；他不愿谈过去，但会讲海洋女神的故事。" },
-  { id: "kassian_hint", who: "kassian", kind: "romance", when: c => c.approval >= 40 && c.romance === "none" && !(state.campSeen || []).includes("kassian_scene"),
+  { id: "kassian_hint", who: "kassian", kind: "romance", when: c => c.approval >= ROMANCE.none.need && c.romance === "none" && !(state.campSeen || []).includes("kassian_scene"),
     seed: "卡西安注意到你身上的伤，坚持替你包扎，手很轻。素材：他教你唱一首水手的潮歌；他会因为离你太近而手足无措。" },
-  { id: "kassian_confess", who: "kassian", kind: "romance", when: c => c.approval >= 60 && c.romance === "hint",
+  { id: "kassian_confess", who: "kassian", kind: "romance", when: c => c.approval >= ROMANCE.hint.need && c.romance === "hint",
     seed: "篝火将熄，卡西安终于开口讲起那场打死好友的比赛。素材：他想知道你还愿不愿意靠近一双杀过人的手。" },
   { id: "kassian_lovers", who: "kassian", kind: "romance", when: c => c.romance === "together",
     seed: "成为恋人后的某个夜晚。卡西安守着篝火让你先睡，怕自己的力气弄疼你，所有的亲近都小心翼翼。" },
   { id: "borin_friend", who: "borin", kind: "friend", when: c => c.approval >= 20,
     seed: "博林举着酒杯讲铁炉堡的笑话，讲着讲着停住了。素材：他提到哥哥达林，然后用一个更大声的笑话盖过去。" },
-  { id: "borin_hint", who: "borin", kind: "romance", when: c => c.approval >= 40 && c.romance === "none" && !(state.campSeen || []).includes("borin_scene"),
+  { id: "borin_hint", who: "borin", kind: "romance", when: c => c.approval >= ROMANCE.none.need && c.romance === "none" && !(state.campSeen || []).includes("borin_scene"),
     seed: "博林喝多了，拉你到屋顶看星星。平时的笑话今晚讲不下去，醉意让他比清醒时胆大。" },
-  { id: "borin_confess", who: "borin", kind: "romance", when: c => c.approval >= 60 && c.romance === "hint",
+  { id: "borin_confess", who: "borin", kind: "romance", when: c => c.approval >= ROMANCE.hint.need && c.romance === "hint",
     seed: "博林没有喝酒，这本身就很反常。素材：他第一次在人前哭，说起哥哥，也说起你。" },
   { id: "borin_lovers", who: "borin", kind: "romance", when: c => c.romance === "together",
     seed: "成为恋人后的某个夜晚。博林笨拙又真诚：喝醉时胆子大，清醒时反而脸红；他在考虑要不要为你少喝一点。" },
   { id: "lyra_friend", who: "lyra", kind: "friend", when: c => c.approval >= 20,
     seed: "莉拉借着火光翻她那本烧焦了角的笔记，嘴里念念有词，被打扰时先嫌你烦，再忍不住给你讲印记的新发现。素材：她被学院除名的那天；失踪的导师奥斯瓦尔德是唯一替她说过话的人。" },
-  { id: "lyra_hint", who: "lyra", kind: "romance", when: c => c.approval >= 40 && c.romance === "none" && !(state.campSeen || []).includes("lyra_scene"),
+  { id: "lyra_hint", who: "lyra", kind: "romance", when: c => c.approval >= ROMANCE.none.need && c.romance === "none" && !(state.campSeen || []).includes("lyra_scene"),
     seed: "深夜，莉拉拉你一起研究两人掌心的印记，靠得很近，讲着讲着不小心靠在你肩上睡着了。醒来后她会嘴硬地否认，耳朵却红了。" },
-  { id: "lyra_confess", who: "lyra", kind: "romance", when: c => c.approval >= 60 && c.romance === "hint",
+  { id: "lyra_confess", who: "lyra", kind: "romance", when: c => c.approval >= ROMANCE.hint.need && c.romance === "hint",
     seed: "莉拉罕见地没带书来找你。素材：她最怕的是被人当成好用的工具；她想知道你在意的是她，还是她能做到的事。如果她曾发现你撒谎，她会冷着脸走开。" },
   { id: "lyra_lovers", who: "lyra", kind: "romance", when: c => c.romance === "together",
     seed: "成为恋人后的某个夜晚。莉拉还是刻薄，但会把最好的位置让给你，偷偷把你的名字写进笔记的页边。" },
   { id: "naia_friend", who: "naia", kind: "friend", when: c => c.approval >= 20,
     seed: "米拉/奈雅抱着琴在火边即兴编歌，歌里藏着关于你的小玩笑。素材：她会反问你喜欢什么、想要什么，问得太认真，像在替自己找答案；如果身份还没暴露，她的谎言之下有一闪而过的疲惫。" },
-  { id: "naia_hint", who: "naia", kind: "romance", when: c => c.approval >= 40 && c.romance === "none" && !(state.campSeen || []).includes("naia_scene"),
+  { id: "naia_hint", who: "naia", kind: "romance", when: c => c.approval >= ROMANCE.none.need && c.romance === "none" && !(state.campSeen || []).includes("naia_scene"),
     seed: "她邀你在月光下跳一支舞，一边跳一边模仿别人的样子逗你笑，最后停下来，用自己（或她以为是自己）的样子看着你。" },
-  { id: "naia_confess", who: "naia", kind: "romance", when: c => c.approval >= 60 && c.romance === "hint",
+  { id: "naia_confess", who: "naia", kind: "romance", when: c => c.approval >= ROMANCE.hint.need && c.romance === "hint",
     seed: "她第一次以真面目（灰白皮肤、水银色头发、乳白的眼睛）站在你面前，问：“你喜欢的是哪一张脸？”回答“哪张都是你”或“你自己想用的那张”能打动她。如果身份还没暴露，这一幕可以改成她差一点就要说出真相。" },
   { id: "naia_lovers", who: "naia", kind: "romance", when: c => c.romance === "together",
     seed: "成为恋人后的某个夜晚。她会按你的喜好变换样子，又会突然问你：“如果我不变了，你还会这样看我吗？”" },
@@ -3657,37 +3666,37 @@ const CAMP_EVENTS = [
     seed: "最后一夜，赛勒涅把晨星骑士团的阵亡名册摊在酒馆后厨的桌上，用一块湿布一遍遍擦那面旧盾。明天她要在最前面。按 quest.selene 分素材：reforged——她已经在新誓词的草稿上划改了很多遍，想让玩家在天亮前听一遍，问新的骑士团第一件事该守什么；hidden——真相被她锁进盒子，她不确定为了让人继续战斗而隐瞒算不算另一种背叛，可能把钥匙交给玩家；oathbreaker——剑靠在墙角，她不再称自己为骑士，语气反而轻了，问一个人卸下誓言之后还剩下什么；还没了结——她把名册推给玩家，说打完再决定，请玩家替她保管日记。赞同 ≥ 60 时她会请玩家明天站在她身侧，不是身后；低于 20 时她只交代阵型和遗物，不谈私事。可托付：名册、旧徽章、她若倒下后想让人念的名字。" },
   { id: "selene_final", who: "selene", kind: "farewell", title: "最后的夜 · 赛勒涅",
     when: c => state.scene === "act3_whisper" && isLover("selene"),
-    seed: "最后一夜，赛勒涅在酒馆后院等到所有人都睡了。她穿好盔甲，却没戴徽章，手里是一张写满划改的新誓词。她不是来告别的。素材：她可以把誓约说给玩家一个人听——不是骑士团的誓词，而是她自己选的几句话；若 c.tested 为真、赞同 ≥ 80，可以推进到 vowed，程序会检查；若考验还没过，她会说打完再立，不逼玩家今晚给答案。也可以分手：她承认自己可能活不过明天，不想用一句誓言绑住玩家，把徽章留下，请玩家记住她是一个做过选择的人，而不是一把剑。亲密：隔着护手握住玩家的手、额头相抵、一个很轻的吻；她不会说漂亮话，会记住玩家说过的每一句。" },
+    seed: "最后一夜，赛勒涅在酒馆后院等到所有人都睡了。她穿好盔甲，却没戴徽章，手里是一张写满划改的新誓词。她不是来告别的。素材：她可以把誓约说给玩家一个人听——不是骑士团的誓词，而是她自己选的几句话；若 c.tested 为真、赞同 ≥ 50，可以推进到 vowed，程序会检查；若考验还没过，她会说打完再立，不逼玩家今晚给答案。也可以分手：她承认自己可能活不过明天，不想用一句誓言绑住玩家，把徽章留下，请玩家记住她是一个做过选择的人，而不是一把剑。亲密：隔着护手握住玩家的手、额头相抵、一个很轻的吻；她不会说漂亮话，会记住玩家说过的每一句。" },
   { id: "vex_farewell", who: "vex", kind: "farewell",
     when: c => state.scene === "act3_whisper" && !isLover("vex"),
     seed: "最后一夜，维克斯在地窖清点他藏起来的东西：一小袋金币、几把飞刀、一颗用布包着的龙蛋（如果还在他手里），莉丝（如果救回来了）在楼上睡着了。按 quest.vex 分素材：sold——莉丝回来了，但她知道哥哥拿什么换的，他正在练习怎么跟她开口，问玩家他是不是还是原来那个人；stormed——莉丝和蛋都保住了，黑潮会悬赏他的脑袋，他嘴上说打完就带妹妹出海，手却一直在摸刀；alone——他带着莉丝回来了，绝口不提代价，只托玩家万一他回不来就照看莉丝；还没了结——债和蛋还压着，他开玩笑说要不今晚就跑，笑完自己先沉默。赞同 ≥ 60 时他会把一枚磨亮的铜币塞给玩家，说是好运，让玩家先替他收着；低于 20 时他嘻嘻哈哈，把真心话藏在玩笑后面。可托付：一张写在餐巾纸上的遗嘱、他欠过的人名单、给莉丝的一封信。" },
   { id: "vex_final", who: "vex", kind: "farewell", title: "最后的夜 · 维克斯",
     when: c => state.scene === "act3_whisper" && isLover("vex"),
-    seed: "最后一夜，维克斯把玩家拉上酒馆屋顶，楼下是避难所最后一盏灯。他没有烟火了，只有一瓶偷来的劣酒和一张写满字的餐巾纸。素材：那是一份他自己拟的契约，条款全是胡闹（谁洗碗、谁先死、赌债怎么分），最后一条是空的，留给玩家填；若 c.tested 为真、赞同 ≥ 80，可以立誓约——他会紧张到把酒洒了，嘴上还说这是计划的一部分。也可以分手：他忽然说自己是灾星，跟着谁谁倒霉，想先把玩家推开；或者他承认自己还不会留下这件事，请玩家别等他。亲密：尾巴绕住玩家的手腕、用玩笑开头的一个吻、笑到一半突然认真。" },
+    seed: "最后一夜，维克斯把玩家拉上酒馆屋顶，楼下是避难所最后一盏灯。他没有烟火了，只有一瓶偷来的劣酒和一张写满字的餐巾纸。素材：那是一份他自己拟的契约，条款全是胡闹（谁洗碗、谁先死、赌债怎么分），最后一条是空的，留给玩家填；若 c.tested 为真、赞同 ≥ 50，可以立誓约——他会紧张到把酒洒了，嘴上还说这是计划的一部分。也可以分手：他忽然说自己是灾星，跟着谁谁倒霉，想先把玩家推开；或者他承认自己还不会留下这件事，请玩家别等他。亲密：尾巴绕住玩家的手腕、用玩笑开头的一个吻、笑到一半突然认真。" },
   { id: "kassian_farewell", who: "kassian", kind: "farewell",
     when: c => state.scene === "act3_whisper" && !isLover("kassian"),
     seed: "最后一夜，卡西安在酒馆后厨烤最后一炉面包，灶台上摆着一小堆贝壳和一张写满名字的纸——他记得的每一个死者。按 quest.kassian 分素材：exposed——阿登带着证据站在你们这边，卡西安的名声洗清了，但他还是想给死去的好友立一块碑，问玩家碑上该刻什么；spared——他放过了阿登，少年没有原谅他，他也不指望，只问宽恕是不是一定要换来原谅；killed_eel——老鳗死了，他的誓言也裂了，他说不清自己还算不算牧师，请玩家明天看着他，别让他开始享受杀人；还没了结——旧账还压着，他请玩家明天站在他能看见的地方。赞同 ≥ 60 时他会承认自己怕失去玩家，手上还在揉面；低于 20 时他客气、忙碌，把话都咽回去。可托付：一袋给难民的干粮、那串贝壳、他母亲留下的潮歌。" },
   { id: "kassian_final", who: "kassian", kind: "farewell", title: "最后的夜 · 卡西安",
     when: c => state.scene === "act3_whisper" && isLover("kassian"),
-    seed: "最后一夜，卡西安在酒馆后厨给玩家留了一碗热汤和一小碟盐，旁边是一张叠好的渔网。他说海上的人结婚不用戒指，用一张网把两个人的手缠在一起。素材：若 c.tested 为真、赞同 ≥ 80，他可以在灶火前立誓约——誓词很短，像祈祷，也像请求玩家允许他继续温柔；他手很稳，声音却会抖。也可以分手：他觉得自己这双手杀过太多人，怕哪天把玩家一起拖进黑暗，宁愿现在放玩家走；他会把贝壳护身符留下，请玩家别回头。亲密：他替玩家擦掉嘴角的汤、掌心贴掌心、一个小心到近乎笨拙的吻。" },
+    seed: "最后一夜，卡西安在酒馆后厨给玩家留了一碗热汤和一小碟盐，旁边是一张叠好的渔网。他说海上的人结婚不用戒指，用一张网把两个人的手缠在一起。素材：若 c.tested 为真、赞同 ≥ 50，他可以在灶火前立誓约——誓词很短，像祈祷，也像请求玩家允许他继续温柔；他手很稳，声音却会抖。也可以分手：他觉得自己这双手杀过太多人，怕哪天把玩家一起拖进黑暗，宁愿现在放玩家走；他会把贝壳护身符留下，请玩家别回头。亲密：他替玩家擦掉嘴角的汤、掌心贴掌心、一个小心到近乎笨拙的吻。" },
   { id: "borin_farewell", who: "borin", kind: "farewell",
     when: c => state.scene === "act3_whisper" && !isLover("borin"),
     seed: "最后一夜，博林坐在地窖最里面，脚边是最后一桶龙息，手里拿着小刀，在酒馆的横梁上刻名字。按 quest.borin 分素材：mercy——他给了达林一个痛快，手还在抖，想请玩家扶着梯子，再陪他给达林念一段战歌；woke——达林活着，明天会来，他怕得比谁都厉害，托玩家盯着哥哥别去送死；abandoned——他把达林留在了岛上，羞愧压得他一直在喝，请玩家别告诉其他人，或者干脆把酒桶踢翻；还没了结——他问玩家明天要是遇上达林，他该怎么办。赞同 ≥ 60 时他称玩家为选的家人，把一枚矮人铁指环塞过来；低于 20 时他大笑着讲笑话，把眼泪藏在酒里。可托付：横梁上的名字、第一桶酒的分配、他的铜哨。" },
   { id: "borin_final", who: "borin", kind: "farewell", title: "最后的夜 · 博林",
     when: c => state.scene === "act3_whisper" && isLover("borin"),
-    seed: "最后一夜，博林把最后一桶龙息搬到地窖，却没打开。他让玩家看他刚在横梁上刻好的两个名字，一个是他的，一个是玩家的，中间还空着一行。素材：他打了一枚粗糙的铁指环，是从酒馆旧门上拆下来的钉子熔的；若 c.tested 为真、赞同 ≥ 80，可以立誓约——矮人的誓约要两个人一起在石头上刻一笔，他会把凿子递过来，让玩家敲第一下。也可以分手：他认定自己明天会死，不肯用誓言拖住玩家；或者他承认自己戒不了酒，怕变成另一个达林，请玩家别把一辈子押在他身上。亲密：胡子上沾着酒沫、很用力又很轻的拥抱、他手心全是茧。" },
+    seed: "最后一夜，博林把最后一桶龙息搬到地窖，却没打开。他让玩家看他刚在横梁上刻好的两个名字，一个是他的，一个是玩家的，中间还空着一行。素材：他打了一枚粗糙的铁指环，是从酒馆旧门上拆下来的钉子熔的；若 c.tested 为真、赞同 ≥ 50，可以立誓约——矮人的誓约要两个人一起在石头上刻一笔，他会把凿子递过来，让玩家敲第一下。也可以分手：他认定自己明天会死，不肯用誓言拖住玩家；或者他承认自己戒不了酒，怕变成另一个达林，请玩家别把一辈子押在他身上。亲密：胡子上沾着酒沫、很用力又很轻的拥抱、他手心全是茧。" },
   { id: "lyra_farewell", who: "lyra", kind: "farewell",
     when: c => state.scene === "act3_whisper" && !isLover("lyra"),
     seed: "最后一夜，莉拉霸占了酒馆角落的一张桌子，摊开所有笔记，用最后半瓶墨在写一份结论。按 quest.lyra 分素材：killed——她亲手杀了奥斯瓦尔德，字比平时更冷更准，写完后请玩家读一遍，问她听起来像不像导师；turned——奥斯瓦尔德反水了，她嘴上说早就知道，手却一直在抖，谈战后想重建学院，又怕自己变成学院的门面；joined——她接受了教团的邀请，手上的鳞片已经遮不住，她仍是莉拉，但有些东西回不去了，请玩家记住她原来的样子；还没了结——她的研究还差最后一页，托玩家万一她死了就把笔记带出去。赞同 ≥ 60 时她会说不出口地承认需要玩家，然后立刻恼羞成怒；低于 20 时她句句带刺，把玩家赶去睡觉。可托付：一页封好的笔记、被献祭者的名单、她烧焦的旧书角。" },
   { id: "lyra_final", who: "lyra", kind: "farewell", title: "最后的夜 · 莉拉",
     when: c => state.scene === "act3_whisper" && isLover("lyra"),
-    seed: "最后一夜，莉拉把一张写得密密麻麻的纸推到玩家面前，标题是关于两个人一起活过明天的可行性。她嘴上说这是研究，耳朵已经红透了。素材：纸上列了条款、风险、退出机制，最后一条是空白，她让玩家自己填；若 c.tested 为真、赞同 ≥ 80，可以立誓约——她会在纸上签两次名，一次给玩家，一次给她自己，说这是她做过最不严谨也最想相信的结论。也可以分手：她承认自己更爱未知的东西，怕哪天为了一个答案把玩家放在第二位，宁愿现在说清楚；她不会哭，会把那张纸折好收进笔记里。亲密：摘下眼镜、额头抵着额头、一个像争吵又像告白的吻。" },
+    seed: "最后一夜，莉拉把一张写得密密麻麻的纸推到玩家面前，标题是关于两个人一起活过明天的可行性。她嘴上说这是研究，耳朵已经红透了。素材：纸上列了条款、风险、退出机制，最后一条是空白，她让玩家自己填；若 c.tested 为真、赞同 ≥ 50，可以立誓约——她会在纸上签两次名，一次给玩家，一次给她自己，说这是她做过最不严谨也最想相信的结论。也可以分手：她承认自己更爱未知的东西，怕哪天为了一个答案把玩家放在第二位，宁愿现在说清楚；她不会哭，会把那张纸折好收进笔记里。亲密：摘下眼镜、额头抵着额头、一个像争吵又像告白的吻。" },
   { id: "naia_farewell", who: "naia", kind: "farewell",
     when: c => state.scene === "act3_whisper" && !isLover("naia"),
     seed: "最后一夜，奈雅坐在酒馆屋顶的阴影里，面前摊着一盒面具和一叠没写完的信，信上的笔迹每一封都不一样。按 quest.naia 分素材：free——她拿回了真名，可那个名字像一件别人的衣服，她在练习怎么说出来，问玩家明天该用哪个名字叫她；double——她要以双面间谍的身份回教团，可能出不来，托玩家记住哪张脸才是她，留一件信物；returned——她答应回教团换情报，今晚是在队伍里的最后一夜，她异常平静，请玩家别看她离开；还没了结——她还没有名字，也没有决定，问玩家明天该叫她什么。赞同 ≥ 60 时她会给玩家看一张从没给别人看过的脸；低于 20 时她一直在演，笑着把距离拉开。可托付：一张面具、一枚刻着字的骨片、一首没唱完的歌。" },
   { id: "naia_final", who: "naia", kind: "farewell", title: "最后的夜 · 奈雅",
     when: c => state.scene === "act3_whisper" && isLover("naia"),
-    seed: "最后一夜，奈雅在一间没有镜子的房间里等玩家，床上摊着十几张脸。她今晚没有演，用的是她自己最不确定的那张。素材：她可以立誓约——要玩家先给她一个名字，再把那名字和一张只给玩家看的面对上；若 c.tested 为真、赞同 ≥ 80，程序会允许 vow，她会哭，但会笑自己哭得难看。也可以分手：她说自己没办法保证明天还是同一个人，与其让玩家等一张可能回不来的脸，不如现在放手；她会把一张最喜欢的面具留下，请玩家记住她不是那些脸。亲密：接吻时她忍不住换了一张脸又换回来、玩家把手贴在她真正的脸颊上、她问玩家今天想看她是谁。" },
+    seed: "最后一夜，奈雅在一间没有镜子的房间里等玩家，床上摊着十几张脸。她今晚没有演，用的是她自己最不确定的那张。素材：她可以立誓约——要玩家先给她一个名字，再把那名字和一张只给玩家看的面对上；若 c.tested 为真、赞同 ≥ 50，程序会允许 vow，她会哭，但会笑自己哭得难看。也可以分手：她说自己没办法保证明天还是同一个人，与其让玩家等一张可能回不来的脸，不如现在放手；她会把一张最喜欢的面具留下，请玩家记住她不是那些脸。亲密：接吻时她忍不住换了一张脸又换回来、玩家把手贴在她真正的脸颊上、她问玩家今天想看她是谁。" },
 ];
 const KIND_ORDER = { main: 0, romance: 1, resonance: 2, quest: 3, friend: 4 };
 // 不占每晚“一个重要事件”名额、另外列成按钮的事件：banter 同伴之间的群戏（pair），farewell 最后一夜每个人的告别（who，title 可省略）
@@ -3808,10 +3817,10 @@ function talkTo(target) {
   gm(`（我${ev?.group || ev?.pair ? "加入" : "走向"}${name}${ev ? "" : "，随便聊聊"}。描写对方此刻的样子，开始对话，给出 3~4 条建议。）`, `你走向${name}。`);
 }
 // 赞同度的固定来源（说书人给的之外）：营地陪聊、个人任务每完成一步、每走完一幕
-const TALK_BONUS = 3, QUEST_STEP_BONUS = 5, ACT_BONUS = 5;
+const TALK_BONUS = 5, QUEST_STEP_BONUS = 7, ACT_BONUS = 7;
 function endTalk() {
   const k = state.camp; if (!k?.talk) return;
-  // 陪一个人聊过一阵（玩家至少回应过一次）：赞同度 +3。群戏和对手戏不算
+  // 陪一个人聊过一阵（玩家至少回应过一次）：赞同度 +5。群戏和对手戏不算
   const ev = k.event ? eventFor(k.event) : null, who = ev ? (ev.group || ev.pair ? null : ev.who) : k.talk;
   if (COMPANIONS[who] && state.turns >= (k.talkAt ?? Infinity) + 2) {
     const c = state.companions[who]; c.approval = clamp(c.approval + TALK_BONUS, -100, 100);
@@ -3979,7 +3988,14 @@ function finishRoll() {
   const res = x.d === 20 ? "大成功" : x.d === 1 ? "大失败" : x.ok ? "成功" : "失败";
   const who = c.who === "player" ? "" : whoName(c.who) + " · ";
   push("roll", `${who}${x.label}　d20(${x.d}) ${sgn(x.bonus)} = ${x.total} / DC ${c.dc}　${res}`, { ok: x.ok, why: c.reason || "" });
-  gm(`【检定结果】${whoName(c.who)}的${x.label}检定：d20 掷出 ${x.d}，加值 ${sgn(x.bonus)}，总计 ${x.total}，DC ${c.dc}，${res}。请叙述结果并继续。`, null, state.combat?.improv ? "improv" : undefined);
+  let consequence = "";
+  if (!x.ok && c.hazard === "lava_jump" && state.scene === "act3_tunnel" && !state.combat) {
+    const target = c.who === "player" ? state.player : state.companions[c.who], damage = roll(3, 6), before = target.hp;
+    target.hp = Math.max(1, before - damage);
+    consequence = `熔岩灼伤：${whoName(c.who)}受到 ${before - target.hp} 点火焰伤害（3d6 掷出 ${damage}），生命 ${before} → ${target.hp}。`;
+    push("sys", consequence, { cls: "appr-down" });
+  }
+  gm(`【检定结果】${whoName(c.who)}的${x.label}检定：d20 掷出 ${x.d}，加值 ${sgn(x.bonus)}，总计 ${x.total}，DC ${c.dc}，${res}。${consequence ? consequence + "伤害已由程序结算，不要再次用 hp 扣除。" : ""}请叙述结果并继续。`, null, state.combat?.improv ? "improv" : undefined);
 }
 
 /* =========================================================
@@ -3996,7 +4012,7 @@ const hostile = (a, b) => a.side !== b.side;
 const weakest = list => list.reduce((a, b) => (b.hp < a.hp ? b : a));
 // 看得见的敌人：伪装中的千面母（guise）打不到，也不会被同伴选作目标
 const seen = u => ACTIVE(u) && !u.guise;
-// 升空的烬王：近战够不着，盟友把它压下来的那一轮除外
+// 升空的烬王：近战够不着，盟友压制或它俯冲时除外
 const aloft = u => !!u.aloft && !u.grounded;
 const SPOT_DC = 15;
 function disguise(u) {
@@ -4118,7 +4134,7 @@ function hurt(u, n, o = {}) {
   }
   u.hp -= n;
   if (c && ENEMIES[u.type]?.ritual && !c.ritualAt && u.hp > 0 && u.hp <= u.max / 2) { // 主教：生命过半开始献祭，3 回合后完成
-    c.ritualAt = c.round + 3; clog(`${u.name}张开双臂，七根石柱同时燃起黑火——献祭仪式开始了！再过 3 回合，烬王就会提前苏醒。（即兴行动可以打断）`, "event");
+    c.ritualAt = c.round + 3; clog(`${u.name}张开双臂，祖坛上的刻纹燃起黑火——献祭仪式开始了！再过 3 回合，烬王就会提前苏醒。（即兴行动可以打断）`, "event");
   }
   const fl = c && ENCOUNTERS[c.id]?.flee;
   if (fl && u.type === fl.type && u.hp > 0 && u.hp <= u.max * fl.at) { u.out = "fled"; clog(fl.text, "event"); return ""; }
@@ -4409,7 +4425,7 @@ function drainMark(u, dc, ab = "con", what = "抽取印记") {
   if (t.ref === "player" && what === "抽取印记") state.player.draconic = clamp(state.player.draconic + 10, 0, 100); // 战斗中不弹提示，战后摘要里能看到
   clog(`${u.name}${what}——${t.name}失神了（${AB[ab]}豁免 ${d + b} 对 DC ${dc}）${t.ref === "player" && what === "抽取印记" ? "，龙化值 +10" : ""}`, "hit");
 }
-// 烬王：生命 > 2/3 时陷在火山口，爪尾两击 + 低语；之后升空吐息，盟友每方能把它压下来一次；生命 ≤ 1/3 时战斗停下，进入最终抉择（见 hurt）
+// 烬王：生命 > 2/3 时陷在火山口，爪尾两击 + 低语；之后升空吐息，盟友每方能把它压下来一次，支援用尽后每隔一轮俯冲；生命 ≤ 1/3 时战斗停下，进入最终抉择（见 hurt）
 function kingTurn(u) {
   const c = state.combat, e = ENEMIES[u.type];
   u.grounded = false;
@@ -4426,6 +4442,10 @@ function kingTurn(u) {
   breathe(u, e.breath);
   const ally = (c.allies || []).shift();
   if (ally) { u.grounded = true; clog(`${ally}开火压制，${u.name}被打得坠向平台——这一轮可以近战了！`, "event"); }
+  else {
+    c.unassistedAir = (c.unassistedAir || 0) + 1;
+    if (c.unassistedAir % 2 === 0) { u.grounded = true; clog(`${u.name}俯冲到平台附近——这一轮可以近战了！`, "event"); }
+  }
 }
 // 唤醒（达林）：指定的同伴每回合用动作唱战歌，累计成功够了，目标就醒过来退出战斗
 function wakeTurn(u) {
@@ -4801,7 +4821,15 @@ function renderCombat(box) {
       if (foeGuised(me).length) add("识破伪装", () => act((c, me) => { c.res.action = false; trySpot(me); }), null, `用掉动作在人群里找伪装的敌人：察觉 DC ${SPOT_DC}`);
       add("冲刺", () => act((c, me) => { c.res.action = false; c.res.move++; clog(`${me.name} 冲刺`); }), null, "本回合多移动一次");
       add("闪避", () => act((c, me) => { c.res.action = false; me.cond.dodge = true; clog(`${me.name} 摆出防守架势`); }), null, "直到你下回合开始，攻击你的人有劣势");
-      if (c.zones[me.zone].tags.includes("exit")) add("撤离战场", () => act((c, me) => { c.res.action = false; c.end = "escaped"; clog(`${me.name} 招呼众人撤离`); }));
+      if (c.zones[me.zone].tags.includes("exit")) add("撤离战场", () => {
+        const retreat = () => act((c, me) => { c.res.action = false; c.end = "escaped"; clog(`${me.name} 招呼众人撤离`); });
+        if (!ENCOUNTERS[c.id].final) return retreat();
+        modal("撤离战场", box => {
+          box.append(el("p", null, "撤离后无法阻止烬王，灰帆港将陷落。确定要撤离吗？"));
+          const confirm = el("button", "btn gold", "确认撤离（港口陷落）"); confirm.type = "button";
+          confirm.onclick = () => { closeModal(); retreat(); }; box.append(confirm);
+        });
+      });
     }
     if (hasF(me, "surge") && !me.fUsed.surge && !r.action) add("动作如潮", () => act((c, me) => useFeat(me, "surge")), null, CLASS_FEATS.fighter[0].desc);
     if (r.bonus) {
@@ -5442,6 +5470,8 @@ const END_TEXT = [
   "船帆鼓满了风，灰帆港在身后的雾里越来越小。航海图上的墨线指向雾海深处的龙骨群岛，沉没的誓约神殿在那里等着你们。",
   "神殿沉回了海底，烬冠山的方向升起黑烟。你们少了一个人，多了一个必须知道的真相。船头转向灰帆港——战争在那里等着。",
 ];
+// 结局图有明确的故事背景，不在不匹配的结局里显示。
+const ENDING_ART = { selene: ["seven"], vex: ["egg"], kassian: ["seven", "mortal"], borin: ["seven"], lyra: ["mortal"], naia: ["mortal"] };
 function openEnd() {
   const sc = SCENES[state.scene], act = sc.endAct ?? state.act, nextSc = SCENES[sc.after];
   modal(act === 3 ? "终章" : act ? ACT_NAMES[act].split(" · ")[0] + "完" : "序幕完", s => {
@@ -5457,10 +5487,12 @@ function openEnd() {
     s.append(list);
     const end = state.flags["act3.ending"];
     if (act === 3 && end) for (const id of lovers().filter(id => !state.companions[id].betrayed).sort((a, b) => (state.companions[b].romance === "vowed") - (state.companions[a].romance === "vowed"))) {
-      const card = el("div", "step lover-end"), im = el("img");
-      im.alt = `你和${PEOPLE[id].name}`; im.onerror = () => im.remove(); im.src = `portraits/ending_${id}.webp`;
-      card.append(im, el("div", "label", `你和${PEOPLE[id].name}${state.companions[id].romance === "vowed" ? " · 誓约" : ""}`));
-      const note = EPILOGUES[id]?.lover?.[end]; if (note) card.append(el("p", null, note));
+      const card = el("div", "step lover-end");
+      if (ENDING_ART[id]?.includes(end)) {
+        const im = el("img"); im.alt = `你和${PEOPLE[id].name}`; im.onerror = () => im.remove(); im.src = `portraits/ending_${id}.webp`; card.append(im);
+      }
+      card.append(el("div", "label", `你和${PEOPLE[id].name}${state.companions[id].romance === "vowed" ? " · 誓约" : ""}`));
+      const note = loverEpilogue(id, end); if (note) card.append(el("p", null, note));
       s.append(card);
     }
     if (nextSc) {
@@ -5470,7 +5502,7 @@ function openEnd() {
     } else if (act === 3 && state.flags["act3.ending"] === "fall" && readSave(CHECKPOINT)) {
       s.append(el("p", null, "幸存者在逃亡的船上望着燃烧的港口。也许还有另一种可能……"));
       const b = el("button", "btn gold", "重新挑战（回到攻山之前）"); b.type = "button";
-      b.onclick = () => { const sv = readSave(CHECKPOINT); if (sv && validState(sv.state)) { closeModal(); loadState(sv.state); toast("回到了攻上烬冠山之前"); } };
+      b.onclick = () => { const sv = readSave(CHECKPOINT); if (sv && validState(sv.state)) { closeModal(); loadState(sv.state); save(); toast("回到了攻上烬冠山之前"); } };
       s.append(b);
     } else s.append(el("p", null, act === 3 ? "全剧终。谢谢你陪他们走完这一程。" : `${ACT_NAMES[act + 1] || "后面的故事"}会在下一个版本开放。你的存档会保留，到时可以接着玩。`));
   });
@@ -5510,7 +5542,7 @@ function start(data) {
   const auto = readSave(AUTO);
   state = data && data.state ? data.state : auto ? auto.state : null;
   if (data && data.draft) draft = data.draft;
-  if (state) { tidyLog(state); catchUpLevel(); }
+  if (state) { restoreCombatExit(state); tidyLog(state); catchUpLevel(); }
   render();
   if (state?.pendingCheck) openDice();
   else if (state?.combat) advanceCombat();

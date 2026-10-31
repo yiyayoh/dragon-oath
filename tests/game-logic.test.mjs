@@ -86,14 +86,15 @@ test('狂信徒自爆不连锁，全队近战留活口', () => {
   const run = game();
   const result = run(`(() => {
     state=newGame(freshDraft());state.scene='prologue_3';startCombat('tavern_ambush');
-    const c=state.combat;for(const u of Object.values(c.units))u.zone=1;
+    const c=state.combat;const initialCultists=Object.values(c.units).filter(u=>u.type==='cultist').length;for(const u of Object.values(c.units))u.zone=1;
     const a=c.units.cultist1,b=c.units.cultist2,d=c.units.cultist3;
     for(const u of Object.values(c.units))if(u.type==='cultist'&&u!==a&&u!==b&&u!==d)u.out='fled';
     Math.random=()=>0;b.hp=1;d.hp=2;hurt(a,99);
     const chain={secondDead:!!b.dead,thirdHp:d.hp,thirdAlive:!d.dead};
     Math.random=()=>0.5;d.hp=1;c.spare=true;c.res={move:1,action:true,bonus:true};allyTurn(c.units.selene);
-    return {chain,captured:d.out,fight:state.flags['prologue.fight_style']};
+    return {initialCultists,chain,captured:d.out,fight:state.flags['prologue.fight_style']};
   })()`);
+  assert.equal(result.initialCultists,5);
   assert.deepEqual(result.chain, { secondDead: true, thirdHp: 1, thirdAlive: true });
   assert.equal(result.captured, 'captured'); assert.equal(result.fight, 'fought');
 });
@@ -285,9 +286,9 @@ test('第二幕：岛屿升级、神殿要钥匙、誓约之心与主教掳人�
     applyGM({flags:{'act2.trial_courage':true},advance:'act2_temple_truth'});applyGM({flags:{'act2.trial_truth':true},advance:'act2_temple_heart'});
     applyGM({flags:{'act2.heart':'destroyed'}});const noTide=state.flags['act2.heart']??null;
     applyGM({advance:'act2_end'});
-    return {locked,blocked,level,skip,warmed,noTide,heart:state.flags['act2.heart'],taken:state.flags['act2.taken'],gone:!party().includes('kassian'),scene:state.scene};
+    return {locked,blocked,level,skip,warmed,noTide,heart:state.flags['act2.heart'],taken:state.flags['act2.taken'],gone:!party().includes('kassian'),ambush:state.log.some(e=>e.t.includes('撤离神殿途中')&&e.t.includes('掳走了卡西安')),scene:state.scene};
   })()`);
-  assert.deepEqual(result, { locked: 'act2_hub', blocked: 'act2_temple', level: 9, skip: 0, warmed: 2, noTide: null, heart: 'cult', taken: 'kassian', gone: true, scene: 'act2_end' });
+  assert.deepEqual(result, { locked: 'act2_hub', blocked: 'act2_temple', level: 9, skip: 0, warmed: 2, noTide: null, heart: 'cult', taken: 'kassian', gone: true, ambush:true, scene: 'act2_end' });
 });
 
 test('烬卫达林：熔炉给他回血，博林的战歌唤醒他', () => {
@@ -330,22 +331,39 @@ test('烬王：低语、升空后近战够不着、盟友压制、坠落时进�
     startCombat('ember_king');const c=state.combat,k=Object.values(c.units).find(u=>u.type==='ember_king');
     k.hp=150;kingTurn(k);const air={aloft:k.aloft,grounded:k.grounded,allies:c.allies.length};
     kingTurn(k);const noMelee=validTarget({kind:'attack',w:0},k)===false||state.combat.units.player.weapons[0].ranged;
+    kingTurn(k);const landsWithoutAllies=k.grounded;
     hurt(k,60);const fallen=!!k.fallen&&!combatResult();hurt(k,500);const result=combatResult();endCombat(result);
     const pending=!!state.pendingFinal;const egg=ENDINGS.egg.need().length>0, crown=ENDINGS.crown.need().length===0;
     chooseEnding('crown');
-    return {air,noMelee,fallen,result,pending,egg,crown,scene:state.scene,ending:state.flags['act3.ending']};
+    return {air,noMelee,landsWithoutAllies,fallen,result,pending,egg,crown,scene:state.scene,ending:state.flags['act3.ending']};
   })()`);
-  assert.deepEqual(result, { air: { aloft: true, grounded: true, allies: 0 }, noMelee: true, fallen: true, result: 'final', pending: true, egg: true, crown: true, scene: 'act3_end', ending: 'crown' });
+  assert.deepEqual(result, { air: { aloft: true, grounded: true, allies: 0 }, noMelee: true, landsWithoutAllies: true, fallen: true, result: 'final', pending: true, egg: true, crown: true, scene: 'act3_end', ending: 'crown' });
 });
 
 test('最终战失败就是港口陷落', () => {
   const run = game();
   const result = run(`(() => {
     gm=()=>{};render=()=>{};state=newGame(freshDraft());state.act=3;state.scene='act3_king';levelUp(12);
-    startCombat('ember_king');for(const u of Object.values(state.combat.units)) if(u.side==='party'){u.hp=0;u.down=true;}
-    endCombat(combatResult());return {ending:state.flags['act3.ending'],scene:state.scene,over:!!state.gameOver};
+    startCombat('ember_king');const exit=state.combat.zones[0].tags.includes('exit');
+    state.combat.zones[0].tags=[];restoreCombatExit(state);const oldSaveExit=state.combat.zones[0].tags.includes('exit');
+    for(const u of Object.values(state.combat.units)) if(u.side==='party'){u.hp=0;u.down=true;}
+    endCombat(combatResult());return {exit,oldSaveExit,ending:state.flags['act3.ending'],scene:state.scene,over:!!state.gameOver};
   })()`);
-  assert.deepEqual(result, { ending: 'fall', scene: 'act3_end', over: false });
+  assert.deepEqual(result, { exit: true, oldSaveExit: true, ending: 'fall', scene: 'act3_end', over: false });
+});
+
+test('港口陷落后重新挑战立即保存恢复的进度', () => {
+  const run = game();
+  const result = run(`(() => {
+    state=newGame(freshDraft());state.act=3;state.scene='act3_end';state.flags['act3.ending']='fall';
+    const checkpoint=newGame(freshDraft());checkpoint.act=3;checkpoint.scene='act3_climb';
+    let saved=null, button=null;readSave=()=>({state:checkpoint});checkpoint.phase="play";
+    loadState=s=>{state=s};save=()=>{saved={scene:state.scene,ending:state.flags['act3.ending']||null}};closeModal=()=>{};
+    el=(tag,cls,text)=>({tag,text,style:{},classList:{add(){}},append(){},setAttribute(){}});
+    modal=(title,build)=>build({classList:{add(){}},append(...items){for(const item of items) if(item.text?.startsWith('重新挑战')) button=item}});
+    openEnd();button.onclick();return saved;
+  })()`);
+  assert.deepEqual(result,{scene:'act3_climb',ending:null});
 });
 
 test('第一幕的小场景：货舱要先知道债、舞会要请柬；小场景不算升级的地点', () => {
@@ -557,13 +575,16 @@ test('烬王末路崩塌平台；主教生命过半开始献祭，3 回合后烬
     state=newGame(freshDraft());state.act=3;state.scene='act3_whisper';state.companions.selene.recruited=true;levelUp(11);
     goScene('act3_climb');const cp=!!store['dragon-oath-checkpoint'];
     state.scene='act3_altar';startCombat('valdo_altar');let c=state.combat;c.res={move:1,action:true,bonus:true};const v=Object.values(c.units).find(u=>u.type==='valdo');
-    hurt(v,Math.ceil(v.max/2)+1);const started=c.ritualAt;c.turn=c.order.length;for(let i=0;i<3;i++){c.turn=c.order.length-1;nextTurn();}
+    for(const u of Object.values(c.units)) if(u.type==='pillar') u.out='defeated';
+    hurt(v,Math.ceil(v.max/2)+1);const started=c.ritualAt;const ritualText=c.feed.at(-1);c.turn=c.order.length;for(let i=0;i<3;i++){c.turn=c.order.length-1;nextTurn();}
     const ritual=!!state.flags['act3.ritual'];state.combat=null;
     state.scene='act3_king';startCombat('ember_king');c=state.combat;c.res={move:1,action:true,bonus:true};const k=Object.values(c.units).find(u=>u.type==='ember_king');const bigger=k.max>Math.round(300*1.3);
     for(const u of Object.values(c.units)) if(u.side==='party') u.zone=1;hurt(k,k.hp-Math.floor(k.max/3)+1);
     const zonesBefore=c.zones.filter(z=>!z.gone).length;kingTurn(k);const zonesAfter=c.zones.filter(z=>!z.gone).length;
-    return {cp,started:!!started,ritual,bigger,fallen:k.fallen,collapsed:zonesBefore-zonesAfter,partyMoved:Object.values(c.units).filter(u=>u.side==='party').every(u=>!c.zones[u.zone].gone)};
+    return {cp,started:!!started,ritual,ritualText,bigger,fallen:k.fallen,collapsed:zonesBefore-zonesAfter,partyMoved:Object.values(c.units).filter(u=>u.side==='party').every(u=>!c.zones[u.zone].gone)};
   })()`);
+  assert.match(result.ritualText, /祖坛上的刻纹燃起黑火/);
+  delete result.ritualText;
   assert.deepEqual(result, { cp: true, started: true, ritual: true, bigger: true, fallen: true, collapsed: 1, partyMoved: true });
 });
 
@@ -728,7 +749,7 @@ test('最后一夜的告别列成按钮、可以有好几个；结局尾声素�
     const labels=plan.banter.filter(id=>id.startsWith('t_fw')).map(id=>eventLabel(eventFor(id)));
     talkTo('event:t_fw_selene');const brief=campBrief();
     EPILOGUES.selene={ending:{seven:'她成了新守誓人的第一人'},lover:{seven:'她在酒馆门口等你'},choice:{reforged:'骑士团重立'},gone:{dead:'墓前的剑'}};
-    state.companions.selene.romance='together';state.flags['quest.selene']='reforged';state.flags['act3.ending']=null;
+    state.companions.selene.romance='vowed';state.flags['quest.selene']='reforged';state.flags['act3.ending']=null;
     chooseEnding('seven');const end=calls.pop();
     state.companions.selene.alive=false;const dead=epilogueNote('selene','seven');
     return {important:plan.important,labels,brief:/赛勒涅单独说话/.test(brief)&&/赛勒涅的告别/.test(brief),
@@ -775,7 +796,7 @@ test('DS 第二轮：告别与恋人最终场景互斥、尾声素材齐全、�
     }
 
     state = newGame(freshDraft()); state.act = 3; state.scene = 'act3_end';
-    const s = state.companions.selene; s.recruited = true; s.romance = 'together'; s.alive = true;
+    const s = state.companions.selene; s.recruited = true; s.romance = 'vowed'; s.alive = true;
     state.flags['quest.selene'] = 'reforged';
     const note = epilogueNote('selene', 'seven');
     const full = note.includes(EPILOGUES.selene.ending.seven) && note.includes(EPILOGUES.selene.lover.seven) && note.includes(EPILOGUES.selene.choice.reforged);
@@ -1139,7 +1160,111 @@ test('数值调整：营地陪聊、个人任务每一步、每走完一幕都�
     const rules=['不要另外发明程序不记录的前置手续','- draconic：玩家的龙化值变化','给得太省'].every(t=>SYSTEM.includes(t));
     return {quiet,chatted,step,again,away,act,rules,seven:ENDINGS.seven.need.toString().includes('>= 30')};
   })()`);
-  assert.deepEqual(result, { quiet: 10, chatted: 13, step: 30, again: 30, away: 0, act: { approval: 35, draconic: 15 }, rules: true, seven: true });
+  assert.deepEqual(result, { quiet: 10, chatted: 15, step: 32, again: 32, away: 0, act: { approval: 39, draconic: 15 }, rules: true, seven: true });
+});
+
+test('放宽恋爱门槛后，事件和关系推进一致，誓约考验和角色底线仍生效', () => {
+  const run = game();
+  const result = run(`(() => {
+    state=newGame(freshDraft());state.act=2;state.scene='act2_hub';
+    const k=state.companions.kassian;k.recruited=true;k.approval=24;
+    const scene=eventFor('kassian_scene');const before=scene.when(k);
+    applyGM({romance:[{id:'kassian',to:'hint'}]});const blocked=k.romance;
+    k.approval=25;const available=scene.when(k);applyGM({romance:[{id:'kassian',to:'hint'}]});const hint=k.romance;
+    k.approval=40;const confess=eventFor('kassian_confess').when(k);applyGM({romance:[{id:'kassian',to:'together'}]});const together=k.romance;
+    k.approval=60;applyGM({romance:[{id:'kassian',to:'vowed'}]});const noTest=k.romance;
+    k.tested=true;applyGM({romance:[{id:'kassian',to:'vowed'}]});
+    const s=state.companions.selene;s.recruited=true;s.approval=40;s.romance='hint';s.caughtLie=true;
+    applyGM({romance:[{id:'selene',to:'together'}]});
+    return {before,blocked,available,hint,confess,together,noTest,vowed:k.romance,lie:s.romance};
+  })()`);
+  assert.deepEqual(result, { before:false, blocked:'none', available:true, hint:'hint', confess:true, together:'together', noTest:'together', vowed:'vowed', lie:'hint' });
+});
+
+test('银龙重生的终章提示明确玩家与赫斯提雅共用一具身体', () => {
+  const run = game();
+  const result = run(`(() => {
+    state=newGame(freshDraft());state.act=3;state.scene='act3_king';
+    const s=state.companions.selene;s.recruited=true;s.romance='together';
+    let prompt='';gm=(text)=>{prompt=text};chooseEnding('hestia');
+    return {oneBody:prompt.includes('不要另写一具沉睡的玩家身体'),lover:prompt.includes('借你身体重生的赫斯提雅'),ending:state.flags['act3.ending']};
+  })()`);
+  assert.deepEqual(result,{oneBody:true,lover:true,ending:'hestia'});
+});
+
+test('烬冠加冕的尾声不会把存档中活着的同伴写成死亡', () => {
+  const run = game();
+  const result = run(`(() => {
+    state=newGame(freshDraft());state.act=3;state.scene='act3_king';
+    for(const id of ['selene','kassian','borin']) state.companions[id].recruited=true;
+    state.companions.selene.romance='together';let prompt='';gm=(text)=>{prompt=text};chooseEnding('crown');
+    return {rule:prompt.includes('同行的人仍然活着'),selene:prompt.includes('她拒绝效忠烬王'),kassian:prompt.includes('继续照顾逃难的人'),borin:prompt.includes('最终撤离'),alive:state.companions.selene.alive};
+  })()`);
+  assert.deepEqual(result,{rule:true,selene:true,kassian:true,borin:true,alive:true});
+});
+
+test('神殿提示要求销毁实际完成后才记录，并等待程序公布被掳者', () => {
+  const run = game();
+  const result = run(`(() => {
+    state=newGame(freshDraft());state.act=2;state.scene='act2_temple_heart';
+    const text=buildPrompt('把誓约之心交给潮裔');
+    return {destroy:text.includes('只有确实已经销毁、晶体不再存在时才写 destroyed'),taken:text.includes('在程序公布结果之前，不要描写同伴被掳或失踪')};
+  })()`);
+  assert.deepEqual(result,{destroy:true,taken:true});
+});
+
+test('七人之誓的恋人尾声按实际关系阶段显示', () => {
+  const run = game();
+  const result = run(`(() => {
+    state=newGame(freshDraft());const k=state.companions.kassian;k.recruited=true;k.romance='together';
+    const together=loverEpilogue('kassian','seven');const prompt=epilogueNote('kassian','seven');
+    k.romance='vowed';return {together,prompt,vowed:loverEpilogue('kassian','seven')};
+  })()`);
+  assert.match(result.together,/以恋人身份继续相伴/);
+  assert.equal(result.prompt.includes('你们在海边立誓'),false);
+  assert.match(result.vowed,/你们在海边立誓/);
+});
+
+test('恋人结局图只在适合其场景的结局显示', () => {
+  const run = game();
+  const result = run(`(() => {
+    state=newGame(freshDraft());state.act=3;state.scene='act3_end';
+    const k=state.companions.kassian;k.recruited=true;k.romance='together';
+    let nodes=[];el=(tag,cls,text)=>{const n={tag,text,style:{},classList:{add(){}},append(){},setAttribute(){}};nodes.push(n);return n};
+    modal=(title,build)=>build({classList:{add(){}},append(){}});readSave=()=>null;
+    const hasImage=end=>{nodes=[];state.flags['act3.ending']=end;openEnd();return nodes.some(n=>n.tag==='img'&&n.src==='portraits/ending_kassian.webp')};
+    return {seven:hasImage('seven'),mortal:hasImage('mortal'),fall:hasImage('fall'),crown:hasImage('crown')};
+  })()`);
+  assert.deepEqual(result,{seven:true,mortal:true,fall:false,crown:false});
+});
+
+test('熔岩沟跳跃失败时由程序结算伤害，成功及其他检定不扣血', () => {
+  const run = game();
+  const result = run(`(() => {
+    state=newGame(freshDraft());state.act=3;state.scene='act3_tunnel';state.player.hp=50;state.player.hpMax=50;
+    Math.random=()=>0;let last='';gm=(t)=>{last=t};
+    const check=(skill,hazard,ok)=>{applyGM({check:{skill,dc:15,who:'player',reason:'跃过熔岩沟',hazard}});rolled={d:ok?18:1,bonus:0,total:ok?18:1,label:'杂技',ok};finishRoll();return state.player.hp;};
+    const failure=check('acrobatics','lava_jump',false), once=last.includes('伤害已由程序结算');
+    const success=check('acrobatics','lava_jump',true), unrelated=check('arcana','lava_jump',false);
+    state.scene='act3_altar';const otherScene=check('acrobatics','lava_jump',false);
+    return {failure,once,success,unrelated,otherScene};
+  })()`);
+  assert.deepEqual(result,{failure:47,once:true,success:47,unrelated:47,otherScene:47});
+});
+
+test('暧昧时完成的恋爱考验在确定关系后保留，最后一夜提示使用当前誓约门槛', () => {
+  const run = game();
+  const result = run(`(() => {
+    state=newGame(freshDraft());state.act=3;state.scene='act3_whisper';
+    const k=state.companions.kassian;k.recruited=true;k.approval=49;
+    applyGM({flags:{'quest.kassian.tested':true}});const before=k.tested||false;
+    k.romance='hint';const brief=companionBrief('kassian').includes('恋爱的考验');
+    applyGM({flags:{'quest.kassian.tested':true}});const remembered=k.tested;
+    k.approval=40;applyGM({romance:[{id:'kassian',to:'together'}]});k.approval=49;applyGM({romance:[{id:'kassian',to:'vowed'}]});const below=k.romance;k.approval=50;applyGM({romance:[{id:'kassian',to:'vowed'}]});
+    const finals=CAMP_EVENTS.filter(e=>/_(final)$/.test(e.id)).map(e=>e.seed);
+    return {before,brief,remembered,below,romance:k.romance,allSix:finals.length===6&&finals.every(t=>t.includes('赞同 ≥ 50'))};
+  })()`);
+  assert.deepEqual(result,{before:false,brief:true,remembered:true,below:'together',romance:'vowed',allSix:true});
 });
 
 test('小修：说书人提示里列出这一幕已经成功的检定；海妖之歌写清玩家何时清醒；第一幕金币和情报站价格', () => {
