@@ -297,10 +297,24 @@ test('烬卫达林：熔炉给他回血，博林的战歌唤醒他', () => {
     gm=()=>{};state=newGame(freshDraft());state.act=2;state.scene='act2_ember';levelUp(7);state.companions.borin.recruited=true;
     startCombat('darin_forge');const c=state.combat,d=Object.values(c.units).find(u=>u.type==='darin');
     const forge=Object.values(c.units).find(u=>u.type==='forge');d.hp=90;foeTurn(forge);const healed=d.hp;
-    rollD20=()=>20;const b=c.units.borin;for(let i=0;i<3;i++){c.res={move:1,action:true,bonus:true};allyTurn(b);}
-    return {healed,out:d.out,flag:state.flags['act2.darin'],result:combatResult()};
+    rollD20=()=>20;const b=c.units.borin,progress=[];for(let i=0;i<3;i++){c.res={move:1,action:true,bonus:true};allyTurn(b);progress.push(state.flags['act2.darin']||null);}
+    return {healed,progress,out:d.out,flag:state.flags['act2.darin'],result:combatResult()};
   })()`);
-  assert.deepEqual(result, { healed: 100, out: 'awakened', flag: 'woke', result: 'victory' });
+  assert.deepEqual(result, { healed: 100, progress: [null, null, 'woke'], out: 'awakened', flag: 'woke', result: 'victory' });
+});
+
+test('说书人不能跳过战歌唤醒达林，杀死和放任仍能正常记录', () => {
+  const run = game();
+  const result = run(`(() => {
+    state=newGame(freshDraft());state.act=2;state.scene='act2_ember_forge';
+    applyGM({flags:{'act2.darin':'woke'}});const forged=state.flags['act2.darin']||null;
+    state.act=3;const falseAlly=allies().some(a=>a.id==='darin');state.act=2;
+    applyGM({flags:{'act2.darin':'killed'}});const killed=state.flags['act2.darin'];
+    delete state.flags['act2.darin'];applyGM({flags:{'act2.darin':'left'}});const left=state.flags['act2.darin'];
+    state.flags['act2.darin']='woke';applyGM({flags:{'act2.darin':'woke'}});
+    return {forged,falseAlly,killed,left,existing:state.flags['act2.darin']};
+  })()`);
+  assert.deepEqual(result, {forged:null,falseAlly:false,killed:'killed',left:'left',existing:'woke'});
 });
 
 test('第三幕：盟友按标记算，赞同低又没了结个人任务的同伴在最后一夜背叛，攻山路线和说服主教有条件', () => {
@@ -356,9 +370,9 @@ test('港口陷落后重新挑战立即保存恢复的进度', () => {
   const run = game();
   const result = run(`(() => {
     state=newGame(freshDraft());state.act=3;state.scene='act3_end';state.flags['act3.ending']='fall';
-    const checkpoint=newGame(freshDraft());checkpoint.act=3;checkpoint.scene='act3_climb';
+    const checkpoint=newGame(freshDraft());checkpoint.runId=state.runId;checkpoint.act=3;checkpoint.scene='act3_climb';
     let saved=null, button=null;readSave=()=>({state:checkpoint});checkpoint.phase="play";
-    loadState=s=>{state=s};save=()=>{saved={scene:state.scene,ending:state.flags['act3.ending']||null}};closeModal=()=>{};
+    loadState=s=>{state=s;return true};save=()=>{saved={scene:state.scene,ending:state.flags['act3.ending']||null}};closeModal=()=>{};
     el=(tag,cls,text)=>({tag,text,style:{},classList:{add(){}},append(){},setAttribute(){}});
     modal=(title,build)=>build({classList:{add(){}},append(...items){for(const item of items) if(item.text?.startsWith('重新挑战')) button=item}});
     openEnd();button.onclick();return saved;
@@ -750,6 +764,7 @@ test('最后一夜的告别列成按钮、可以有好几个；结局尾声素�
     talkTo('event:t_fw_selene');const brief=campBrief();
     EPILOGUES.selene={ending:{seven:'她成了新守誓人的第一人'},lover:{seven:'她在酒馆门口等你'},choice:{reforged:'骑士团重立'},gone:{dead:'墓前的剑'}};
     state.companions.selene.romance='vowed';state.flags['quest.selene']='reforged';state.flags['act3.ending']=null;
+    for(const c of Object.values(state.companions)){c.recruited=true;c.approval=Math.max(30,c.approval);}
     chooseEnding('seven');const end=calls.pop();
     state.companions.selene.alive=false;const dead=epilogueNote('selene','seven');
     return {important:plan.important,labels,brief:/赛勒涅单独说话/.test(brief)&&/赛勒涅的告别/.test(brief),
@@ -1282,4 +1297,156 @@ test('小修：说书人提示里列出这一幕已经成功的检定；海妖�
       siren:SCENES.act2_siren.anchor.includes('从那一刻起玩家完全自主'),intel:TAVERN.intel.cost,brawl:LOOT.docks_brawl.gold};
   })()`);
   assert.deepEqual(result, { early: false, has: true, noFail: true, nextAct: false, siren: true, intel: 90, brawl: 45 });
+});
+
+
+function asyncGame() {
+  const nodes = new Map(), storage = new Map();
+  const node = id => { if (!nodes.has(id)) nodes.set(id, {style:{setProperty(){}},classList:{add(){},remove(){}},append(){},setAttribute(){},addEventListener(){}}); return nodes.get(id); };
+  const context = vm.createContext({console,setTimeout,clearTimeout,AbortController,window:{},location:{hostname:'test.invalid',protocol:'file:'},
+    document:{getElementById:node,createElement:node,addEventListener(){}},localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)}});
+  vm.runInContext(source+'\nrenderPlay=()=>{};render=()=>{};toast=()=>{};advanceCombat=()=>{};closeModal=()=>{};maybeSummarize=()=>{};pref.api="chatgpt";chatgpt.ready=true;',context);
+  return async code => JSON.parse(JSON.stringify(await vm.runInContext(code,context)));
+}
+
+test('异常 JSON 和中断回复不提交状态，失败原文不进入后续记忆，成功重试只结算一次', async () => {
+  const run=asyncGame();
+  const result=await run(`(async()=>{
+    state=newGame(freshDraft());state.act=1;state.scene='act1_hub';state.flags['act1.key']='legal';
+    narrate=async()=> '玛莎把航海图交给你。@@@{"flags":{"act1.chart":"opened"';
+    await gm('接图','接图');const bad={turns:state.turns,flag:state.flags['act1.chart']||null,retry:!!lastAction,recent:recentLines().includes('玛莎把航海图交给你')};
+    narrate=async()=>{throw {code:'network',text:'这段中断内容不应该被记住'};};await gm('再试','再试');
+    const failed=state.log.filter(e=>e.failed);failed.forEach(e=>e.m=1);
+    const filtered={recent:recentLines().includes('这段中断内容'),recall:recallLines('这段中断内容'),chapter:state.log.filter(e=>!e.failed&&e.k==='gm').length};
+    narrate=async()=> '玛莎把航海图交给你。@@@{"flags":{"act1.chart":"opened"}}';await gm('接图','接图');
+    const invalidReplies=['只有正文','正文@@@','正文@@@null','正文@@@[]','正文@@@{"flags":'];
+    const rejected=invalidReplies.map(t=>{try{parseGMReply(t);return false;}catch(e){return e.code==='invalid_reply';}});
+    state.scene='act1_dawn';let chapterInput='';narrate=async prompt=>{chapterInput=prompt;return '纪要正文';};await writeChapter();
+    return {bad,filtered,rejected,chapterClean:!chapterInput.includes('这段中断内容')&&chapterInput.includes('玛莎把航海图交给你'),turns:state.turns,flag:state.flags['act1.chart'],retry:!!lastAction,
+      plainCombat:parseGMReply('战况正文','narrate')[0],emptyObject:parseGMReply('继续等待@@@{}')[1]};
+  })()`);
+  assert.deepEqual(result.bad,{turns:0,flag:null,retry:true,recent:false});
+  assert.deepEqual(result.filtered,{recent:false,recall:'',chapter:0});
+  assert(result.rejected.every(Boolean));assert.equal(result.chapterClean,true);
+  assert.equal(result.turns,1);assert.equal(result.flag,'opened');assert.equal(result.retry,false);
+  assert.equal(result.plainCombat,'战况正文');assert.deepEqual(result.emptyObject,{});
+});
+
+test('检查点只匹配同一局，导出携带一层检查点，老档和重复取点兼容', () => {
+  const run=game();
+  const result=run(`(()=>{
+    state=newGame(freshDraft());const original=state.runId;state.act=3;state.scene='act3_climb';saveCheckpoint();
+    const exported=snapshot(),embedded=!!exported.state.checkpoint,leaf=!exported.state.checkpoint.state.checkpoint;
+    state=newGame(freshDraft());const foreign=currentCheckpoint();
+    const imported=JSON.parse(JSON.stringify(exported.state));state=imported;const own=!!currentCheckpoint();
+    saveCheckpoint();const repeated=!state.checkpoint.state.checkpoint;
+    const old=newGame(freshDraft());delete old.runId;delete old.companions.naia;const before=JSON.stringify(old);
+    const accepted=loadState(old),newId=!!state.runId,oldUntouched=JSON.stringify(old)===before;
+    return {distinct:original!==state.runId,embedded,leaf,foreign,own,repeated,accepted,newId,oldUntouched,oldCompanion:!!state.companions.naia};
+  })()`);
+  assert.deepEqual(result,{distinct:true,embedded:true,leaf:true,foreign:null,own:true,repeated:true,accepted:true,newId:true,oldUntouched:true,oldCompanion:true});
+});
+
+test('不完整导入在替换当前状态前被拒绝，合法战斗档仍可恢复', () => {
+  const run=game();
+  const result=run(`(()=>{
+    state=newGame(freshDraft());const before=state;
+    const bad={phase:'play',player:{name:'损坏档'},scene:'prologue_1',log:[]};
+    const rejects=[];
+    for(const change of [s=>delete s.companions,s=>s.player.abilities=null,s=>s.memory={people:{x:[null]}},s=>s.pendingCheck={dc:15},s=>s.log=[null]]){
+      const sample=newGame(freshDraft());change(sample);rejects.push(!loadState(sample)&&state===before);
+    }
+    const badAccepted=loadState(bad),unchanged=state===before;
+    state.act=3;state.scene='act3_king';levelUp(12);startCombat('ember_king');const copy=JSON.parse(JSON.stringify(state));
+    return {badAccepted,unchanged,rejects,combatValid:validState(copy),combatLoaded:loadState(copy)};
+  })()`);
+  assert.equal(result.badAccepted,false);assert.equal(result.unchanged,true);assert(result.rejects.every(Boolean));
+  assert.equal(result.combatValid,true);assert.equal(result.combatLoaded,true);
+});
+
+test('七人之誓必须六位同伴健在同行，死亡、失踪、背叛、缺员与低赞同均阻止选择', () => {
+  const run=game();const result=run(`(()=>{
+    state=newGame(freshDraft());state.act=3;state.scene='act3_king';
+    const empty=ENDINGS.seven.need().length>0;
+    for(const c of Object.values(state.companions)){c.recruited=true;c.approval=30;}
+    const complete=ENDINGS.seven.need().length===0,blocked=[];
+    for(const field of ['alive','recruited','taken','jailed','betrayed','approval']){
+      const before=JSON.parse(JSON.stringify(state.companions.selene));state.companions.selene[field]=field==='approval'?29:['alive','recruited'].includes(field)?false:true;
+      blocked.push(ENDINGS.seven.need().length>0);state.companions.selene=before;
+    }
+    return {empty,complete,blocked};
+  })()`);assert(result.empty);assert(result.complete);assert(result.blocked.every(Boolean));
+});
+
+test('容器同意只接受本次询问的在队同伴，拒绝或无同意不能被献出，终章与读档保留唯一身体', () => {
+  const run=game();const result=run(`(()=>{
+    gm=()=>{};state=newGame(freshDraft());state.act=3;state.scene='act3_king';state.pendingFinal=true;
+    const c=state.companions.selene;c.recruited=true;c.romance='vowed';
+    applyGM({});applyGM({vessel_consent:{id:'selene',ok:true}});const unsolicited=c.vesselConsent===undefined;
+    state.vesselAsk='selene';applyGM({vessel_consent:{id:'vex',ok:true}});const wrong=c.vesselConsent===undefined;
+    applyGM({vessel_consent:{id:'selene',ok:false}});const refused=!chooseEnding('hestia','selene')&&!state.flags['act3.ending'];
+    state.vesselAsk='selene';c.taken=true;applyGM({vessel_consent:{id:'selene',ok:true}});const taken=c.vesselConsent===false;c.taken=false;
+    applyGM({vessel_consent:{id:'selene',ok:true}});let prompt='';gm=t=>{prompt=t};const accepted=chooseEnding('hestia','selene');
+    const portable=JSON.parse(JSON.stringify(state));portable.levelNote=null;loadState(portable);
+    return {unsolicited,wrong,refused,taken,accepted,vessel:state.endingVessel,oneBody:prompt.includes('赫斯提雅借赛勒涅唯一的身体重生'),alive:prompt.includes('玩家仍然活着'),lover:loverEpilogue('selene','hestia').includes('等待赛勒涅'),card:endingText('hestia').includes('你活了下来')};
+  })()`);assert.deepEqual(result,{unsolicited:true,wrong:true,refused:true,taken:true,accepted:true,vessel:'selene',oneBody:true,alive:true,lover:true,card:true});
+});
+
+test('掩盖真相的赞同上限覆盖剧情、任务、跨幕和夜谈来源，旧档抉择不补扣', () => {
+  const run=game();const result=run(`(()=>{
+    gm=()=>{};state=newGame(freshDraft());state.act=2;state.scene='act2_mist';const c=state.companions.selene;c.recruited=true;c.approval=90;
+    Object.assign(state.flags,{'quest.selene.diary':true,'quest.selene.truth':true});applyGM({flags:{'quest.selene':'hidden'}});
+    const cap=c.approvalCap,initial=c.approval;applyGM({approval:[{id:'selene',delta:15}]});const story=c.approval;
+    state.camp={talk:'selene',talkAt:0,done:[]};state.turns=3;endTalk();const talk=c.approval;
+    state.camp=null;state.scene='act2_end';state.ended=true;nextAct();const act=c.approval;
+    const old=newGame(freshDraft());old.flags['quest.selene']='hidden';old.companions.selene.approval=90;loadState(old);
+    return {cap,initial,story,talk,act,legacy:state.companions.selene.approval,legacyCap:state.companions.selene.approvalCap||null};
+  })()`);assert.deepEqual(result,{cap:60,initial:60,story:60,talk:60,act:60,legacy:90,legacyCap:null});
+});
+
+test('破誓者实际替换灵光、打击与专属技能，保留等级成长和普通攻击', () => {
+  const run=game();const result=run(`(()=>{
+    state=newGame(freshDraft());state.act=2;state.scene='act2_mist';const c=state.companions.selene;c.recruited=true;c.approval=40;
+    Object.assign(state.flags,{'quest.selene.diary':true,'quest.selene.truth':true});applyGM({flags:{'quest.selene':'oathbreaker'}});levelUp(12);startCombat('darin_forge');
+    const u=state.combat.units.selene,foe=cbList().find(x=>x.side!=='party'&&!ENEMIES[x.type]?.object);u.zone=foe.zone;
+    state.combat.res={action:true,bonus:true,move:1};signatureTurn(u);
+    rollD20=()=>20;attack(u,foe,u.weapons[0],{smite:true});
+    return {label:classLabel('selene'),features:u.feats,extra:u.extra,fear:foe.cond.frightened,used:u.sigUsed,log:state.combat.feed.some(t=>t.includes('恐惧之拥')),dark:state.combat.feed.some(t=>t.includes('黯蚀斩')&&t.includes('黯蚀打击'))};
+  })()`);assert.deepEqual(result,{label:'破誓者',features:['dread','necrotic'],extra:true,fear:2,used:true,log:true,dark:true});
+});
+
+test('卡西安复仇少一次神术，营地明确赎罪后恢复，重复完成不叠加', () => {
+  const run=game();const result=run(`(()=>{
+    gm=()=>{};state=newGame(freshDraft());state.act=1;state.scene='act1_docks_arena';const c=state.companions.kassian;c.recruited=true;c.approval=40;
+    Object.assign(state.flags,{'quest.kassian.arden':true,'quest.kassian.poison':true});const before=partyUnit('kassian',0).uses;
+    applyGM({flags:{'quest.kassian':'killed_eel'}});const after=partyUnit('kassian',0).uses,blocked=!completeAtonement();
+    state.camp={talk:null,plan:{important:null,banter:[]},done:[]};const restored=completeAtonement(),again=completeAtonement();
+    return {before,after,blocked,restored,again,uses:partyUnit('kassian',0).uses,memory:memo().people.kassian.filter(t=>t.includes('赎罪')).length};
+  })()`);assert(result.before>0);assert.equal(result.after,result.before-1);assert(result.blocked);assert(result.restored);assert.equal(result.again,false);assert.equal(result.uses,result.before);assert.equal(result.memory,1);
+});
+
+test('博林抉择固定赞同后果只结算一次，低信任放任会离队', () => {
+  const run=game();const result=run(`(()=>{
+    const choose=(pick,approval)=>{state=newGame(freshDraft());state.act=2;state.scene='act2_ember_forge';const c=state.companions.borin;c.recruited=true;c.approval=approval;
+      Object.assign(state.flags,{'act1.darin_axe':true,'quest.borin.alive':true});applyGM({flags:{'quest.borin':pick}});applyGM({flags:{'quest.borin':pick}});return {approval:c.approval,left:!!c.left};};
+    return {mercy:choose('mercy',40),leave:choose('abandoned',20),stay:choose('abandoned',60)};
+  })()`);assert.deepEqual(result,{mercy:{approval:50,left:false},leave:{approval:-5,left:true},stay:{approval:35,left:false}});
+});
+
+test('莉拉新抉择在第三幕检查 60 门槛，旧档不追溯背叛，已背叛不重复记忆', () => {
+  const run=game();const result=run(`(()=>{
+    const sample=(approval,old)=>{state=newGame(freshDraft());state.act=2;state.scene='act2_ember_study';const c=state.companions.lyra;c.recruited=true;c.approval=approval;
+      if(old)state.flags['quest.lyra']='joined';else {Object.assign(state.flags,{'act1.notes_copied':true,'quest.lyra.oswald':true});applyGM({flags:{'quest.lyra':'joined'}});}
+      state.act=3;goScene('act3_1');resolveCultPact();return {betrayed:!!c.betrayed,party:party().includes('lyra'),memory:(memo().people.lyra||[]).filter(t=>t.includes('投向了教团')).length};};
+    return {low:sample(59,false),high:sample(60,false),legacy:sample(20,true)};
+  })()`);assert.deepEqual(result,{low:{betrayed:true,party:false,memory:1},high:{betrayed:false,party:true,memory:0},legacy:{betrayed:false,party:true,memory:0}});
+});
+
+test('战况提示精简重复人物资料，其他幕支线保留索引，长期记忆原文完整保留', () => {
+  const run=game();const result=run(`(()=>{
+    state=newGame(freshDraft());state.act=3;state.scene='act3_king';for(const c of Object.values(state.companions)){c.recruited=true;c.approval=50;}
+    state.flags['side.tom_leg']='taken';memo().chapters=[{id:'act1_1',title:'酒馆约定',text:'你答应玛莎战后回来修好吧台。'}];
+    const before=JSON.stringify(state.memory),normal=buildPrompt('继续'),battle=buildPrompt('继续','narrate');
+    return {smaller:battle.length<normal.length,remembers:battle.includes('你答应玛莎战后回来修好吧台'),index:battle.includes('其他幕未完成的支线'),unchanged:JSON.stringify(state.memory)===before};
+  })()`);assert.deepEqual(result,{smaller:true,remembers:true,index:true,unchanged:true});
 });

@@ -51,7 +51,13 @@ function request(server, { method = 'GET', pathname = '/', headers = {}, body } 
   });
 }
 const save = (t, name = '艾林') => ({ t, state: { phase: 'play', scene: 'prologue_1', player: { name }, log: [{ k: 'gm', t: '雨夜' }] } });
-const put = (server, key, body, type = 'application/json') => request(server, { method: 'PUT', pathname: `/__save/slot/${key}`, headers: { 'Content-Type': type }, body: typeof body === 'string' ? body : JSON.stringify(body) });
+const put = async (server, key, body, type = 'application/json') => {
+  if (body && typeof body === 'object' && !Object.hasOwn(body,'expectedRevision')) {
+    const list=JSON.parse((await request(server,{pathname:'/__save/list'})).body);
+    body={...body,expectedRevision:list.slots?.[key]?.revision??null};
+  }
+  return request(server,{method:'PUT',pathname:`/__save/slot/${key}`,headers:{'Content-Type':type},body:typeof body==='string'?body:JSON.stringify(body)});
+};
 const post = (server, prompt) => request(server, { method: 'POST', pathname: '/__gpt/narrate', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) });
 const events = body => body.split(/\r?\n/).filter(line => line.startsWith('data:')).map(line => JSON.parse(line.slice(5)));
 
@@ -213,9 +219,10 @@ test('saves round-trip through disk and list only metadata', async t => {
   assert.deepEqual(JSON.parse((await request(server, { pathname: '/__save/list' })).body), { slots: {}, backups: [] });
   const data = save(1700000000000);
   assert.equal((await put(server, 'auto', data)).status, 200);
-  assert.deepEqual(JSON.parse((await request(server, { pathname: '/__save/slot/auto' })).body), data);
+  const read=JSON.parse((await request(server,{pathname:'/__save/slot/auto'})).body);
+  assert.match(read.revision,/^[a-f0-9]{64}$/);const {revision,...stored}=read;assert.deepEqual(stored,data);
   const list = JSON.parse((await request(server, { pathname: '/__save/list' })).body);
-  assert.deepEqual(list.slots.auto, { t: 1700000000000, name: '艾林', scene: 'prologue_1', combat: false });
+  assert.deepEqual(list.slots.auto, { revision, t: 1700000000000, name: '艾林', scene: 'prologue_1', combat: false });
   assert.doesNotMatch(JSON.stringify(list), /雨夜/);
   // 存档文件不会被当成静态文件送出去
   assert.equal((await request(server, { pathname: '/.dragon-oath-local/saves/auto.json' })).status, 404);
@@ -292,4 +299,19 @@ test('client disconnect aborts narration, emits no done, and releases the next r
   const retry = await post(server, 'retry');
   assert.equal(retry.status, 200);
   assert.deepEqual(events(retry.body), [{ type: 'done', text: 'retried successfully' }]);
+});
+
+
+test('旧页面的保存被版本校验拒绝，新进度和旧备份保留，重传相同内容可以恢复', async t => {
+  const root=await mkdtemp(path.join(os.tmpdir(),'dragon-oath-cas-test-'));t.after(()=>rm(root,{recursive:true,force:true}));
+  const server=await startServer(t,{root});await put(server,'auto',save(1700000000000,'同一角色'));
+  const initial=JSON.parse((await request(server,{pathname:'/__save/slot/auto'})).body);
+  const advanced=save(1700000000001,'同一角色');advanced.state.turns=100;advanced.expectedRevision=initial.revision;
+  assert.equal((await put(server,'auto',advanced)).status,200);
+  const stale=save(1700000000002,'同一角色');stale.state.turns=2;stale.expectedRevision=initial.revision;
+  assert.equal((await put(server,'auto',stale)).status,409);
+  assert.equal((await request(server,{method:'PUT',pathname:'/__save/slot/auto',headers:{'Content-Type':'application/json'},body:JSON.stringify(save(1700000000003))})).status,409);
+  const read=JSON.parse((await request(server,{pathname:'/__save/slot/auto'})).body);assert.equal(read.state.turns,100);
+  assert.equal((await put(server,'auto',advanced)).status,200); // 接收成功但响应丢失后的幂等重传
+  const fresh=save(1700000000004,'主动恢复');fresh.expectedRevision=read.revision;assert.equal((await put(server,'auto',fresh)).status,200);
 });

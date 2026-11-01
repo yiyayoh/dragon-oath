@@ -1,4 +1,5 @@
 import http from 'node:http';
+import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 import { stat, realpath, mkdir, readFile, writeFile, rename, readdir, unlink } from 'node:fs/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -51,7 +52,8 @@ const BACKUP_ID = /^(auto|slot[1-3])-(\d{13})$/;
 const SAVE_LIMIT = 20 * 1024 * 1024;
 const validSave = d => typeof d.t === 'number' && Number.isFinite(d.t) && d.state && typeof d.state === 'object' && !Array.isArray(d.state)
   && d.state.phase === 'play' && d.state.player && typeof d.state.player === 'object' && Array.isArray(d.state.log);
-const saveMeta = d => ({ t: d.t, name: String(d.state?.player?.name ?? '').slice(0, 40), scene: String(d.state?.scene ?? '').slice(0, 40), combat: !!d.state?.combat });
+const saveRevision = d => createHash('sha256').update(JSON.stringify({ t: d.t, state: d.state })).digest('hex');
+const saveMeta = d => ({ revision: saveRevision(d), t: d.t, name: String(d.state?.player?.name ?? '').slice(0, 40), scene: String(d.state?.scene ?? '').slice(0, 40), combat: !!d.state?.combat });
 function createSaveStore(dir, { backupGapMs, maxBackups }) {
   const backups = path.join(dir, 'backups');
   let queue = Promise.resolve();
@@ -70,11 +72,14 @@ function createSaveStore(dir, { backupGapMs, maxBackups }) {
     },
     read: key => readFile(path.join(dir, key + '.json'), 'utf8'),
     readBackup: id => readFile(path.join(backups, id + '.json'), 'utf8'),
-    write: (key, data) => serial(async () => {
+    write: (key, data, expectedRevision) => serial(async () => {
       await mkdir(backups, { recursive: true });
       const file = path.join(dir, key + '.json');
       let prev = null;
       try { prev = await readJson(file); } catch {}
+      const current = prev ? saveRevision(prev) : null, revision = saveRevision(data);
+      if ((expectedRevision ?? null) !== current && revision !== current) throw { http: 409, code: 'save_conflict' };
+      if (revision === current) return revision; // 响应丢失后重传同一份数据可以安全重试
       if (prev && validSave(prev) && prev.t !== data.t) {
         const last = (await listBackups()).find(id => id.startsWith(key + '-'));
         // 进度倒退（开新局、读旧档后接着玩）一定备份；平时最多每 backupGapMs 留一份
@@ -87,6 +92,7 @@ function createSaveStore(dir, { backupGapMs, maxBackups }) {
       const tmp = file + '.tmp';
       await writeFile(tmp, JSON.stringify(data));
       await rename(tmp, file);
+      return revision;
     }),
   };
 }
@@ -151,14 +157,19 @@ export function createGameServer({ port = DEFAULT_PORT, getStatus = accountStatu
         if (kind === 'list' && name === undefined && req.method === 'GET') return json(res, 200, await saves.list());
         if (kind === 'slot' && SAVE_KEYS.has(name)) {
           if (req.method === 'GET') {
-            try { return json(res, 200, JSON.parse(await saves.read(name))); } catch { return json(res, 404, { error: 'not_found' }); }
+            try { const data = JSON.parse(await saves.read(name)); return json(res, 200, { ...data, revision: saveRevision(data) }); } catch { return json(res, 404, { error: 'not_found' }); }
           }
           if (req.method === 'PUT') {
             let data;
             try { data = await readBody(req, SAVE_LIMIT); } catch (error) { return json(res, error.http || 400, { error: 'invalid_request' }); }
-            if (!validSave(data)) return json(res, 400, { error: 'invalid_request' });
-            await saves.write(name, { t: data.t, state: data.state });
-            return json(res, 200, { ok: true, t: data.t });
+            if (!validSave(data) || (data.expectedRevision != null && (typeof data.expectedRevision !== 'string' || !/^[a-f0-9]{64}$/.test(data.expectedRevision)))) return json(res, 400, { error: 'invalid_request' });
+            try {
+              const revision = await saves.write(name, { t: data.t, state: data.state }, data.expectedRevision);
+              return json(res, 200, { ok: true, t: data.t, revision });
+            } catch (error) {
+              if (error.code === 'save_conflict') return json(res, 409, { error: 'save_conflict', code: 'save_conflict' });
+              throw error;
+            }
           }
         }
         if (kind === 'backup' && BACKUP_ID.test(name || '') && req.method === 'GET') {

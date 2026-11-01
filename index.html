@@ -481,7 +481,7 @@ const SCENES = {
   },
   prologue_3: {
     camp: false, title: "教团袭击", loc: "醉龙酒馆 · 大堂", bg: "linear-gradient(160deg,#7a2e17,#2a0f08 60%,#120706)",
-    anchor: "十分钟后，6 名灰烬教团狂信徒和 1 名烬火术士破门而入，要求“交出带印记的人”。区域：大堂、吧台、二楼回廊、地窖门。解决方式全部有效：①战斗：双方真正动手时，在 JSON 写 combat 为 tavern_ambush，程序接管回合制战斗（在场同伴一起参战，第 3 回合巨鼠从地窖涌出，敌我不分；玩家可开“留活口”活捉狂信徒）；②谈判：威吓 DC 15 吓跑一半，欺瞒 DC 13 谎称持有者已从后门逃走；③环境：推倒炭盆、砍断吊灯、把酒桶滚下楼梯（GM 定 DC）；④黑暗选择：交出一个同伴——该同伴被带走（flags 写 prologue.betrayed_companion = 其 id），其余同伴赞同 −15~−20。没有开战时，也可以在第 3 轮左右让地窖门被撞开、巨鼠涌出制造混乱。本战不会致死：全队倒下时，由玛莎或援手救起并付出代价。收到【战斗结束】或敌人被驱散后，叙述残局并把 advance 设为 prologue_4。",
+    anchor: "十分钟后，5 名灰烬教团狂信徒和 1 名烬火术士破门而入，要求“交出带印记的人”。区域：大堂、吧台、二楼回廊、地窖门。解决方式全部有效：①战斗：双方真正动手时，在 JSON 写 combat 为 tavern_ambush，程序接管回合制战斗（在场同伴一起参战，第 3 回合巨鼠从地窖涌出，敌我不分；玩家可开“留活口”活捉狂信徒）；②谈判：威吓 DC 15 吓跑一半，欺瞒 DC 13 谎称持有者已从后门逃走；③环境：推倒炭盆、砍断吊灯、把酒桶滚下楼梯（GM 定 DC）；④黑暗选择：交出一个同伴——该同伴被带走（flags 写 prologue.betrayed_companion = 其 id），其余同伴赞同 −15~−20。没有开战时，也可以在第 3 轮左右让地窖门被撞开、巨鼠涌出制造混乱。本战不会致死：全队倒下时，由玛莎或援手救起并付出代价。收到【战斗结束】或敌人被驱散后，叙述残局并把 advance 设为 prologue_4。",
     next: "prologue_4", encounters: ["tavern_ambush"], recruit: ["selene", "vex", "kassian", "borin"],
   },
   prologue_4: {
@@ -650,7 +650,7 @@ const SCENES = {
   act1_lighthouse: {
     title: "灯塔之夜", loc: "灰帆港 · 灯塔", bg: "linear-gradient(160deg,#6b3a2a,#26140f 60%,#0f0806)", level: 5, camp: false, act: 1,
     split: { flag: "act1.ship_intact", place: "码头", job: "拆掉码头上的炸药" },
-    anchor: "航海图和船都到手的当晚，灰烬教团动手了：酒馆被砸，玛莎被绑走（若 act1.hostage=tom，被绑的是小汤姆；确定人质时写 act1.hostage=martha 或 tom），留话“一个小时内，带着印记持有者到灯塔来交换”。同时米拉的身份暴露：她传给教团的情报让教团知道了你们的航线和船（若 act1.naia_seen 为 true，玩家早已知道，现在她可以选择当面坦白）。把 act1.naia_exposed 设为 true，她从此显出真身（灰白皮肤、水银色头发、没有瞳孔的乳白眼睛），名字是奈雅。玩家必须当场或事后决定怎么处置她：杀掉、关押、接纳（写 act1.naia_fate = killed|imprisoned|recruited；killed 时她死去，imprisoned 时她离队被关在酒馆地窖）。在场的同伴会强烈表态：赛勒涅、博林主张严惩，卡西安主张宽恕（不在队的人不出场）。教团还在码头埋了炸药，目标是你们的船：队伍可以拆分，一部分人去码头拆炸药，其余人去灯塔。谁去码头由玩家在界面上分派，码头的战斗和拆弹由程序结算并写 act1.ship_intact；你不要替玩家决定谁去哪里，也不要自己写 act1.ship_intact，可以在叙述里提醒玩家要分派。灯塔分底层、旋梯、灯室三层；千面母（教团间谍头子、奈雅的养母，永远不用同一张脸）带着无面刺客混在一群“平民”里等着，开战时她已经变成队伍里某个人的样子。动手时在 JSON 写 combat 为 lighthouse；若奈雅已被接纳且赞同度 ≥ 40，她可以和千面母对话让她动摇退场，用千面母的真名威胁也能让她投降。千面母会当着奈雅说出：她手里握着奈雅的“真名”，教团随时能用它收回她（奈雅在场、赞同度 ≥ 20 时，她事后才会告诉你真名意味着什么，写 quest.naia.name=true）。战后写 act1.martha_alive（人质是否活着，不管人质是玛莎还是小汤姆）（人质是否活着），把 advance 设为 act1_dawn。",
+    anchor: "航海图和船都到手的当晚，灰烬教团动手了：酒馆被砸，玛莎被绑走（若 act1.hostage=tom，被绑的是小汤姆；确定人质时写 act1.hostage=martha 或 tom），留话“一个小时内，带着印记持有者到灯塔来交换”。同时米拉的身份暴露：她传给教团的情报让教团知道了你们的航线和船（若 act1.naia_seen 为 true，玩家早已知道，现在她可以选择当面坦白）。把 act1.naia_exposed 设为 true，她从此显出真身（灰白皮肤、水银色头发、没有瞳孔的乳白眼睛），名字是奈雅。玩家必须当场或事后决定怎么处置她：杀掉、关押、接纳（写 act1.naia_fate = killed|imprisoned|recruited；killed 时她死去，imprisoned 时她离队被关在酒馆地窖）。在场的同伴会强烈表态：赛勒涅、博林主张严惩，卡西安主张宽恕（不在队的人不出场）。教团还在码头埋了炸药，目标是你们的船：队伍可以拆分，一部分人去码头拆炸药，其余人去灯塔。谁去码头由玩家在界面上分派，码头的战斗和拆弹由程序结算并写 act1.ship_intact；你不要替玩家决定谁去哪里，也不要自己写 act1.ship_intact，可以在叙述里提醒玩家要分派。灯塔分底层、旋梯、灯室三层；千面母（教团间谍头子、奈雅的养母，永远不用同一张脸）带着无面刺客混在一群“平民”里等着，开战时她已经变成队伍里某个人的样子。动手时在 JSON 写 combat 为 lighthouse；若奈雅已被接纳且赞同度 ≥ 40，她可以和千面母对话让她动摇退场，用千面母的真名威胁也能让她投降。千面母会当着奈雅说出：她手里握着奈雅的“真名”，教团随时能用它收回她（奈雅在场、赞同度 ≥ 20 时，她事后才会告诉你真名意味着什么，写 quest.naia.name=true）。战后写 act1.martha_alive（人质是否活着，不管人质是玛莎还是小汤姆），把 advance 设为 act1_dawn。",
     next: "act1_dawn", encounters: ["lighthouse"],
   },
   act1_dawn: {
@@ -831,7 +831,7 @@ const SCENES = {
   },
   act3_altar: {
     title: "祖坛", loc: "烬冠山 · 祖坛", bg: "linear-gradient(160deg,#6b2418,#250b07 60%,#0e0403)", act: 3, camp: false, rescue: true,
-    anchor: "火山口边缘的黑曜石祖坛，七根刻着印记的石柱围成一圈。神殿里被掳走的同伴（见 act2.taken）被锁在其中一根石柱上，掌心的印记被抽得发灰——可以用 recruit 把他救回队伍。主教瓦尔多在祖坛中央主持仪式，平静地等着你们。可以和他辩论：他是献祭幸存者的后代，认为银龙的守护建立在尸骨上——若玩家拿得出证据（伊芙的证词 act2.eve，和赛勒涅找到的骑士团日记 quest.selene.diary），用魅力 DC 22 可以说服他自我献祭、削弱烬王（写 act3.valdo=convinced；没有这两样证据程序不会接受）。说不动就开打：在 JSON 写 combat 为 valdo_altar（他会尝试抽取持有者的印记，石柱给他回血），打完写 act3.valdo=killed 或 captured。主教倒下，火山口里的烬王就挣脱了封印。之后把 advance 设为 act3_king。",
+    anchor: "火山口边缘的黑曜石祖坛，七根刻着印记的石柱围成一圈，其中四根给主教供能，战斗中可以摧毁（其余三根不作为战斗目标）。神殿里被掳走的同伴（见 act2.taken）被锁在其中一根石柱上，掌心的印记被抽得发灰——可以用 recruit 把他救回队伍。主教瓦尔多在祖坛中央主持仪式，平静地等着你们。可以和他辩论：他是献祭幸存者的后代，认为银龙的守护建立在尸骨上——若玩家拿得出证据（伊芙的证词 act2.eve，和赛勒涅找到的骑士团日记 quest.selene.diary），用魅力 DC 22 可以说服他自我献祭、削弱烬王（写 act3.valdo=convinced；没有这两样证据程序不会接受）。说不动就开打：在 JSON 写 combat 为 valdo_altar（他会尝试抽取持有者的印记，石柱给他回血），打完写 act3.valdo=killed 或 captured。主教倒下，火山口里的烬王就挣脱了封印。之后把 advance 设为 act3_king。",
     next: "act3_king", encounters: ["valdo_altar"], doneWhen: () => state.fought?.valdo_altar === "victory" || state.flags["act3.valdo"] === "convinced",
   },
   act3_king: {
@@ -1063,7 +1063,10 @@ const QUESTS = {
       { flag: "quest.selene.diary", act: 1, text: "在沉船湾的银龙遗骨旁找到骑士团长的遗体和日记" },
       { flag: "quest.selene.truth", act: 2, text: "读懂日记：百年前骑士团为加固封印献祭了一整个渔村，幸存者的复仇让骑士团覆灭" },
     ],
-    choice: { flag: "quest.selene", act: 2, options: { reforged: "公开真相，重立誓言", hidden: "掩盖真相", oathbreaker: "放弃誓言，成为破誓者" } },
+    choice: { flag: "quest.selene", act: 2, options: { reforged: "公开真相，重立誓言", hidden: "掩盖真相（赞同上限 60）", oathbreaker: "放弃誓言，成为破誓者" }, on: {
+      hidden: (c, notes) => { c.approvalCap = 60; c.approval = Math.min(c.approval, 60); notes.push(["赛勒涅掩盖了真相，赞同度上限降为 60", "down"]); },
+      oathbreaker: (c, notes) => { c.oathbroken = true; notes.push(["赛勒涅成为破誓者：圣疗与守护灵光转为恐惧之力，光耀攻击转为黯蚀攻击", "up"]); },
+    } },
     test: "第二幕的启示里她得知自己只是容器，你告诉她“你不是任何人的容器”" },
   vex: { name: "债与蛋", steps: [
       { flag: "act1.debt_known", act: 1, text: "黑潮会在码头堵住维克斯追债，限期三天，不然把他妹妹莉丝卖到外海" },
@@ -1079,19 +1082,24 @@ const QUESTS = {
       { flag: "quest.kassian.arden", act: 1, text: "亡友的儿子阿登找上门来，当众向卡西安发起生死决斗" },
       { flag: "quest.kassian.poison", act: 1, text: "在斗兽场的旧账本里查到：那场比赛前，老鳗买过一瓶毒药" },
     ],
-    choice: { flag: "quest.kassian", act: 1, options: { exposed: "在斗兽场当众公布证据", spared: "接受决斗，但不杀阿登", killed_eel: "让卡西安亲手杀死老鳗" } },
+    choice: { flag: "quest.kassian", act: 1, options: { exposed: "在斗兽场当众公布证据", spared: "接受决斗，但不杀阿登", killed_eel: "让卡西安亲手杀死老鳗（赎罪前每场少一次治疗之语）" }, on: {
+      killed_eel: (c, notes) => { c.divineDebt = true; notes.push(["卡西安的誓言破碎：每场少一次治疗之语，可在营地举行赎罪仪式恢复", "down"]); },
+    } },
     test: "你能轻易杀死一个投降的敌人时，选择放过" },
   borin: { name: "兄弟的斧", steps: [
       { flag: "act1.darin_axe", act: 1, text: "发现一名教团执事用着哥哥达林的符文战斧" },
       { flag: "quest.borin.alive", act: 1, text: "从执事那里得知达林还活着，在龙骨群岛的教团据点" },
     ],
-    choice: { flag: "quest.borin", act: 2, options: { mercy: "给达林一个痛快", woke: "唤醒达林（铁炉堡战歌 + 魅力 DC 18）", abandoned: "放任不管" } },
+    choice: { flag: "quest.borin", act: 2, options: { mercy: "给达林一个痛快（赞同 +10）", woke: "唤醒达林（铁炉堡战歌累计三次成功）", abandoned: "放任不管（赞同 −25，降到 0 或以下会离队）" }, on: {
+      mercy: (c, notes) => { const d = changeApproval("borin", 10); notes.push([`博林赞同 ${sgn(d)}；达林的事让他消沉了很久`, "up"]); },
+      abandoned: (c, notes) => { const d = changeApproval("borin", -25); notes.push([`博林不赞同 ${sgn(d)}（放任达林）`, "down"]); if (c.approval <= 0) { c.recruited = false; c.left = true; notes.push(["博林无法原谅你的选择，离开队伍", "down"]); } },
+    } },
     test: "达林的事上站在博林这边，不放任不管" },
   lyra: { name: "老师的影子", steps: [
       { flag: "act1.notes_copied", act: 1, text: "在废塔地下室发现研究笔记被人整本抄录过" },
       { flag: "quest.lyra.oswald", act: 1, text: "认出抄写的是导师奥斯瓦尔德：他已加入教团，还邀请莉拉“一起完成我们的研究”" },
     ],
-    choice: { flag: "quest.lyra", act: 2, options: { killed: "杀死导师", turned: "说服导师反水", joined: "让莉拉接受邀请" }, on: { joined: (c, notes) => addDraconic("lyra", 30, notes) } },
+    choice: { flag: "quest.lyra", act: 2, options: { killed: "杀死导师", turned: "说服导师反水", joined: "让莉拉接受邀请（龙化 +30，第三幕赞同低于 60 时背叛）" }, on: { joined: (c, notes) => { c.cultPact = true; addDraconic("lyra", 30, notes); notes.push(["莉拉接受了邀请：第三幕到来时赞同低于 60 将投向教团", "down"]); } } },
     test: "在力量和你之间，她看到你不会把她当工具" },
   naia: { name: "无面之名", steps: [
       { flag: "act1.naia_fate", act: 1, text: "身份暴露后，你决定了怎么处置她" },
@@ -1279,9 +1287,10 @@ for (const id of Object.keys(SIDE)) FLAG_KEYS[`side.${id}`] = ["taken", "done", 
 // 给说书人的支线：这一场能接的、已经接下的
 function sideLine() {
   const can = Object.entries(SIDE).filter(([id, q]) => q.act === state.act && !state.flags[`side.${id}`] && q.at.includes(state.scene) && (!q.need || q.need()));
-  const on = Object.entries(SIDE).filter(([id]) => state.flags[`side.${id}`] === "taken");
+  const taken = Object.entries(SIDE).filter(([id]) => state.flags[`side.${id}`] === "taken"), on = taken.filter(([, q]) => q.act === state.act);
   return (can.length ? `\n可以接的支线（让找人帮忙的 NPC 自然地开口，玩家答应时写 side.<id>=taken）：${can.map(([id, q]) => `《${q.name}》（side.${id}）：${q.hook}`).join("；")}` : "") +
-    (on.length ? `\n进行中的支线：${on.map(([id, q]) => `《${q.name}》（side.${id}）：${q.goal}；完成时写 side.${id}=done（程序当轮就发奖励：${q.rewardText}；所以等东西真的交到玩家手里那一轮再写 done，并在叙述里交代是谁、怎么给的），做不成写 failed`).join("；")}` : "");
+    (on.length ? `\n进行中的支线：${on.map(([id, q]) => `《${q.name}》（side.${id}）：${q.goal}；完成时写 side.${id}=done（程序当轮就发奖励：${q.rewardText}；所以等东西真的交到玩家手里那一轮再写 done，并在叙述里交代是谁、怎么给的），做不成写 failed`).join("；")}` : "") +
+    (taken.some(([, q]) => q.act !== state.act) ? `\n其他幕未完成的支线（保留记录，本场不推进）：${taken.filter(([, q]) => q.act !== state.act).map(([id, q]) => `《${q.name}》（side.${id}）：尚未完成`).join("；")}` : "");
 }
 // 任务标记登记进 FLAG_KEYS；questKeys 记下每个标记属于谁的第几步（抉择记作最后一步之后）
 const questKeys = {};
@@ -1475,7 +1484,7 @@ function addDraconic(ref, n, notes) {
   for (const m of MARKS.filter(m => before < m.at && after >= m.at)) line(`${who || "你"}的印记觉醒了：${m.name}——${m.desc}`, "up");
   if (ref !== "player") return;
   for (const t of [40, 60, 80].filter(t => before < t && after >= t))
-    for (const id of party()) { const [d] = DRAGON_VIEW[id] || [0]; if (d) { state.companions[id].approval = clamp(state.companions[id].approval + d, -100, 100); line(`${PEOPLE[id].name}看着你掌心蔓延的鳞片，赞同度 ${sgn(d)}`, d > 0 ? "up" : "down"); } }
+    for (const id of party()) { const [d] = DRAGON_VIEW[id] || [0]; if (d) { const actual = changeApproval(id, d); if (actual) line(`${PEOPLE[id].name}看着你掌心蔓延的鳞片，赞同度 ${sgn(actual)}`, actual > 0 ? "up" : "down"); } }
 }
 /* 6 级以后的职业能力（每场战斗一次的写 once）。玩家和同伴共用，同伴由自动战斗使用。 */
 const CLASS_FEATS = {
@@ -1897,7 +1906,7 @@ function toast(text, kind) {
    状态
    ========================================================= */
 const AUTO = "dragon-oath-auto";
-const CHECKPOINT = "dragon-oath-checkpoint"; // 攻山之前的存档点：港口陷落之后可以从这里重新挑战（只存在浏览器里）
+const CHECKPOINT = "dragon-oath-checkpoint"; // 检查点的浏览器副本；正式检查点同时随本局存档携带
 const SLOT = n => "dragon-oath-slot-" + n;
 const PREF = "dragon-oath-pref";
 let state = null;
@@ -1932,13 +1941,15 @@ function profsOf(d) {
 }
 function acOf(cls, dexMod) { const [base, addDex] = CLASSES[cls].ac; return addDex ? base + dexMod : base; }
 
+let runSequence = 0;
+const newRunId = () => globalThis.crypto?.randomUUID?.() || Date.now().toString(36) + "-" + (++runSequence);
 function newGame(d) {
   const ab = finalAbilities(d), c = CLASSES[d.cls];
   const hp = c.hd + mod(ab.con);
   const companions = {};
   for (const [id, cd] of Object.entries(COMPANIONS)) companions[id] = { recruited: false, alive: true, taken: false, approval: 0, romance: "none", hp: cd.hp, hpMax: cd.hp };
   return {
-    version: 1, phase: "play", act: 0, scene: "prologue_1", day: 1, location: SCENES.prologue_1.loc,
+    version: 1, runId: newRunId(), phase: "play", act: 0, scene: "prologue_1", day: 1, location: SCENES.prologue_1.loc,
     player: { name: d.name, gender: d.gender, appearance: d.appearance, race: d.race, cls: d.cls, bg: d.bg, level: 1,
       abilities: ab, profs: profsOf(d), hp, hpMax: hp, ac: acOf(d.cls, mod(ab.dex)), gold: 15, inventory: c.items.slice(),
       draconic: 0, inspiration: 0, portraitData: d.portraitData },
@@ -1952,7 +1963,8 @@ function newGame(d) {
    服务器覆盖前会留历史备份。读档时取两边较新的一份。 */
 const DISK_KEY = k => k === AUTO ? "auto" : "slot" + k.slice(-1);
 const SAVE_FORMAT = "dragon-oath-save";
-const disk = { on: false, meta: {}, backups: [], pending: {}, writing: {} };
+const disk = { on: false, meta: {}, backups: [], pending: {}, writing: {}, base: {}, conflicts: {} };
+const CONFLICT_PREFIX = "dragon-oath-conflict-";
 let saveWarnAt = 0;
 function saveWarn(msg) { if (Date.now() - saveWarnAt > 60000) { saveWarnAt = Date.now(); toast(msg, "down"); } }
 const metaOf = p => ({ t: p.t, name: p.state.player.name, scene: p.state.scene, combat: !!p.state.combat });
@@ -1962,11 +1974,34 @@ function save(key) {
   key = key || AUTO;
   let p;
   try { p = snapshot(); } catch (e) { return false; }
+  p.t = Math.max(p.t, (readSave(key)?.t || 0) + 1);
+  const slot = DISK_KEY(key);
+  if (!disk.on && readSave(key)?.revision) p.revision = readSave(key).revision;
+  if (disk.on) {
+    p.revision = disk.base[slot] ?? null;
+    const other = readSave(key);
+    if (disk.conflicts[slot] || (other?.revision && other.revision !== p.revision)) return keepSaveConflict(key, p);
+  }
   let local = true;
   try { localStorage.setItem(key, JSON.stringify(p)); } catch (e) { local = false; }
   if (disk.on) diskWrite(key, p);
   else if (!local) { if (key === AUTO) saveWarn("自动存档失败：浏览器存储已满或不可用。请在存档菜单里导出备份。"); else toast("存档失败：浏览器存储不可用", "down"); }
   return local || disk.on;
+}
+function keepSaveConflict(key, p) {
+  const slot = DISK_KEY(key), conflict = disk.conflicts[slot] ||= CONFLICT_PREFIX + Date.now() + "-" + slot;
+  try { localStorage.setItem(conflict, JSON.stringify(p)); }
+  catch (e) { saveWarn("冲突进度无法存入浏览器，请立即导出当前进度。"); return false; }
+  saveWarn("检测到其他页面已保存新进度，本页已另存冲突副本。请打开存档菜单选择进度。");
+  return true;
+}
+function conflictSaves() {
+  const out = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i); if (!key?.startsWith(CONFLICT_PREFIX)) continue;
+    const data = readSave(key); if (validState(data?.state)) out.push({ key, data });
+  }
+  return out.sort((a, b) => b.data.t - a.data.t);
 }
 async function diskWrite(key, p) {
   disk.pending[key] = p;
@@ -1975,10 +2010,24 @@ async function diskWrite(key, p) {
   try {
     while (disk.pending[key]) {
       const next = disk.pending[key]; delete disk.pending[key];
+      const slot = DISK_KEY(key);
+      if (disk.conflicts[slot]) { keepSaveConflict(key, next); continue; }
       try {
-        const res = await fetch("/__save/slot/" + DISK_KEY(key), { method: "PUT", mode: "same-origin", credentials: "omit", headers: { "Content-Type": "application/json" }, body: JSON.stringify(next) });
+        const res = await fetch("/__save/slot/" + slot, { method: "PUT", mode: "same-origin", credentials: "omit", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...next, expectedRevision: disk.base[slot] ?? null }) });
+        if (res.status === 409) {
+          keepSaveConflict(key, disk.pending[key] || next); delete disk.pending[key];
+          const latest = await diskGet("slot/" + slot), local = readSave(key);
+          if (latest) {
+            disk.meta[slot] = { ...metaOf(latest), revision: latest.revision };
+            if (local?.t === next.t) try { localStorage.setItem(key, JSON.stringify(latest)); } catch (e) {}
+          }
+          continue;
+        }
         if (!res.ok) throw new Error("HTTP " + res.status);
-        disk.meta[DISK_KEY(key)] = metaOf(next);
+        const done = await res.json(); disk.base[slot] = done.revision;
+        disk.meta[slot] = { ...metaOf(next), revision: done.revision };
+        const local = readSave(key);
+        if (local?.t === next.t) try { localStorage.setItem(key, JSON.stringify({ ...next, revision: done.revision })); } catch (e) {}
       } catch (e) { saveWarn("硬盘存档失败：请确认“开始游玩.cmd”的窗口还开着。浏览器里仍有一份存档。"); }
     }
   } finally { disk.writing[key] = false; }
@@ -1996,8 +2045,57 @@ function slotMeta(key) {
   const l = readSave(key), lm = l?.state?.player ? metaOf(l) : null, dm = disk.meta[DISK_KEY(key)];
   return dm && (!lm || dm.t > lm.t) ? { ...dm, from: "disk" } : lm ? { ...lm, from: "local" } : null;
 }
-async function loadSave(key) { const m = slotMeta(key); return !m ? null : m.from === "disk" ? diskGet("slot/" + DISK_KEY(key)) : readSave(key); }
-const validState = s => !!s && typeof s === "object" && s.phase === "play" && !!s.player && Array.isArray(s.log) && !!SCENES[s.scene];
+async function loadSave(key) {
+  const m = slotMeta(key), slot = DISK_KEY(key);
+  if (!m) return null;
+  const p = m.from === "disk" ? await diskGet("slot/" + slot) : readSave(key);
+  if (p && m.from === "disk") disk.base[slot] = p.revision;
+  return p;
+}
+const saveRecord = v => !!v && typeof v === "object" && !Array.isArray(v);
+function validState(s) {
+  if (!saveRecord(s) || s.phase !== "play" || !SCENES[s.scene] || !Number.isFinite(s.day)
+      || (s.runId != null && typeof s.runId !== "string") || (s.vesselAsk != null && !COMPANIONS[s.vesselAsk])
+      || (s.endingVessel != null && s.endingVessel !== "player" && !COMPANIONS[s.endingVessel])) return false;
+  const p = s.player, numbers = ["hp", "hpMax", "ac", "gold", "level", "draconic", "inspiration"];
+  if (!saveRecord(p) || typeof p.name !== "string" || !RACES[p.race] || !CLASSES[p.cls] || !BACKGROUNDS[p.bg]
+      || !saveRecord(p.abilities) || !AB_KEYS.every(k => Number.isFinite(p.abilities[k])) || !numbers.every(k => Number.isFinite(p[k]))
+      || !Array.isArray(p.profs) || !p.profs.every(k => !!SKILLS[k]) || !Array.isArray(p.inventory) || !p.inventory.every(v => typeof v === "string")) return false;
+  if (!saveRecord(s.companions) || !saveRecord(s.flags) || !Array.isArray(s.log)
+      || !s.log.every(e => saveRecord(e) && (e.t == null || typeof e.t === "string"))
+      || !Array.isArray(s.journal) || !s.journal.every(j => saveRecord(j) && typeof j.quest === "string" && typeof j.note === "string")
+      || !Array.isArray(s.suggestions) || !Array.isArray(s.speakers) || !saveRecord(s.expressions)) return false;
+  for (const id of Object.keys(COMPANIONS)) {
+    const c = s.companions[id]; if (c == null) continue; // 后来加入的同伴由 tidyLog 补齐
+    if (!saveRecord(c) || !["hp", "hpMax", "approval"].every(k => Number.isFinite(c[k])) || typeof c.alive !== "boolean"
+        || (c.approvalCap != null && (!Number.isFinite(c.approvalCap) || c.approvalCap < -100 || c.approvalCap > 100))
+        || ["oathbroken", "divineDebt", "cultPact", "vesselConsent"].some(k => c[k] != null && typeof c[k] !== "boolean")
+        || (c.ab != null && (!saveRecord(c.ab) || !AB_KEYS.every(k => Number.isFinite(c.ab[k]))))) return false;
+  }
+  if (s.memory != null && (!saveRecord(s.memory) || !saveRecord(s.memory.people)
+      || (s.memory.summary != null && typeof s.memory.summary !== "string")
+      || !Object.values(s.memory.people).every(v => Array.isArray(v) && v.every(t => typeof t === "string"))
+      || (s.memory.chapters != null && (!Array.isArray(s.memory.chapters) || !s.memory.chapters.every(c => saveRecord(c) && typeof c.text === "string"))))) return false;
+  if (s.pendingCheck && (!saveRecord(s.pendingCheck) || typeof s.pendingCheck.skill !== "string" || !validCheckKey(s.pendingCheck.skill) || !Number.isFinite(s.pendingCheck.dc) || !(s.pendingCheck.who === "player" || COMPANIONS[s.pendingCheck.who]))) return false;
+  if (s.combat && (!ENCOUNTERS[s.combat.id] || !Array.isArray(s.combat.zones) || !s.combat.zones.length
+      || !s.combat.zones.every(z => saveRecord(z) && Array.isArray(z.tags) && Array.isArray(z.adj))
+      || !saveRecord(s.combat.units) || !Array.isArray(s.combat.order))) return false;
+  return true;
+}
+function currentCheckpoint() {
+  const candidates = [state?.checkpoint, readSave(CHECKPOINT)];
+  return candidates.find(p => p?.state?.runId && p.state.runId === state?.runId && validState(p.state)) || null;
+}
+function saveCheckpoint() {
+  const p = snapshot(); delete p.state.checkpoint; // 最多携带一层，避免检查点递归增长
+  state.checkpoint = p;
+  try { localStorage.setItem(CHECKPOINT, JSON.stringify(p)); } catch (e) {}
+}
+function retryCheckpoint() {
+  const p = currentCheckpoint(); if (!p) return false;
+  if (!loadState({ ...p.state, checkpoint: p })) return false;
+  save(); toast("回到了攻上烬冠山之前"); return true;
+}
 // 读进来的存档统一整理：去掉没写完的条目；旧存档的条目没有场景标记，按记录里的章节标题补上
 function tidyLog(s) {
   // 旧存档没有后来加的同伴
@@ -2020,19 +2118,45 @@ function restoreCombatExit(s) {
   if (c?.id === "ember_king" && !c.zones[0].tags.includes("exit")) c.zones[0].tags.push("exit");
 }
 function loadState(s) {
-  state = s; restoreCombatExit(state); tidyLog(state); catchUpLevel();
-  lastAction = null; pick = null; cbGen++;
-  closeModal(); render();
+  if (!validState(s)) return false;
+  const previous = state, previousAction = lastAction, previousPick = pick, next = JSON.parse(JSON.stringify(s));
+  try {
+    state = next; state.runId ||= newRunId();
+    restoreCombatExit(state); tidyLog(state); catchUpLevel(); lastAction = null; pick = null; render();
+  } catch (e) { state = previous; lastAction = previousAction; pick = previousPick; render(); return false; }
+  cbGen++;
+  closeModal();
   if (state.pendingCheck) openDice(); else if (state.combat) advanceCombat(); else if (state.levelNote) openLevelUp();
+  return true;
 }
 // 开页时和硬盘对一次：硬盘更新（换了浏览器、清过缓存）就换成硬盘的；浏览器更新就补写到硬盘
 async function diskInit() {
   if (!LOCAL_GPT) return;
+  disk.initializing = true;
+  try {
   const boot = state, bootLen = state ? state.log.length : -1;
   if (!(await diskList())) return;
   for (const key of [AUTO, SLOT(1), SLOT(2), SLOT(3)]) {
-    const l = readSave(key), dm = disk.meta[DISK_KEY(key)];
-    if (l?.state?.player && (!dm || l.t > dm.t)) diskWrite(key, l);
+    const slot = DISK_KEY(key), l = readSave(key), dm = disk.meta[slot];
+    disk.base[slot] = l?.revision ?? dm?.revision ?? null;
+    if (l && dm && !l.revision && key === AUTO && disk.boot?.t === dm.t) {
+      const original = await diskGet("slot/auto");
+      if (original && JSON.stringify(original.state) === JSON.stringify(disk.boot.state)) {
+        l.revision = original.revision; disk.base[slot] = original.revision;
+        try { localStorage.setItem(key, JSON.stringify(l)); } catch (e) {}
+      }
+    }
+    if (l && dm && l.t === dm.t && l.revision !== dm.revision) {
+      const confirmed = await diskGet("slot/" + slot);
+      if (confirmed && JSON.stringify(confirmed.state) === JSON.stringify(l.state)) {
+        l.revision = confirmed.revision; disk.base[slot] = confirmed.revision;
+        try { localStorage.setItem(key, JSON.stringify(l)); } catch (e) {}
+      } else keepSaveConflict(key, l);
+    }
+    if (validState(l?.state) && (!dm || l.t > dm.t)) {
+      if (dm && l.revision !== dm.revision) keepSaveConflict(key, l);
+      else diskWrite(key, l);
+    }
   }
   const l = readSave(AUTO), dm = disk.meta.auto;
   const untouched = state === boot && (!state || state.log.length === bootLen) && !busy;
@@ -2040,10 +2164,12 @@ async function diskInit() {
     const sv = await diskGet("slot/auto");
     if (sv && validState(sv.state) && state === boot) {
       try { localStorage.setItem(AUTO, JSON.stringify(sv)); } catch (e) {} // 补回浏览器里的副本，时间戳保持不变
-      loadState(sv.state); toast("已读取硬盘上的最新存档");
+      disk.base.auto = sv.revision;
+      if (loadState(sv.state)) toast("已读取硬盘上的最新存档");
     }
   }
   if (!state || state.phase !== "play") $("mLoad").hidden = !hasSaves();
+  } finally { disk.initializing = false; }
 }
 async function exportSave() {
   if (!state || state.phase !== "play") return;
@@ -2124,6 +2250,19 @@ function bonusFor(who, key) {
   return { total: m + p, parts, label: name };
 }
 const kitOf = who => who === "player" ? state.player.cls : COMPANIONS[who].kit;
+function changeApproval(id, delta) {
+  const c = state.companions[id], before = c.approval;
+  c.approval = clamp(before + delta, -100, c.approvalCap ?? 100);
+  return c.approval - before;
+}
+const classLabel = who => who === "selene" && state.companions.selene.oathbroken ? "破誓者" : who === "player" ? CLASSES[state.player.cls].name : COMPANIONS[who].cls;
+const signatureOf = who => who === "selene" && state.companions.selene.oathbroken
+  ? { name: "恐惧之拥", desc: "附赠动作，每场一次：同区敌人恐惧 2 回合，取代圣疗" } : SIGNATURE[who];
+const companionEffects = id => {
+  const c = state.companions[id];
+  return [c.approvalCap != null ? `赞同度上限 ${c.approvalCap}` : "", c.oathbroken ? "破誓者：至圣斩转为黯蚀斩，圣疗转为恐惧之拥，守护灵光转为恐惧灵光" : "",
+    c.divineDebt ? "誓言破碎，每场少一次治疗之语；可在营地赎罪恢复" : "", c.cultPact && !c.betrayed ? "已接受教团邀请：第三幕赞同低于 60 时背叛" : ""].filter(Boolean).join("；");
+};
 // 每升一级的生命：生命骰的一半 + 1 + 体质调整值（取平均值，不掷骰），至少 1
 const hpGain = who => Math.max(1, Math.floor(CLASSES[kitOf(who)].hd / 2) + 1 + mod(abOf(who).con));
 // 升到 to 级：全队一起升，满血；4/8/12 级玩家自己分配属性提升，同伴自动给主属性 +2
@@ -2287,16 +2426,17 @@ function canRecruit(id) {
   if (c.taken) return !!sc.rescue;
   return !!sc.recruit?.includes(id) && (!sc.meetIf?.[id] || sc.meetIf[id]());
 }
-function companionBrief(id) {
+function companionBrief(id, concise = false) {
   const c = COMPANIONS[id], s = state.companions[id], p = PEOPLE[id];
   const love = s.romance && s.romance !== "none" ? `，恋爱：${ROMANCE[s.romance].name}${s.secret ? "（秘密，其他恋人不知道）" : ""}` : "";
   const rule = ROMANCE_RULES[id], gate = [rule?.noLie && s.caughtLie ? "曾发现玩家撒谎，不会接受告白" : "", rule ? `接受多人恋爱需要赞同度 ≥ ${rule.poly}` : ""].filter(Boolean).join("；");
-  return `· ${p.name}（id: ${id}，${c.race}${c.cls}，${partyLevel()} 级）${s.jailed ? "【被关押在酒馆地窖，不在队伍里，不参加战斗】" : s.recruited ? "【已加入队伍】" : canRecruit(id) ? `【尚未加入；这一场可以招募：只要他/她答应同行，就必须在 JSON 写 recruit:["${id}"]，光在叙述里答应不算入队】` : "【尚未加入】"} 赞同度 ${s.approval}（${relLabel(s.approval)}）${love}，HP ${s.hp}/${s.hpMax}${gate ? "\n  感情底线：" + gate : ""}
+  if (concise) return `· ${p.name}（${id}），${classLabel(id)}，赞同 ${s.approval}${love}；性格：${c.personality}；${companionEffects(id)}`;
+  return `· ${p.name}（id: ${id}，${c.race}${classLabel(id)}，${partyLevel()} 级）${s.jailed ? "【被关押在酒馆地窖，不在队伍里，不参加战斗】" : s.recruited ? "【已加入队伍】" : canRecruit(id) ? `【尚未加入；这一场可以招募：只要他/她答应同行，就必须在 JSON 写 recruit:["${id}"]，光在叙述里答应不算入队】` : "【尚未加入】"} 赞同度 ${s.approval}（${relLabel(s.approval)}）${love}，HP ${s.hp}/${s.hpMax}${gate ? "\n  感情底线：" + gate : ""}
   性格：${c.personality}
   赞同：${c.likes}；反感：${c.dislikes}
   秘密：${c.secret}
   加入条件：${c.join}
-  专属技能：${SIGNATURE[id].name}（${SIGNATURE[id].desc}）${featsOf(c.kit, partyLevel()).length ? "；职业能力：" + featsOf(c.kit, partyLevel()).map(f => f.name).join("、") : ""}
+  专属技能：${signatureOf(id).name}（${signatureOf(id).desc}）${companionEffects(id) ? "；当前后果：" + companionEffects(id) : ""}${featsOf(c.kit, partyLevel()).length ? "；职业能力：" + featsOf(c.kit, partyLevel()).map(f => s.oathbroken ? ({ aura: "恐惧灵光（同区敌人 AC −1）", radiant: "黯蚀打击" }[f.id] || f.name) : f.name).join("、") : ""}
   印记：龙化值 ${s.draconic || 0}${s.resonance ? "，已经和玩家共鸣过" : ""}；对玩家龙化（现在 ${state.player.draconic}）的看法：${DRAGON_VIEW[id]?.[1] || "说不清"}
   ${questBrief(id)}`;
 }
@@ -2436,7 +2576,10 @@ function buildPrompt(action, mode) {
     `\n\n【玩家角色】${p.name}，${p.gender}，${p.level} 级${RACES[p.race].name}${CLASSES[p.cls].name}，背景：${BACKGROUNDS[p.bg].name}（灵感条件：${BACKGROUNDS[p.bg].insp}）。外貌：${p.appearance}` +
     `\n属性：${AB_KEYS.map(k => AB[k] + p.abilities[k] + "(" + sgn(mod(p.abilities[k])) + ")").join(" ")}；熟练技能：${profs}` +
     `\nHP ${p.hp}/${p.hpMax}，AC ${acTotal("player")}，金币 ${p.gold}，灵感 ${p.inspiration}，龙化值 ${p.draconic}${marksOf("player").length ? "（印记能力：" + marksOf("player").map(m => m.name).join("、") + "）" : ""}，装备：${gearLine("player")}，行囊：${p.inventory.join("、") || "无"}` +
-    `\n\n【在场同伴】\n${pres.length ? pres.map(companionBrief).join("\n") : "（无，玩家独自一人）"}` +
+    `\n\n【在场同伴】\n${pres.length ? pres.map(id => companionBrief(id, mode === "narrate")).join("\n") : "（无，玩家独自一人）"}` +
+    (Object.keys(COMPANIONS).some(id => !pres.includes(id) && (state.companions[id].approval || state.companions[id].recruited || !state.companions[id].alive)) ? `\n【不在场同伴】${Object.keys(COMPANIONS).filter(id => !pres.includes(id) && (state.companions[id].approval || state.companions[id].recruited || !state.companions[id].alive)).map(id => { const c = state.companions[id]; return `${PEOPLE[id].name}（${id}）：${!c.alive ? "已死" : c.betrayed ? "背叛离队" : c.taken ? "被掳" : c.jailed ? "被关押" : "不在场"}，赞同 ${c.approval}`; }).join("；")}` : "") +
+    (state.vesselAsk ? `\n【容器询问】只回应${PEOPLE[state.vesselAsk]?.name}是否自愿献出身体；用 vessel_consent:{id:"${state.vesselAsk}",ok:true或false} 记录明确答应或拒绝。不能替玩家确认结局。` : "") +
+    (state.flags["act3.ending"] === "hestia" ? `\n【银龙容器】${endingText("hestia")}容器与赫斯提雅共用一具身体，不能另写原主人的身体。` : "") +
     `\n\n【NPC】\n${npcLines()}` +
     `\n\n【世界标记】${JSON.stringify(state.flags)}；赫斯提雅信任 ${state.hestiaTrust}；第 ${state.day} 天，营地补给 ${state.supplies ?? 0}${debtLine()}${allyLine()}${hostageDead() ? `；灯塔之夜的人质${tomGone() ? "小汤姆" : "玛莎"}没能救回来，已经死了：之后的场景里不要再让${tomGone() ? "他" : "她"}出场` : ""}${state.act ? "；阵营声望：" + repLine() : ""}` +
     (Object.entries(state.rel || {}).some(([, v]) => v) ? `\n【同伴之间】${Object.entries(state.rel).filter(([, v]) => v).map(([k, v]) => k.split("_").map(id => PEOPLE[id].name).join("×") + " " + sgn(v)).join("，")}` : "") +
@@ -2465,13 +2608,13 @@ const CHAPTER_SRC = 24000, RECALL_CHARS = 2500, RECALL_MIN = 6;
 const memo = () => { const m = (state.memory ||= { summary: "", people: {} }); m.chapters ||= []; return m; };
 const LINE_TAG = { gm: "GM：", you: "玩家：", roll: "检定：", sys: "系统：", cb: "战斗：" };
 const entryLine = e => (LINE_TAG[e.k] || "") + e.t.slice(0, 1200);
-const storyPool = () => state.log.filter(e => e.t && !e.live && !e.m && e.k !== "chapter" && e.k !== "cb");
+const storyPool = () => state.log.filter(e => e.t && !e.live && !e.failed && !e.m && e.k !== "chapter" && e.k !== "cb");
 // 最近检定成功拿到的东西：检定的难点 + 紧接着那段叙述的开头。说书人常忘了自己写过的线索（读出的字、问到的话），反复要求同一件事再检定
 function winsLines(skip = 12) {
   const log = state.log, out = [];
   for (let i = 0; i < log.length - skip; i++) {
     const e = log[i]; if (e.k !== "roll" || !e.ok || !e.why || (SCENES[e.s]?.act ?? state.act) !== state.act) continue; // 只看这一幕的
-    const g = log.slice(i + 1, i + 6).find(x => x.k === "gm");
+    const g = log.slice(i + 1, i + 6).find(x => x.k === "gm" && !x.failed);
     out.push(`· ${e.why}：${g ? str(g.t.replace(/\s+/g, " "), 90) : "成功"}`);
   }
   return out.slice(-5).join("\n");
@@ -2490,7 +2633,7 @@ function recentLines() {
 // 想起的旧事：把玩家这句话切成 2–4 字的片段，在已压缩的旧原文里找；越少见的片段权重越高，人名加倍
 function recallLines(action) {
   if (!action || action.startsWith("【") || action.startsWith("（")) return "";
-  const pool = state.log.filter(e => e.m && e.t && e.k !== "chapter" && e.k !== "cb");
+  const pool = state.log.filter(e => e.m && !e.failed && e.t && e.k !== "chapter" && e.k !== "cb");
   if (!pool.length) return "";
   const names = new Set(MEM_IDS.map(id => PEOPLE[id].name));
   const grams = new Set();
@@ -2562,7 +2705,7 @@ function pendingChapter() {
   const done = new Set(memo().chapters.map(c => c.id)), order = [], cur = curKey();
   for (const e of state.log) if (e.s && !order.includes(chKey(e))) order.push(chKey(e));
   return order.find(id => (id !== cur || state.ended) && !done.has(id)
-    && state.log.some(e => chKey(e) === id && e.t && e.k !== "chapter" && e.k !== "cb"));
+    && state.log.some(e => chKey(e) === id && !e.failed && e.t && e.k !== "chapter" && e.k !== "cb"));
 }
 function chapterPrompt(id, text) {
   const p = state.player;
@@ -2578,7 +2721,7 @@ ${text}`;
 async function writeChapter() {
   if (!state || state.combat || !narratorReady()) return;
   const id = pendingChapter(); if (!id) return;
-  const entries = state.log.filter(e => chKey(e) === id && e.t && e.k !== "chapter" && e.k !== "cb");
+  const entries = state.log.filter(e => chKey(e) === id && !e.failed && e.t && e.k !== "chapter" && e.k !== "cb");
   let text = entries.map(entryLine).join("\n");
   if (text.length > CHAPTER_SRC) text = entries.map(e => (LINE_TAG[e.k] || "") + e.t.slice(0, 300)).join("\n"); // 太长就每条截短
   if (text.length > CHAPTER_SRC) text = text.slice(0, CHAPTER_SRC / 2) + "\n……\n" + text.slice(-CHAPTER_SRC / 2);
@@ -2627,6 +2770,7 @@ async function summarize() {
 }
 
 const ERR = {
+  invalid_reply: "说书人的回复格式不完整，本轮未完成。请点“重试上一步”。",
   not_granted: "你没有允许这个页面使用 Claude，说书人无法继续。可以在页面的权限菜单里重新允许。",
   sampling_disabled: "这个账户暂时无法使用 Claude。",
   rate_limited: "说书人需要喘口气（请求太频繁或额度用尽），稍后点“重试上一步”。",
@@ -2800,6 +2944,18 @@ async function apiNarrate(prompt, onText, signal) {
   return text;
 }
 
+function parseGMReply(text, mode) {
+  const [narr, tail] = splitReply(text);
+  if (narr && mode === "narrate" && !text.includes("@@@")) return [narr, {}];
+  const a = tail.indexOf("{"), b = tail.lastIndexOf("}");
+  try {
+    if (!narr || a < 0 || b <= a) throw new Error("missing change object");
+    const data = JSON.parse(tail.slice(a, b + 1));
+    if (!saveRecord(data)) throw new Error("invalid change object");
+    return [narr, data];
+  } catch (e) { throw { code: "invalid_reply", text }; }
+}
+
 // mode：undefined 普通一轮；"narrate" 描写战况（失败不重试）；"improv" 战斗中的即兴行动
 async function gm(action, shown, mode) {
   if (busy || state.ended) return;
@@ -2812,7 +2968,7 @@ async function gm(action, shown, mode) {
     busy = false; memWait = false;
   }
   const prompt = buildPrompt(action, mode);
-  if (shown) push("you", shown);
+  const playerEntry = shown ? push("you", shown) : null;
   state.suggestions = [];
   const entry = push("gm", "", { live: true });
   busy = true; ctl = new AbortController();
@@ -2821,21 +2977,19 @@ async function gm(action, shown, mode) {
     const text = await narrate(prompt, t => {
       entry.t = splitReply(t)[0]; const n = document.querySelector('[data-live="1"]'); if (n) { n.textContent = entry.t; scrollStory(); }
     }, ctl.signal);
-    const [narr, tail] = splitReply(text);
+    const [narr, data] = parseGMReply(text, mode);
     entry.t = narr; delete entry.live;
-    let data = {};
-    const a = tail.indexOf("{"), b = tail.lastIndexOf("}");
-    if (a >= 0 && b > a) { try { data = JSON.parse(tail.slice(a, b + 1)); } catch (e) { console.warn("JSON 解析失败", e); } }
     applyGM(data, mode);
     if (mode !== "narrate") state.turns++;
     lastAction = null;
   } catch (e) {
-    delete entry.live;
+    delete entry.live; entry.failed = true;
+    if (playerEntry) playerEntry.failed = true;
     entry.t = splitReply(e.text || "")[0];
     if (!entry.t) state.log.splice(state.log.indexOf(entry), 1);
     if (e.code !== "cancelled") push("sys", ERR[e.code] || "说书人的思路被打断了，点“重试上一步”再来一次。");
     if (e.code === "not_granted" || e.code === "sampling_disabled") sample = null;
-    if (shown) { const i = state.log.findIndex(x => x.k === "you" && x.t === shown); if (i >= 0 && e.code !== "cancelled") state.log[i].retry = true; }
+    if (playerEntry && e.code !== "cancelled") playerEntry.retry = true;
   } finally {
     busy = false; ctl = null;
     save(); renderPlay();
@@ -2865,7 +3019,7 @@ function applyGM(d, mode) {
     if (k === "act1.lise" && state.flags[k]) { // 莉丝的结局定了就不再改；只有债到期后的那一轮可以撤销误判
       if (v === "saved" && state.flags[k] === "sold" && state.liseSale) {
         state.flags[k] = "saved"; const vx = state.companions.vex;
-        vx.approval = clamp(vx.approval + state.liseSale.approval, -100, 100);
+        changeApproval("vex", state.liseSale.approval);
         const mm = memo().people.vex || []; const i = mm.indexOf("你没能在期限内救下莉丝"); if (i >= 0) mm.splice(i, 1);
         state.liseSale = null; notes.push(["莉丝其实早就救出来了：撤销债务到期，维克斯的赞同度恢复", "up"]);
       }
@@ -2902,7 +3056,7 @@ function applyGM(d, mode) {
     if (k === "act2.sacrifice" && v === "draconic") { if (state.player.draconic < 20 || state.flags[k]) continue; addDraconic("player", -20, notes); }
     if (k === "act2.heart" && (state.flags[k] || v === "cult" || v === "destroyed" && state.flags["act2.tideborn"] !== "ally")) continue; // 抢走由代码写；销毁要潮裔是盟友
     if (k === "act2.heart" && v === "player") addDraconic("player", 30, notes);
-    if (CODE_FLAGS.has(k)) continue; // 由代码结算
+    if (CODE_FLAGS.has(k) || k === "act2.darin" && v === "woke") continue; // 达林唤醒由战歌结算；killed/left 仍可由剧情写入
     if (k === "act3.route" && !({ charge: () => allies().length >= 2, tunnel: () => state.flags["quest.naia"] === "double" || state.flags["prologue.rat_king"] === "spared" || !!state.flags["tavern.intel"], wings: () => state.player.draconic >= 80 })[v]?.()) { console.warn("这条路的条件不满足", v); continue; }
     if (k === "act3.valdo" && v === "convinced" && !((state.flags["act2.eve"] || state.flags["side.eve_letter"] === "done") && state.flags["quest.selene.diary"])) continue; // 说服主教要有证据
     const was = state.flags[k];
@@ -2915,8 +3069,8 @@ function applyGM(d, mode) {
     // 个人任务往前走了一步（不含最后的抉择）：赞同度 +7
     const [sq, si] = questKeys[k] || [];
     if (sq && !was && state.flags[k] && QUESTS[sq].steps[si]?.flag === k && state.companions[sq].alive && state.companions[sq].recruited) {
-      const c = state.companions[sq]; c.approval = clamp(c.approval + QUEST_STEP_BONUS, -100, 100);
-      notes.push([`${PEOPLE[sq].name}赞同 +${QUEST_STEP_BONUS}（个人任务往前走了一步）`, "up"]);
+      const actual = changeApproval(sq, QUEST_STEP_BONUS);
+      if (actual) notes.push([`${PEOPLE[sq].name}赞同 ${sgn(actual)}（个人任务往前走了一步）`, "up"]);
     }
   }
   const taken = state.flags["prologue.betrayed_companion"];
@@ -2935,11 +3089,15 @@ function applyGM(d, mode) {
 
   // approval
   const pres = present();
+  const offer = d.vessel_consent;
+  if (offer && state.pendingFinal && state.scene === "act3_king" && !state.combat && !d.check && offer.id === state.vesselAsk
+      && party().includes(offer.id) && !state.companions[offer.id].betrayed && typeof offer.ok === "boolean") {
+    state.companions[offer.id].vesselConsent = offer.ok; delete state.vesselAsk;
+    notes.push([`${PEOPLE[offer.id].name}${offer.ok ? "自愿成为赫斯提雅重生的容器；仍需你最终确认" : "拒绝成为容器，你尊重了这个决定"}`, offer.ok ? "up" : "down"]);
+  }
   for (const a of (Array.isArray(d.approval) ? d.approval : [])) {
     if (!pres.includes(a.id)) continue;
-    const delta = num(a.delta, 15); if (!delta) continue;
-    const c = state.companions[a.id];
-    c.approval = clamp(c.approval + delta, -100, 100);
+    const c = state.companions[a.id], delta = changeApproval(a.id, num(a.delta, 15)); if (!delta) continue;
     const why = a.reason ? "（" + str(a.reason, 40) + "）" : "";
     const t = `${PEOPLE[a.id].name} ${delta > 0 ? "赞同" : "不赞同"} ${sgn(delta)}`;
     toast(t, delta > 0 ? "up" : "down");
@@ -2997,6 +3155,7 @@ function applyGM(d, mode) {
   }
   // romance, relations, supplies
   if (mode !== "narrate") applyBonds(d, notes);
+  if (mode !== "narrate" && state.act === 3 && state.scene !== "act3_end" && !state.combat) resolveCultPact();
   // journal
   for (const j of (Array.isArray(d.journal) ? d.journal : []).slice(0, 2)) {
     const q = str(j.quest, 20).trim(), n = str(j.note, 80).trim(); if (!q || !n) continue;
@@ -3102,6 +3261,13 @@ function route(sc, id) {
 }
 const isLoc = id => !!(SCENES[id]?.loc1 || SCENES[id]?.loc2);
 const hubSubs = sc => sc.hub ? nextOf(sc).filter(isLoc).flatMap(x => nextOf(SCENES[x]).filter(y => y !== state.scene && !nextOf(sc).includes(y)).map(y => [x, y])) : [];
+function resolveCultPact() {
+  const c = state.companions.lyra;
+  if (!c.cultPact || c.betrayed || !party().includes("lyra") || c.approval >= 60) return;
+  c.betrayed = true; c.recruited = false; c.left = true;
+  remember("lyra", "接受导师邀请后，在第三幕投向了教团");
+  push("sys", "莉拉接受了导师的邀请，选择投向教团，离开了队伍", { cls: "appr-down" });
+}
 function goScene(id, keepLocation, rested = false) {
   state.scene = id;
   state.visits = { ...(state.visits || {}), [id]: (state.visits?.[id] || 1) + (state.log.some(e => e.s === id) ? 1 : 0) };
@@ -3112,8 +3278,9 @@ function goScene(id, keepLocation, rested = false) {
   const need = levelNeed(); // 里程碑升级：场景数据里的 level，第一幕按走完的地点数
   if (need > partyLevel()) levelUp(need);
   if (state.visits[id] === 1) sceneRolls(ns); // 第一次进入时，代码替全队掷的豁免/检定
-  if (id === "act3_climb") try { localStorage.setItem(CHECKPOINT, JSON.stringify(snapshot())); } catch (e) {}
+  if (id === "act3_climb") saveCheckpoint();
   if (ns.enter) SCENE_ENTER[ns.enter]?.();
+  if (state.act === 3 && id !== "act3_end") resolveCultPact();
   flashScene = !!ns.flash;
 }
 // 插曲：从营地或长休进入一个单独的小场景，scene_end 后回到原来的地方。back：camp 记着营地（回来继续），next 睡醒后去的场景，morning 回来后写清晨
@@ -3172,10 +3339,10 @@ const ENDINGS = {
   egg: { name: "新生之卵", act: "把誓约之力注入龙蛋", text: "赫斯提雅的灵魂进入了破壳的幼龙，封印由新生的银龙守护。你们掌心的印记褪成了淡淡的银色纹身。没有人需要牺牲。",
     need: () => [state.flags["act2.egg_warmed"] === 3 && eggHere() ? "" : "龙蛋要在身边、并保温满 3 次", state.companions.vex.alive && state.companions.vex.approval >= 40 && party().includes("vex") ? "" : "维克斯在队里且赞同度 ≥ 40"].filter(Boolean) },
   seven: { name: "七人之誓", act: "七人共同承担誓约", text: "七个人各自保留一片印记，成为新一代守誓人。银龙终于安息，醉龙酒馆成了守誓人重聚的地方。",
-    need: () => { const met = Object.keys(COMPANIONS).filter(id => inAct(id) && state.companions[id].alive && (state.companions[id].recruited || state.companions[id].betrayed));
-      return [met.some(id => state.companions[id].betrayed) ? "没有人背叛" : "", Object.keys(COMPANIONS).some(id => state.companions[id].alive && state.companions[id].taken) ? "被掳走的同伴已经救回来" : "", met.every(id => state.companions[id].approval >= 30) ? "" : "在世同伴的赞同度都 ≥ 30"].filter(Boolean); } },
+    need: () => { const ids = Object.keys(COMPANIONS);
+      return [ids.every(id => party().includes(id)) ? "" : "六位同伴全部健在并在队中，共七人", ids.some(id => state.companions[id].betrayed) ? "没有人背叛" : "", ids.some(id => state.companions[id].taken) ? "被掳走的同伴已经救回来" : "", ids.every(id => state.companions[id].approval >= 30) ? "" : "六位同伴的赞同度都 ≥ 30"].filter(Boolean); } },
   hestia: { name: "银龙重生", act: "把身体献给赫斯提雅", text: "容器的灵魂沉入长眠，赫斯提雅借那具身体重生，封印稳固千年。", need: () => [] },
-  mortal: { name: "凡人之世", act: "打碎誓约，以凡人之力斩龙", text: "印记全部消失。盟军与你们七人合力屠龙，世上再也没有龙了。",
+  mortal: { name: "凡人之世", act: "打碎誓约，以凡人之力斩龙", text: "印记全部消失。盟军与你们合力屠龙，世上再也没有龙了。",
     need: () => [state.flags["act2.heart"] === "destroyed" ? "" : "誓约之心已经销毁", allies().length >= 3 ? "" : "最终战有 ≥ 3 方盟友"].filter(Boolean) },
   dragon: { name: "新龙王", act: "吸收全部七片印记", text: "你化作银黑双色的巨龙，吞噬了烬王，从此统治雾海。", need: () => [state.player.draconic >= 80 ? "" : "龙化值 ≥ 80"].filter(Boolean) },
   crown: { name: "烬冠加冕", act: "向烬王屈膝", get text() { return "烬王苏醒，你成了它在人间的代言人。灰帆港化为灰烬。" + (repOf("cult") >= 0 ? "主教瓦尔多亲自为你戴上烬冠，教团的信徒跪了一地。" : "教团的信徒不承认你，烬王只把你当作一件趁手的工具。"); }, need: () => [] },
@@ -3187,10 +3354,37 @@ function openFinal() {
     for (const [id, e] of Object.entries(ENDINGS).filter(([id]) => id !== "fall")) {
       const miss = e.need(), b = el("button", "opt"); b.type = "button"; b.disabled = !!miss.length || busy;
       b.append(el("span", "k", "★"), el("span", "tx", `${e.act}（${e.name}）` + (miss.length ? "　还缺：" + miss.join("、") : "")));
-      b.onclick = () => { closeModal(); chooseEnding(id); };
+      b.onclick = () => { if (id === "hestia") openVessels(); else { closeModal(); chooseEnding(id); } };
       s.append(b);
     }
   });
+}
+function vesselAvailable(id) { return party().includes(id) && !state.companions[id].betrayed; }
+function openVessels() {
+  if (!state.pendingFinal || state.scene !== "act3_king" || state.combat || busy) return;
+  modal("谁来成为容器", s => {
+    s.append(el("p", "recap", "赫斯提雅将借被选者的身体重生，那个人的灵魂会在同一具身体里长眠。这是牺牲。你可以献出自己，也可以先询问同伴；同伴可以拒绝，只有自愿者才能被选择。"));
+    const option = (text, fn) => { const b = el("button", "opt", text); b.type = "button"; b.onclick = fn; s.append(b); };
+    option("由我自愿献出身体", () => confirmVessel("player"));
+    for (const id of party().filter(vesselAvailable)) {
+      const consent = state.companions[id].vesselConsent;
+      if (consent === true) option(`${PEOPLE[id].name}已自愿：选择${PEOPLE[id].name}`, () => confirmVessel(id));
+      else if (consent === false) s.append(el("p", "label", `${PEOPLE[id].name}已经拒绝成为容器。`));
+      else option(`询问${PEOPLE[id].name}是否自愿`, () => {
+        state.vesselAsk = id; closeModal();
+        gm(`（玩家询问${PEOPLE[id].name}：是否自愿让赫斯提雅借你的身体重生？请按其性格、关系和经历作出自由回答。必须说明这是灵魂长眠的牺牲，可以明确拒绝。只在其明确答应或拒绝时写 vessel_consent:{id:"${id}",ok:true或false}。这次只是询问，不发生献身，不结束场景；suggestions写[]。）`, null);
+      });
+    }
+    option("返回最终抉择", openFinal);
+  });
+}
+function confirmVessel(id) {
+  if (!state.pendingFinal || busy || state.combat || (id !== "player" && (!vesselAvailable(id) || state.companions[id].vesselConsent !== true))) return false;
+  modal("确认银龙重生", s => {
+    s.append(el("p", "recap", `确定让${id === "player" ? "自己" : PEOPLE[id].name}自愿献出身体吗？赫斯提雅将以这具身体重生，原主人的灵魂沉睡。这会进入结局。`));
+    const yes = el("button", "btn gold", "确认自愿献身"); yes.type = "button"; yes.onclick = () => { closeModal(); chooseEnding("hestia", id); };
+    const no = el("button", "btn", "返回"); no.type = "button"; no.onclick = openVessels; s.append(yes, no);
+  }); return true;
 }
 // 结局尾声的素材（填数据见 docs/任务书-内容扩充-DS-2.md）：说书人写终章时按每位同伴的处境拿到对应的要点，可以不照抄
 // EPILOGUES[同伴] = { ending: { 结局 id: 要点 }, lover: { 结局 id: 恋人另写的要点 }, choice: { 个人任务抉择: 要点 }, gone: { dead|betrayed|taken: 要点 } }
@@ -3377,6 +3571,9 @@ const EPILOGUES = {
   },
 };
 function loverEpilogue(cid, end) {
+  if (end === "hestia" && state.endingVessel && state.endingVessel !== "player") return state.endingVessel === cid
+    ? `你留在醉龙酒馆，等待${PEOPLE[cid].name}也许永远不会醒来的灵魂；赫斯提雅只借用了${PEOPLE[cid].name}的那一具身体。`
+    : `你和${PEOPLE[cid].name}一起活了下来，记住${PEOPLE[state.endingVessel].name}自愿作出的牺牲，彼此陪伴着走过战后的日子。`;
   if (end === "seven" && state.companions[cid].romance !== "vowed") return `你和${PEOPLE[cid].name}以恋人身份继续相伴，也与其他同伴共同守护誓约。`;
   return EPILOGUES[cid]?.lover?.[end];
 }
@@ -3384,19 +3581,34 @@ function epilogueNote(cid, end) {
   const ep = EPILOGUES[cid], c = state.companions[cid]; if (!ep) return "";
   const gone = !c.alive ? "dead" : c.betrayed ? "betrayed" : c.taken ? "taken" : "";
   const pick = state.flags[QUESTS[cid].choice.flag];
-  const bits = gone ? [ep.gone?.[gone]] : [ep.ending?.[end], isLover(cid) && loverEpilogue(cid, end), pick && ep.choice?.[pick]];
+  const vesselNote = end === "hestia" && state.endingVessel && state.endingVessel !== "player" ? cid === state.endingVessel
+    ? `${PEOPLE[cid].name}自愿献出身体，灵魂沉入同一具身体中的长眠；赫斯提雅借此重生。不要再写其作为独立的人行动。`
+    : `${PEOPLE[cid].name}活了下来，见证${PEOPLE[state.endingVessel].name}自愿成为银龙的容器；玩家也仍然活着。` : ep.ending?.[end];
+  const bits = gone ? [ep.gone?.[gone]] : [vesselNote, isLover(cid) && loverEpilogue(cid, end), pick && ep.choice?.[pick]];
   const t = bits.filter(Boolean).join("；");
   return t ? `（尾声素材：${t}）` : "";
 }
-function chooseEnding(id) {
+function endingText(id) {
+  return id === "hestia" && state.endingVessel && state.endingVessel !== "player"
+    ? `${PEOPLE[state.endingVessel].name}自愿成为容器，灵魂在自己的身体里长眠。赫斯提雅借这具身体重生，封印稳固千年。你活了下来。` : ENDINGS[id]?.text || "";
+}
+function chooseEnding(id, vessel = "player") {
   const e = ENDINGS[id];
+  if (!e || (id !== "fall" && e.need().length)) return false;
+  if (id === "hestia") {
+    if (vessel !== "player" && (!state.pendingFinal || !vesselAvailable(vessel) || state.companions[vessel].vesselConsent !== true)) return false;
+    state.endingVessel = vessel;
+  }
   state.flags["act3.ending"] = id; state.pendingFinal = false;
   push("sys", `结局：${e.name}`, { cls: "appr-up" });
   goScene("act3_end"); save(); render();
   const lines = Object.keys(COMPANIONS).filter(cid => inAct(cid) && (state.companions[cid].recruited || state.companions[cid].taken || state.companions[cid].betrayed || !state.companions[cid].alive))
     .map(cid => { const c = state.companions[cid], q = QUESTS[cid], pick = state.flags[q.choice.flag];
       return `${PEOPLE[cid].name}：${!c.alive ? "已死" : c.betrayed ? "投向了烬王" : c.taken ? "仍被困" : "同行"}，赞同 ${c.approval}${c.romance !== "none" ? "，恋爱：" + ROMANCE[c.romance].name : ""}，个人任务：${pick ? q.choice.options[pick] : "没有了结"}${epilogueNote(cid, id)}`; });
-  gm(`（最终结局：${e.name}——${e.text}${e.act ? "玩家的抉择是：" + e.act + "。" : ""}${id === "hestia" ? "赫斯提雅借玩家唯一的身体重生，玩家的灵魂在同一具身体里沉睡；不要另写一具沉睡的玩家身体。" : ""}按这个结局写终章：先写结局发生的那一刻，再为每位同伴写一段尾声（由结局、个人任务结果、赞同度决定）；恋人的尾声放在最后、单独成段，篇幅至少是其他同伴的两倍，写你们两个人之间具体的画面和以后的日子。同伴情况：${lines.join("；")}。同伴的生死以这里的状态为准，同行的人仍然活着，不要在尾声中写他们死亡。括号里的尾声素材是参考，要按实际发生过的事改写，和剧情对不上的就别用。）`, null);
+  const bodyRule = id !== "hestia" ? "" : vessel === "player" ? "赫斯提雅借玩家唯一的身体重生，玩家的灵魂在同一具身体里沉睡；不要另写一具沉睡的玩家身体。"
+    : `赫斯提雅借${PEOPLE[vessel].name}唯一的身体重生，${PEOPLE[vessel].name}的灵魂在同一具身体里沉睡。玩家仍然活着；不要让这位容器同伴再作为独立的人说话行动，也不要另写其沉睡的身体。`;
+  gm(`（最终结局：${e.name}——${endingText(id)}${e.act ? "玩家的抉择是：" + e.act + "。" : ""}${bodyRule}按这个结局写终章：先写结局发生的那一刻，再为每位同伴写一段尾声（由结局、个人任务结果、赞同度决定）；恋人的尾声放在最后、单独成段，篇幅至少是其他同伴的两倍，写你们两个人之间具体的画面和以后的日子。同伴情况：${lines.join("；")}。同伴的生死以这里的状态为准，同行的人仍然活着，不要在尾声中写他们死亡。括号里的尾声素材是参考，要按实际发生过的事改写，和剧情对不上的就别用。）`, null);
+  return true;
 }
 
 // 场景进入时由代码处理的剧情后果
@@ -3444,8 +3656,8 @@ function nextAct() {
   if (state.act >= 2) {
     for (const id of Object.keys(COMPANIONS)) if (state.companions[id].alive) addDraconic(id, 15);
     addDraconic("player", 15); // 印记每一幕都更深一层，玩家也一样
-    for (const id of party()) { const c = state.companions[id]; c.approval = clamp(c.approval + ACT_BONUS, -100, 100); }
-    if (party().length) push("sys", `一起走过了这一幕：队里的同伴赞同 +${ACT_BONUS}`, { cls: "appr-up" });
+    for (const id of party()) { const c = state.companions[id]; changeApproval(id, ACT_BONUS); }
+    if (party().length) push("sys", `一起走过了这一幕：队里的同伴赞同最多 +${ACT_BONUS}（受各自上限限制）`, { cls: "appr-up" });
   }
   if (state.act === 3) state.journal.push({ quest: "第三幕：烬冠", note: "回到被围的灰帆港，召集盟友，攻上烬冠山，在主教唤醒烬王之前赶到祖坛。" });
   if (state.act === 2) {
@@ -3754,7 +3966,7 @@ function applyBonds(d, notes) {
     const ok = x.ok === true && c.approval >= (ROMANCE_RULES[l]?.poly ?? 60);
     c.consent = { ...(c.consent || {}), [x.for]: ok };
     if (ok) { if (state.companions[x.for].secret && lovers().filter(o => o !== x.for).every(o => state.companions[o].consent?.[x.for] === true)) state.companions[x.for].secret = false; notes.push([`${PEOPLE[l].name}接受了你和${PEOPLE[x.for].name}的关系`, "up"]); }
-    else { c.approval = clamp(c.approval - 15, -100, 100); notes.push([`${PEOPLE[l].name}不接受你和${PEOPLE[x.for].name}的关系 −15`, "down"]); }
+    else { changeApproval(l, -15); notes.push([`${PEOPLE[l].name}不接受你和${PEOPLE[x.for].name}的关系 −15`, "down"]); }
   }
   for (const x of (Array.isArray(d.reputation) ? d.reputation : []).slice(0, 2)) {
     const delta = num(x?.delta, 15); if (!FACTIONS[x?.id] || !delta) continue;
@@ -3823,8 +4035,8 @@ function endTalk() {
   // 陪一个人聊过一阵（玩家至少回应过一次）：赞同度 +5。群戏和对手戏不算
   const ev = k.event ? eventFor(k.event) : null, who = ev ? (ev.group || ev.pair ? null : ev.who) : k.talk;
   if (COMPANIONS[who] && state.turns >= (k.talkAt ?? Infinity) + 2) {
-    const c = state.companions[who]; c.approval = clamp(c.approval + TALK_BONUS, -100, 100);
-    push("sys", `${PEOPLE[who].name}赞同 +${TALK_BONUS}（你们聊了一阵）`, { cls: "appr-up" });
+    const d = changeApproval(who, TALK_BONUS);
+    push("sys", d ? `${PEOPLE[who].name}赞同 ${sgn(d)}（你们聊了一阵）` : `${PEOPLE[who].name}和你聊了一阵（赞同已到上限）`, { cls: "appr-up" });
   }
   if (!k.talk.startsWith("event:")) k.done.push(k.talk);
   k.talk = null; k.event = null; state.suggestions = [];
@@ -3858,7 +4070,7 @@ function restNight(partner) {
   for (const id of lovers().filter(id => state.companions[id].secret)) {
     const others = lovers().filter(l => l !== id && here.includes(l));
     if (!others.length || Math.random() >= 1 / 3) continue; // 其他恋人也在营地时，每晚三分之一的机会被发现
-    for (const l of lovers()) state.companions[l].approval = clamp(state.companions[l].approval - 25, -100, 100);
+    for (const l of lovers()) changeApproval(l, -25);
     for (const l of others) remember(l, `发现你瞒着他和${PEOPLE[id].name}在一起`);
     state.companions[id].secret = false; // 败露之后不再是秘密，现任们会找你谈
     news.push(`${others.map(l => PEOPLE[l].name).join("、")}发现了你和${PEOPLE[id].name}的秘密恋情，所有恋人赞同度 −25`);
@@ -3868,7 +4080,7 @@ function restNight(partner) {
   state.day++; state.camp = null; state.shortRests = 0;
   if (debtOpen() && state.day >= state.act1Day + DEBT_DAYS) {
     state.flags["act1.lise"] = "sold";
-    const v = state.companions.vex; if (v.alive) { v.approval = clamp(v.approval - 30, -100, 100); remember("vex", "你没能在期限内救下莉丝"); }
+    const v = state.companions.vex; if (v.alive) { changeApproval("vex", -30); remember("vex", "你没能在期限内救下莉丝"); }
     state.liseSale = { approval: v.alive ? 30 : 0 }; // 说书人下一轮可以撤销：剧情里莉丝其实早就救出来了，只是忘了写标记
     news.push("维克斯的债到期了：老鳗把莉丝卖到了外海，维克斯赞同度 −30（若最近的剧情里莉丝其实已经被救出来、人就在你们身边，不要写她被卖，改写 act1.lise=saved，程序会撤销这次到期）");
   }
@@ -3919,6 +4131,9 @@ function renderCamp(box) {
   }
   wrap.append(grid);
   const acts = el("div", "cb-acts");
+  if (state.companions.kassian.divineDebt && campers().includes("kassian")) {
+    const atone = el("button", "btn small", "陪卡西安举行赎罪仪式"); atone.type = "button"; atone.disabled = busy || !!k.talk; atone.onclick = openAtonement; acts.append(atone);
+  }
   for (const gid of [imp?.group ? imp.id : null, ...k.plan.banter].filter(Boolean)) {
     const e = eventFor(gid), b = el("button", "btn small", eventLabel(e));
     b.type = "button"; b.disabled = busy; b.onclick = () => talkTo("event:" + gid); acts.append(b);
@@ -3926,6 +4141,21 @@ function renderCamp(box) {
   acts.append(el("span", "sp"));
   const sl = el("button", "btn small gold", "睡觉"); sl.type = "button"; sl.disabled = busy; sl.onclick = goSleep; acts.append(sl);
   wrap.append(acts); box.append(wrap);
+}
+function openAtonement() {
+  if (busy || !state.camp || state.camp.talk || state.combat || state.pendingCheck || !campers().includes("kassian") || !state.companions.kassian.divineDebt) return false;
+  modal("卡西安的赎罪", s => {
+    s.append(el("p", "recap", "卡西安承认杀死老鳗是出于复仇，愿意为亡者守夜，并重新立誓保护活着的人。陪他完成祈祷，恢复被誓言破碎封住的那一次治疗之语。"));
+    const b = el("button", "btn gold", "陪他祈祷，完成赎罪"); b.type = "button"; b.onclick = () => completeAtonement(); s.append(b);
+  }); return true;
+}
+function completeAtonement() {
+  if (busy || !state.camp || state.camp.talk || state.combat || state.pendingCheck || !campers().includes("kassian") || !state.companions.kassian.divineDebt) return false;
+  state.companions.kassian.divineDebt = false;
+  remember("kassian", "你陪他为复仇赎罪，为亡者守夜，并重新立誓保护活着的人");
+  push("sys", "卡西安完成了赎罪仪式，治疗之语的次数恢复", { cls: "appr-up" });
+  closeModal(); save(); renderPlay();
+  gm("（玩家陪卡西安完成赎罪祈祷。程序已经恢复他的神术次数，只描写他在火光前为亡者守夜、重立保护活人的誓言，不再收费或要求重复仪式；suggestions 写 []。）", null); return true;
 }
 
 /* =========================================================
@@ -4058,9 +4288,9 @@ function partyUnit(ref, zone) {
   return {
     id: ref, ref, side: "party", pid: ref, name: whoName(ref), zone, dexMod: mod(ab.dex),
     hp: Math.max(1, s.hp), max: s.hpMax, ac: acTotal(ref), level: lvl, initBonus: gearBonus(ref).init, marksUsed: {},
-    breathDc: 8 + g.pb + mod(ab.con), feats: featsOf(kitKey, lvl).map(f => f.id), fUsed: {}, sigUsed: false,
+    breathDc: 8 + g.pb + mod(ab.con), feats: featsOf(kitKey, lvl).map(f => s.oathbroken ? ({ aura: "dread", radiant: "necrotic" }[f.id] || f.id) : f.id), fUsed: {}, sigUsed: false,
     weapons: gearWeapons(ref, kit.weapons.map(w => ({ n: w.n, cnt: w.cantrip ? g.cantrip : 1, d: w.d, plus: w.cantrip ? (kitKey === "warlock" && lvl >= 9 ? mod(ab.cha) : 0) : mod(ab[w.ab]), hit: mod(ab[w.ab]) + g.pb, ranged: !!w.ranged, mock: !!w.mock, cantrip: !!w.cantrip })), ab, g.pb),
-    feat: kit.feat, uses: g.uses, healMod: kit.healAb ? mod(ab[kit.healAb]) : 0,
+    oathbroken: !!s.oathbroken, feat: kit.feat, uses: Math.max(0, g.uses - (s.divineDebt ? 1 : 0)), healMod: kit.healAb ? mod(ab[kit.healAb]) : 0,
     sneakDice: g.sneak, extra: g.extra, fireball: g.fireball ? (featsOf(kitKey, lvl).some(f => f.id === "fireball2") ? 2 : 1) : 0, spellDc: 8 + g.pb + mod(ab.int),
     cond: {}, saves: { s: 0, f: 0 },
   };
@@ -4201,6 +4431,7 @@ function attack(a, t, w, o = {}) {
   const m = attackMods(a, t, w), c = state.combat;
   if (o.adv) { m.adv = true; m.dis = false; }
   if (t.side === "party" && cbList().some(v => v.side === "party" && ACTIVE(v) && hasF(v, "aura") && v.zone === t.zone)) m.ac++; // 守护灵光
+  if (t.side !== "party" && cbList().some(v => v.side === "party" && ACTIVE(v) && hasF(v, "dread") && v.zone === t.zone)) m.ac--; // 恐惧灵光
   const buff = a.side === "party" ? (c.blessed >= c.round ? 2 : 0) + (c.inspired >= c.round ? 2 : 0) : 0; // 祈福术、激昂之歌
   const [d, rs] = d20x(m.adv, m.dis, a.ref === "player" && state.player.race === "halfling");
   delete a.cond.mocked;
@@ -4212,11 +4443,11 @@ function attack(a, t, w, o = {}) {
   const sneak = a.feat === "sneak" ? a.sneakDice || 1 : ENEMIES[a.type]?.sneak || 0;
   if (sneak && !a.sneakUsed && (m.adv || cbList().some(v => v !== a && v.side === a.side && ACTIVE(v) && v.zone === t.zone))) { a.sneakUsed = true; n += roll(sneak * k, 6); extra.push("偷袭"); }
   if (t.cond.marked === a.id) { n += roll(k, 6); extra.push(FEATS[a.feat]?.name || "印记"); }
-  if (o.smite && !w.ranged && a.uses > 0) { a.uses--; n += roll(2 * k, 8); extra.push("至圣斩"); }
+  if (o.smite && !w.ranged && a.uses > 0) { a.uses--; n += roll(2 * k, 8); extra.push(a.oathbroken ? "黯蚀斩" : "至圣斩"); }
   if (w.mock) { t.cond.mocked = true; extra.push("对方下次攻击劣势"); }
   if (w.extra && !(w.extra.fire && ENEMIES[t.type]?.immune === "fire")) { n += roll(w.extra.cnt * k, w.extra.d); extra.push(w.extra.n); }
   if (o.bonusDice) { n += roll(o.bonusDice[0] * k, o.bonusDice[1]); extra.push(o.bonusName); }
-  if (!w.ranged && (hasF(a, "radiant") || hasF(a, "divine"))) { n += roll(k, 8); extra.push(hasF(a, "radiant") ? "光耀打击" : "神圣打击"); }
+  if (!w.ranged && (hasF(a, "radiant") || hasF(a, "divine") || hasF(a, "necrotic"))) { n += roll(k, 8); extra.push(hasF(a, "necrotic") ? "黯蚀打击" : hasF(a, "radiant") ? "光耀打击" : "神圣打击"); }
   if (a.rageUntil >= c.round) { n += 3; extra.push("狂怒"); }
   n = Math.max(1, n);
   const r = hurt(t, n, { crit, spare: o.spare && !w.ranged });
@@ -4341,9 +4572,10 @@ function useFeat(u, id, arg) {
 }
 // 同伴专属技能：能用就用，用掉这个回合的动作或附赠动作
 function signatureTurn(u) {
-  const c = state.combat, sig = SIGNATURE[u.ref]; if (!sig || u.sigUsed) return false;
+  const c = state.combat, sig = signatureOf(u.ref); if (!sig || u.sigUsed) return false;
   const mates = cbList().filter(v => v.side === "party" && !v.dead && !v.out), foes = cbList().filter(v => hostile(u, v) && seen(v) && !ENEMIES[v.type]?.object);
   const use = t => { u.sigUsed = true; clog(`${u.name}使出${sig.name}：${t}`, "event"); return true; };
+  if (u.ref === "selene" && u.oathbroken) { const targets = foes.filter(v => v.zone === u.zone && ACTIVE(v)); if (targets.length) { for (const v of targets) v.cond.frightened = 2; c.res.bonus = false; use(targets.map(v => v.name).join("、") + "陷入恐惧（2 回合）"); } return false; }
   if (u.ref === "selene") { const t = mates.find(v => v.down) || mates.find(v => v.hp <= v.max / 4); if (t) { c.res.bonus = false; return use(heal(t, u.level * 3)) && false; } }
   if (u.ref === "vex" && foes.length) { const t = weakest(foes); t.cond.exposed = true; c.res.bonus = false; use(`${t.name}露出了破绽（全队攻击它有优势）`); return false; }
   if (u.ref === "kassian" && foes.length >= 2) { c.blessed = c.round + 2; c.res.bonus = false; use("全队命中 +2，3 回合"); return false; }
@@ -5061,7 +5293,7 @@ function renderPlay() {
   // story
   const story = $("story"); story.textContent = "";
   for (const e of state.log) {
-    const n = el("div", "e " + e.k + (e.k === "roll" ? (e.ok ? " ok" : " bad") : "") + (e.cls ? " " + e.cls : "") + (e.live ? " live" : ""), e.t);
+    const n = el("div", "e " + e.k + (e.k === "roll" ? (e.ok ? " ok" : " bad") : "") + (e.cls ? " " + e.cls : "") + (e.live ? " live" : ""), e.failed ? "（未完成，不计入剧情）\n" + e.t : e.t);
     if (e.live) n.dataset.live = "1";
     story.append(n);
   }
@@ -5165,7 +5397,7 @@ function openSheet(focus) {
         side.append(im, ub, up); cs.append(side);
       } else cs.append(im);
       const info = el("div", "step");
-      const ab = isP ? state.player.abilities : COMPANIONS[cur].ab;
+      const ab = abOf(cur);
       if (isP) {
         const p = state.player;
         info.append(el("div", "label", `${p.gender} · ${RACES[p.race].name}${CLASSES[p.cls].name} · ${BACKGROUNDS[p.bg].name} · ${p.level} 级`));
@@ -5175,8 +5407,9 @@ function openSheet(focus) {
         info.append(el("div", "label", "灵感条件：" + BACKGROUNDS[p.bg].insp));
       } else {
         const c = COMPANIONS[cur], sc = state.companions[cur];
-        info.append(el("div", "label", `${c.race}${c.cls} · ${sc.recruited ? "已加入" : sc.taken ? "被教团带走" : "未加入"}`));
+        info.append(el("div", "label", `${c.race}${classLabel(cur)} · ${sc.recruited ? "已加入" : sc.taken ? "被教团带走" : "未加入"}`));
         info.append(el("div", null, c.personality));
+        if (companionEffects(cur)) info.append(el("div", "label", companionEffects(cur)));
         for (const [k, v] of [["等级", partyLevel()], ["生命", `${sc.hp} / ${sc.hpMax}`], ["AC", acTotal(cur)]]) { const r = el("div", "kv"); r.append(el("span", null, k), el("b", null, String(v))); info.append(r); }
         const ap = el("div", "appr");
         ap.append(el("span", null, "赞同度"));
@@ -5294,7 +5527,8 @@ function openJournal() {
 }
 const SLOT_LABEL = { auto: "自动存档", slot1: "存档 1", slot2: "存档 2", slot3: "存档 3" };
 const metaLine = m => `${m.name} · ${SCENES[m.scene]?.title || m.scene} · ${new Date(m.t).toLocaleString("zh-CN")}${m.combat ? " · 战斗中" : ""}`;
-function openSaves(loadOnly) {
+async function openSaves(loadOnly) {
+  if (disk.on) await diskList(); // 先刷新列表，避免异步重画把正在确认的导入窗口移除
   const playing = state?.phase === "play";
   modal(loadOnly ? "读取存档" : "存档", s => {
     const body = el("div", "step"); s.append(body);
@@ -5302,7 +5536,15 @@ function openSaves(loadOnly) {
     const open = async (b, get, label) => {
       b.disabled = true;
       const sv = await get();
-      if (sv && validState(sv.state)) { loadState(sv.state); toast("已读取：" + label); } else { b.disabled = false; toast("读取失败：存档不存在或已损坏", "down"); }
+      if (sv && validState(sv.state)) {
+        if (disk.on) await diskList();
+        if (!loadState(sv.state)) { b.disabled = false; toast("读取失败：存档结构不完整", "down"); return; }
+        if (disk.on) {
+          disk.base.auto = disk.meta.auto?.revision ?? null; delete disk.conflicts.auto;
+          try { localStorage.setItem(AUTO, JSON.stringify({ ...snapshot(), revision: disk.base.auto })); } catch (e) {}
+        }
+        save(); toast("已读取：" + label);
+      } else { b.disabled = false; toast("读取失败：存档不存在或已损坏", "down"); }
     };
     const draw = () => {
       body.textContent = "";
@@ -5323,6 +5565,17 @@ function openSaves(loadOnly) {
           row.append(t, btns); body.append(row);
         }
       }
+      const conflicts = conflictSaves();
+      if (conflicts.length) {
+        body.append(el("div", "label", "其他页面保存冲突时保留的进度（选择前可先导出当前进度）"));
+        if (disk.on && disk.meta.auto) {
+          const latest = btn("读取硬盘最新自动档", () => open(latest, () => diskGet("slot/auto"), "硬盘最新自动档")); body.append(latest);
+        }
+        for (const item of conflicts) {
+          const row = el("div", "slot"), b = btn("读取此冲突副本", () => open(b, async () => item.data, "冲突副本"));
+          row.append(el("div", "meta", metaLine(metaOf(item.data))), b); body.append(row);
+        }
+      }
       // 导出 / 导入：所有入口都能用，用来换电脑或在入口之间搬存档
       const tools = el("div", "row");
       if (playing) tools.append(btn("导出当前进度", exportSave));
@@ -5333,7 +5586,13 @@ function openSaves(loadOnly) {
         if (!d) { toast("这不是有效的醉龙酒馆存档文件", "down"); return; }
         confirmBox.textContent = "";
         confirmBox.append(el("div", "meta", `要导入「${metaLine(metaOf(d))}」吗？${playing ? (disk.on ? "当前进度会被替换（硬盘上会自动留一份备份）。" : "当前进度会被替换，需要的话先导出一份。") : ""}`));
-        const go = btn("确认导入", () => { loadState(d.state); save(); toast("已导入存档"); }, "gold");
+        const go = btn("确认导入", async () => {
+          if (disk.on) await diskList();
+          if (!loadState(d.state)) { toast("存档结构不完整，当前进度未替换", "down"); return; }
+          if (disk.on) { disk.base.auto = disk.meta.auto?.revision ?? null; delete disk.conflicts.auto;
+            try { localStorage.setItem(AUTO, JSON.stringify({ ...snapshot(), revision: disk.base.auto })); } catch (e) {} }
+          save(); toast("已导入存档");
+        }, "gold");
         const no = btn("取消", () => { confirmBox.textContent = ""; });
         const r = el("div", "row"); r.append(go, no); confirmBox.append(r);
       };
@@ -5345,7 +5604,6 @@ function openSaves(loadOnly) {
         : "存档保存在这个浏览器里，换设备或清理浏览器数据后会丢失。建议不时导出一份备份。"));
     };
     draw();
-    if (disk.on) diskList().then(() => { if (!$("modal").hidden && body.isConnected) draw(); }); // 刷新硬盘上的备份列表
   });
 }
 function savePref() { prefSaved = true; try { localStorage.setItem(PREF, JSON.stringify(pref)); } catch (e) {} }
@@ -5476,7 +5734,7 @@ function openEnd() {
   const sc = SCENES[state.scene], act = sc.endAct ?? state.act, nextSc = SCENES[sc.after];
   modal(act === 3 ? "终章" : act ? ACT_NAMES[act].split(" · ")[0] + "完" : "序幕完", s => {
     s.classList.add("endcard");
-    s.append(el("p", null, act === 3 ? `【${ENDINGS[state.flags["act3.ending"]]?.name || ""}】${ENDINGS[state.flags["act3.ending"]]?.text || ""}` : END_TEXT[act] || ""));
+    s.append(el("p", null, act === 3 ? `【${ENDINGS[state.flags["act3.ending"]]?.name || ""}】${endingText(state.flags["act3.ending"])}` : END_TEXT[act] || ""));
     const list = el("div", "step"); list.style.width = "100%";
     for (const id of Object.keys(COMPANIONS).filter(id => inAct(id))) {
       const c = state.companions[id];
@@ -5499,10 +5757,10 @@ function openEnd() {
       const b = el("button", "btn gold", `进入${ACT_NAMES[nextSc.act]}`); b.type = "button";
       b.onclick = () => { if (busy) return; nextAct(); };
       s.append(b);
-    } else if (act === 3 && state.flags["act3.ending"] === "fall" && readSave(CHECKPOINT)) {
+    } else if (act === 3 && state.flags["act3.ending"] === "fall" && currentCheckpoint()) {
       s.append(el("p", null, "幸存者在逃亡的船上望着燃烧的港口。也许还有另一种可能……"));
       const b = el("button", "btn gold", "重新挑战（回到攻山之前）"); b.type = "button";
-      b.onclick = () => { const sv = readSave(CHECKPOINT); if (sv && validState(sv.state)) { closeModal(); loadState(sv.state); save(); toast("回到了攻上烬冠山之前"); } };
+      b.onclick = () => { closeModal(); retryCheckpoint(); };
       s.append(b);
     } else s.append(el("p", null, act === 3 ? "全剧终。谢谢你陪他们走完这一程。" : `${ACT_NAMES[act + 1] || "后面的故事"}会在下一个版本开放。你的存档会保留，到时可以接着玩。`));
   });
@@ -5540,13 +5798,11 @@ $("freeText").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shi
 function start(data) {
   draft = freshDraft();
   const auto = readSave(AUTO);
-  state = data && data.state ? data.state : auto ? auto.state : null;
+  disk.boot = auto;
+  const initial = data && data.state ? data.state : auto ? auto.state : null;
   if (data && data.draft) draft = data.draft;
-  if (state) { restoreCombatExit(state); tidyLog(state); catchUpLevel(); }
-  render();
-  if (state?.pendingCheck) openDice();
-  else if (state?.combat) advanceCombat();
-  else if (state?.levelNote) openLevelUp();
+  state = null;
+  if (!initial || !loadState(initial)) render();
 }
 window.claude?.hot?.snapshot?.(() => ({ state, draft }));
 window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
