@@ -353,7 +353,7 @@ GitHub Pages（`https://yiyayoh.github.io/dragon-oath/`）没有开启，用户�
 git -c http.proxy= -c https.proxy= push origin main
 ```
 
-如果哪天直连不通，再用 `-c http.proxy=http://127.0.0.1:<端口>` 试当前能用的代理端口。
+如果直连报 `Recv failure: Connection was reset`，加上 `-c http.version=HTTP/1.1` 就能过（2026-11-04 实测）；还不行再试 `-c http.proxy=http://127.0.0.1:<端口>`。
 
 仓库是 https://github.com/yiyayoh/dragon-oath ，直接推 `main`。这台电脑的代理端口会变：git 全局配置写的是 `127.0.0.1:1088`，10-26 那天 1088 不通、能用的是 1094，10-27 又换回了 1088。推送失败时先看环境变量 `HTTPS_PROXY` 指向哪个端口，再临时指定：
 
@@ -389,6 +389,7 @@ git -c http.proxy=http://127.0.0.1:1094 -c https.proxy=http://127.0.0.1:1094 pus
 - **画面细节**：烬王已启用完整龙角修整版，原版仅作加载回退；赫斯提雅龙形的垂死感较弱；奈雅 80 档头顶留白偏少、浅色竖瞳较淡。图片均已可用，保留生成差异说明。
 - **平台**：硬盘存档、备份与导入导出在隔离服务验证；未操作用户个人存档，claude.ai 的 downloads 导出缺真实点击验收。DeepSeek 长时间格式稳定性未系统测试。字体失败时回退系统字体。
 - **发布**：当前会话没有 Claude Artifact 发布能力；GitHub 推送不等于 claude.ai 页面已同步。全量同步包含最新网页和72个WebP文件（包括新版emberking_neutral_v3.webp与原版回退），供支持 Artifact 工具的 Claude 会话发布。
+
 
 
 
