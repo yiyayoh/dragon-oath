@@ -315,3 +315,17 @@ test('旧页面的保存被版本校验拒绝，新进度和旧备份保留，�
   assert.equal((await put(server,'auto',advanced)).status,200); // 接收成功但响应丢失后的幂等重传
   const fresh=save(1700000000004,'主动恢复');fresh.expectedRevision=read.revision;assert.equal((await put(server,'auto',fresh)).status,200);
 });
+
+test('存档名称随硬盘和备份保留，旧客户端不删除名称，过期改名不能覆盖新版本', async t => {
+  const root=await mkdtemp(path.join(os.tmpdir(),'dragon-oath-label-test-'));t.after(()=>rm(root,{recursive:true,force:true}));
+  const server=await startServer(t,{root,backupGapMs:0});const initial={...save(1700000000000,'原角色'),label:'出海前'};
+  assert.equal((await put(server,'slot1',initial)).status,200);const get=async()=>JSON.parse((await request(server,{pathname:'/__save/slot/slot1'})).body);
+  const first=await get();assert.equal(first.label,'出海前');const renamed={...initial,t:1700000000001,label:'灯塔前',expectedRevision:first.revision};
+  assert.equal((await put(server,'slot1',renamed)).status,200);assert.equal((await put(server,'slot1',renamed)).status,200);
+  assert.equal((await put(server,'slot1',{...initial,t:1700000000002,label:'旧页面',expectedRevision:first.revision})).status,409);
+  const beforeLegacy=await get();assert.equal(beforeLegacy.label,'灯塔前');
+  const legacy={...save(1700000000003,'原角色'),expectedRevision:beforeLegacy.revision};assert.equal((await put(server,'slot1',legacy)).status,200);assert.equal((await get()).label,'灯塔前');
+  const list=JSON.parse((await request(server,{pathname:'/__save/list'})).body);assert.equal(list.slots.slot1.label,'灯塔前');assert(list.backups.some(b=>b.label==='出海前'));
+  const cleared={...save(1700000000004),label:''};assert.equal((await put(server,'slot1',cleared)).status,200);assert.equal((await get()).label,'');
+  for(const label of [null,7,'x'.repeat(41)])assert.equal((await put(server,'slot1',{...save(1700000000005),label})).status,400);
+});

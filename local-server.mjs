@@ -51,9 +51,11 @@ const SAVE_KEYS = new Set(['auto', 'slot1', 'slot2', 'slot3']);
 const BACKUP_ID = /^(auto|slot[1-3])-(\d{13})$/;
 const SAVE_LIMIT = 20 * 1024 * 1024;
 const validSave = d => typeof d.t === 'number' && Number.isFinite(d.t) && d.state && typeof d.state === 'object' && !Array.isArray(d.state)
-  && d.state.phase === 'play' && d.state.player && typeof d.state.player === 'object' && Array.isArray(d.state.log);
-const saveRevision = d => createHash('sha256').update(JSON.stringify({ t: d.t, state: d.state })).digest('hex');
-const saveMeta = d => ({ revision: saveRevision(d), t: d.t, name: String(d.state?.player?.name ?? '').slice(0, 40), scene: String(d.state?.scene ?? '').slice(0, 40), combat: !!d.state?.combat });
+  && d.state.phase === 'play' && d.state.player && typeof d.state.player === 'object' && Array.isArray(d.state.log)
+  && (d.label === undefined || typeof d.label === 'string' && d.label.length <= 40);
+const labelField = d => d.label === undefined ? {} : { label: d.label };
+const saveRevision = d => createHash('sha256').update(JSON.stringify({ t: d.t, state: d.state, ...labelField(d) })).digest('hex');
+const saveMeta = d => ({ revision: saveRevision(d), t: d.t, name: String(d.state?.player?.name ?? '').slice(0, 40), scene: String(d.state?.scene ?? '').slice(0, 40), combat: !!d.state?.combat, ...labelField(d) });
 function createSaveStore(dir, { backupGapMs, maxBackups }) {
   const backups = path.join(dir, 'backups');
   let queue = Promise.resolve();
@@ -77,6 +79,8 @@ function createSaveStore(dir, { backupGapMs, maxBackups }) {
       const file = path.join(dir, key + '.json');
       let prev = null;
       try { prev = await readJson(file); } catch {}
+      // 旧客户端不认识名称字段时继续保留，显式空字符串才表示清除名称。
+      if (data.label === undefined && prev?.label !== undefined) data = { ...data, label: prev.label };
       const current = prev ? saveRevision(prev) : null, revision = saveRevision(data);
       if ((expectedRevision ?? null) !== current && revision !== current) throw { http: 409, code: 'save_conflict' };
       if (revision === current) return revision; // 响应丢失后重传同一份数据可以安全重试
@@ -164,7 +168,7 @@ export function createGameServer({ port = DEFAULT_PORT, getStatus = accountStatu
             try { data = await readBody(req, SAVE_LIMIT); } catch (error) { return json(res, error.http || 400, { error: 'invalid_request' }); }
             if (!validSave(data) || (data.expectedRevision != null && (typeof data.expectedRevision !== 'string' || !/^[a-f0-9]{64}$/.test(data.expectedRevision)))) return json(res, 400, { error: 'invalid_request' });
             try {
-              const revision = await saves.write(name, { t: data.t, state: data.state }, data.expectedRevision);
+              const revision = await saves.write(name, { t: data.t, state: data.state, ...labelField(data) }, data.expectedRevision);
               return json(res, 200, { ok: true, t: data.t, revision });
             } catch (error) {
               if (error.code === 'save_conflict') return json(res, 409, { error: 'save_conflict', code: 'save_conflict' });

@@ -207,6 +207,7 @@ h1, h2, h3 { text-wrap: balance; }
 .apbar i { position: absolute; top: 0; bottom: 0; }
 .slot { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; background: var(--oak); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; }
 .slot .meta { font-size: 12.5px; color: var(--muted); }
+.slot.journal-result { grid-template-columns: 1fr; align-items: start; overflow-wrap: anywhere; }
 .recap { margin: 0; font-size: 14px; line-height: 1.85; color: var(--ink); white-space: pre-wrap; }
 .mem { margin: 2px 0 0; padding-left: 1.2em; font-size: 13px; color: var(--muted); }
 .mem li { margin: 1px 0; }
@@ -1848,7 +1849,14 @@ const SCALE_FIX = { bone_wyrms: { hp: 1.4, hit: 6, dmg: 8 }, ember_outpost: { hp
   ember_slope: { hp: 1.4, hit: 7, dmg: 10 }, valdo_altar: { hp: 1.4, hit: 7, dmg: 10 }, ember_king: { hit: 7, dmg: 12 } };
 const SCALE = { 2: { hp: 1.2, ac: 1, hit: 3, dmg: 5 }, 3: { hp: 1.3, ac: 1, hit: 4, dmg: 7 } };
 for (const [act, ids] of Object.entries({ 2: ["ghost_ship", "bone_wyrms", "ember_outpost", "darin_forge", "mist_kraken", "temple_raid"], 3: ["harbor_wyrmling", "ember_slope", "valdo_altar", "ember_king"] }))
-  for (const id of ids) ENCOUNTERS[id].scale = { ...SCALE[act], ...(SCALE_FIX[id] || {}) };
+  for (const id of ids) { ENCOUNTERS[id].scale = { ...SCALE[act], ...(SCALE_FIX[id] || {}) }; ENCOUNTERS[id].largeParty = +act === 2 ? { hp: .15, hit: .5, dmg: .5 } : null; }
+ENCOUNTERS.ghost_ship.largeParty = { hp: .1, hit: 0, dmg: 0 }; // 开幕战只补耐战，不提高命中或伤害。
+// 仅第二幕的大队伍补强；开战时按实际参战人数冻结，战中离队、倒地或读档不重算。
+function encounterScale(encounter, count) {
+  const scale = { ...encounter.scale }, large = encounter.largeParty, extra = large ? Math.max(0, count - 4) : 0;
+  if (extra) { scale.hp = Math.round(scale.hp * (1 + large.hp * extra) * 100) / 100; scale.hit += Math.floor(extra * large.hit); scale.dmg += Math.floor(extra * large.dmg); }
+  return scale;
+}
 
 /* =========================================================
    工具
@@ -1884,6 +1892,7 @@ function portrait(img, id, expr) {
   else if (id !== "player") {
     if (id === "darin" && state?.flags?.["act2.darin"] === "woke") cands.push("portraits/darin_woke.webp"); // 被战歌唤醒之后的样子
     if (expr && expr !== "neutral") cands.push(`portraits/${id}_${expr}.webp`);
+    if (id === "emberking") cands.push("portraits/emberking_neutral_v3.webp"); // 完整龙角构图，保留原版作为加载回退。
     cands.push(`portraits/${id}_neutral.webp`);
   }
   const list = cands.filter(u => !failed.has(u));
@@ -1967,7 +1976,7 @@ const disk = { on: false, meta: {}, backups: [], pending: {}, writing: {}, base:
 const CONFLICT_PREFIX = "dragon-oath-conflict-";
 let saveWarnAt = 0;
 function saveWarn(msg) { if (Date.now() - saveWarnAt > 60000) { saveWarnAt = Date.now(); toast(msg, "down"); } }
-const metaOf = p => ({ t: p.t, name: p.state.player.name, scene: p.state.scene, combat: !!p.state.combat });
+const metaOf = p => ({ t: p.t, name: p.state.player.name, scene: p.state.scene, combat: !!p.state.combat, ...(p.label === undefined ? {} : { label: p.label }) });
 function snapshot() { const s = JSON.parse(JSON.stringify(state)); s.log.forEach(e => delete e.live); return { t: Date.now(), state: s }; }
 function save(key) {
   if (!state || state.phase !== "play") return false;
@@ -1976,6 +1985,8 @@ function save(key) {
   try { p = snapshot(); } catch (e) { return false; }
   p.t = Math.max(p.t, (readSave(key)?.t || 0) + 1);
   const slot = DISK_KEY(key);
+  const label = readSave(key)?.label ?? disk.meta[slot]?.label;
+  if (label !== undefined) p.label = label;
   if (!disk.on && readSave(key)?.revision) p.revision = readSave(key).revision;
   if (disk.on) {
     p.revision = disk.base[slot] ?? null;
@@ -2043,6 +2054,7 @@ async function diskList() {
 function readSave(key) { try { return JSON.parse(localStorage.getItem(key) || "null"); } catch (e) { return null; } }
 function slotMeta(key) {
   const l = readSave(key), lm = l?.state?.player ? metaOf(l) : null, dm = disk.meta[DISK_KEY(key)];
+  if (lm && dm && lm.label === undefined && l.revision === dm.revision) lm.label = dm.label;
   return dm && (!lm || dm.t > lm.t) ? { ...dm, from: "disk" } : lm ? { ...lm, from: "local" } : null;
 }
 async function loadSave(key) {
@@ -2076,10 +2088,20 @@ function validState(s) {
       || (s.memory.summary != null && typeof s.memory.summary !== "string")
       || !Object.values(s.memory.people).every(v => Array.isArray(v) && v.every(t => typeof t === "string"))
       || (s.memory.chapters != null && (!Array.isArray(s.memory.chapters) || !s.memory.chapters.every(c => saveRecord(c) && typeof c.text === "string"))))) return false;
+  if (s.memory?.facts != null && (!Array.isArray(s.memory.facts) || !s.memory.facts.every(f => saveRecord(f) && typeof f.id === "string" && Object.hasOwn(FACT_KINDS, f.kind)
+      && (f.who === "player" || MEM_IDS.includes(f.who)) && typeof f.text === "string" && f.text.length <= 160 && typeof f.scene === "string"
+      && ["you", "gm"].includes(f.source) && Number.isInteger(f.logIndex) && typeof f.pinned === "boolean")
+      || new Set(s.memory.facts.map(f => f.id)).size !== s.memory.facts.length)) return false;
+  if (s.memory?.factSeq != null && (!Number.isInteger(s.memory.factSeq) || s.memory.factSeq < 0)) return false;
+  if (s.progressReview != null && (!saveRecord(s.progressReview) || typeof s.progressReview.scene !== "string" || !Object.hasOwn(SCENES, s.progressReview.scene)
+      || typeof s.progressReview.quote !== "string" || s.progressReview.quote.length > 1800 || !Array.isArray(s.progressReview.issues) || !s.progressReview.issues.length || s.progressReview.issues.length > 6
+      || !s.progressReview.issues.every(i => saveRecord(i) && typeof i.key === "string" && i.key.length <= 100 && typeof i.reason === "string" && i.reason.length <= 160))) return false;
   if (s.pendingCheck && (!saveRecord(s.pendingCheck) || typeof s.pendingCheck.skill !== "string" || !validCheckKey(s.pendingCheck.skill) || !Number.isFinite(s.pendingCheck.dc) || !(s.pendingCheck.who === "player" || COMPANIONS[s.pendingCheck.who]))) return false;
   if (s.combat && (!ENCOUNTERS[s.combat.id] || !Array.isArray(s.combat.zones) || !s.combat.zones.length
       || !s.combat.zones.every(z => saveRecord(z) && Array.isArray(z.tags) && Array.isArray(z.adj))
       || !saveRecord(s.combat.units) || !Array.isArray(s.combat.order))) return false;
+  if (s.combat?.scale != null && (!saveRecord(s.combat.scale) || !Object.entries(s.combat.scale).every(([k, v]) => ["hp", "ac", "hit", "dmg"].includes(k) && Number.isFinite(v) && v >= 0)
+      || s.combat.scale.hp != null && s.combat.scale.hp <= 0)) return false;
   return true;
 }
 function currentCheckpoint() {
@@ -2122,7 +2144,7 @@ function loadState(s) {
   const previous = state, previousAction = lastAction, previousPick = pick, next = JSON.parse(JSON.stringify(s));
   try {
     state = next; state.runId ||= newRunId();
-    restoreCombatExit(state); tidyLog(state); catchUpLevel(); lastAction = null; pick = null; render();
+    restoreCombatExit(state); tidyLog(state); indexOldFacts(); catchUpLevel(); lastAction = null; pick = null; render();
   } catch (e) { state = previous; lastAction = previousAction; pick = previousPick; render(); return false; }
   cbGen++;
   closeModal();
@@ -2141,14 +2163,14 @@ async function diskInit() {
     disk.base[slot] = l?.revision ?? dm?.revision ?? null;
     if (l && dm && !l.revision && key === AUTO && disk.boot?.t === dm.t) {
       const original = await diskGet("slot/auto");
-      if (original && JSON.stringify(original.state) === JSON.stringify(disk.boot.state)) {
+      if (original && JSON.stringify(original.state) === JSON.stringify(disk.boot.state) && original.label === disk.boot.label) {
         l.revision = original.revision; disk.base[slot] = original.revision;
         try { localStorage.setItem(key, JSON.stringify(l)); } catch (e) {}
       }
     }
     if (l && dm && l.t === dm.t && l.revision !== dm.revision) {
       const confirmed = await diskGet("slot/" + slot);
-      if (confirmed && JSON.stringify(confirmed.state) === JSON.stringify(l.state)) {
+      if (confirmed && JSON.stringify(confirmed.state) === JSON.stringify(l.state) && confirmed.label === l.label) {
         l.revision = confirmed.revision; disk.base[slot] = confirmed.revision;
         try { localStorage.setItem(key, JSON.stringify(l)); } catch (e) {}
       } else keepSaveConflict(key, l);
@@ -2370,6 +2392,7 @@ const SYSTEM = `你是奇幻跑团游戏《醉龙酒馆：龙誓》的游戏主�
 - advance：只能填场景资料里写明的下一个场景 id。scene_end 只在【当前场景】写明“这一场结束时 scene_end 为 true”的场景、或者写明是“插曲”的场景（单独相处、梦）使用，别的场景不要写。
 - combat：开战时写遭遇 id 字符串，例如 "combat":"tavern_ambush"。战斗中即兴行动的效果格式见【即兴行动规则】。
 - remember：本轮发生了某个角色会长久记住的事时写，每轮最多 2 条，每条不超过 40 字，从该角色的角度写关于玩家的事实。只记真正要紧的：承诺、谎言、秘密、恩情、冒犯、救命、亲密时刻、重大分歧。闲聊不要记。id 可用：${MEM_IDS.join(" ")}。
+- facts：本轮确实出现了承诺、读完信件/日记或查明线索时，可写最多3条 {"kind":"promise或read或clue","who":"player或角色id","quote":"本轮正文或玩家原话中的连续原文，6–160字"}。who是作出承诺、读信或得知线索的人；NPC摘记原文必须包含其姓名，玩家自述归player。read必须引用GM正文中明确由该主体完成阅读的句子，玩家提出读信不算已经读完。quote必须逐字来自本轮已发生的内容，不能写建议、假设、未完成动作或自行推断。记事只辅助叙述，不代替任务和物品标记；已有摘记中的承诺不是尚未履行的自动判定，须看后续结果。
 - romance：恋爱推进，[{"id":"selene","to":"hint"}]。阶段 none → hint（暧昧）→ together（恋人）→ vowed（誓约），一次只能推进一格；门槛是赞同度 25 / 40 / 50，誓约还要先通过个人任务的考验。气氛真的到了才写，不是每次都要推进。分手写 "to":"none"。
 - caught_lie：玩家被同伴发现撒谎时写，["selene"]。
 - consent：玩家已有恋人又和别人走近时，现任表态：[{"id":"现任","for":"新对象","ok":true}]，不接受写 false。
@@ -2548,7 +2571,8 @@ function nextLine(sc) {
   return (long ? long + "\n" : "") + "可以 advance 到的场景 id：" + ids.map(id => {
     const missing = (sc.goals || []).filter(g => !state.flags[g.flag]).map(g => g.flag);
     return `${id}「${SCENES[id].title}」${sc.gate?.[id] && !sc.gate[id]() ? `（条件还没满足，不能去${missing.length ? "；还缺 " + missing.join("、") : ""}）` : ""}`;
-  }).join("、") + "。玩家一动身去这些地方，就在同一轮写 advance（只改 location 不会换场景，下一轮你拿到的还是这一场的锚点）" + hubLine(sc);
+  }).join("、") + "。玩家一动身去这些地方，就在同一轮写 advance（只改 location 不会换场景，下一轮你拿到的还是这一场的锚点）" + hubLine(sc)
+    + (firstActTransfers(sc).length ? `\n也可以经港口街直接前往：${firstActTransfers(sc).map(id => `${id}「${SCENES[id].title}」`).join("、")}。玩家说清目的地时同一轮写该目的地的advance，程序会经过港口街，不必再停一轮问同样的问题。` : "");
 }
 // 第一幕：维克斯欠老鳗的债限期三天（按长休计）
 const DEBT_DAYS = 3;
@@ -2563,15 +2587,30 @@ function updateDebtJournal() {
   if (entry) entry.note = note; else state.journal.push({ quest: "维克斯的债", note });
 }
 const debtLine = () => debtOpen() ? `；维克斯的债还剩 ${Math.max(0, state.act1Day + DEBT_DAYS - state.day)} 天（每睡一晚少一天，到期莉丝会被卖到外海。若剧情里莉丝其实已经被救出货舱、不在老鳗手里了，这一轮就写 act1.lise=saved，否则到期时程序会当作她被卖了）` : "";
+function firstActProgress() {
+  const items = [["act1.key", "守誓人的钥匙"], ["act1.chart", "航海图"], ["act1.ship", "船"]].map(([flag, name]) => ({ name, done: !!state.flags[flag] }));
+  const ready = items[1].done && items[2].done;
+  const hint = ready ? "出海准备就绪。可以继续支线；回酒馆扎营也能继续主线。" : !items[0].done ? "先拿回守誓人的钥匙。可以去总督府，或向港卫军打听。"
+    : !items[1].done ? "带钥匙回醉龙酒馆，在地窖取出航海图。" : "航海图已到手，还要安排船。可去黑潮码头或找港卫军商量。";
+  return { items, ready, hint };
+}
+function continueFirstAct() {
+  if (state.act !== 1 || !firstActProgress().ready || busy || state.combat || state.camp || state.pendingCheck || state.ended || ["act1_lighthouse", "act1_dawn"].includes(state.scene)) return false;
+  if (state.scene === "act1_hub") { enterCamp(); return true; }
+  const path = route(SCENES[state.scene], "act1_hub"); if (!path) return false;
+  for (const id of path) goScene(id);
+  save(); render(); gm("我们带上已经取得的航海图，安排好船，回到醉龙酒馆。", "我们带上已经取得的航海图，安排好船，回到醉龙酒馆。"); return true;
+}
 function buildPrompt(action, mode) {
   const p = state.player, sc = SCENES[state.scene];
   const profs = p.profs.map(k => SKILLS[k][0]).join("、");
-  const recent = recentLines(), m = memo(), chapters = chapterLines(), recall = mode === "narrate" ? "" : recallLines(action);
+  const recent = recentLines(), m = memo(), facts = factLines(action, mode), chapters = chapterLines(action + "\n" + facts, mode), recall = mode === "narrate" ? "" : recallLines(action);
   const memLines = MEM_IDS.filter(id => m.people[id]?.length).map(id => `· ${PEOPLE[id].name}（${id}）：${m.people[id].join("；")}`).join("\n");
   const pres = present();
   const encs = (sc.encounters || []).filter(id => !state.fought?.[id]), done = (sc.encounters || []).filter(id => state.fought?.[id]);
   return SYSTEM + rulesBlock() +
     `\n\n【当前场景】${state.scene}「${sc.title}」，地点：${state.location}\n场景锚点（GM 可见）：${sc.anchor}${dreamLine(sc)}${trialLine()}${intelLine(sc)}\n${nextLine(sc)}${splitLine(sc)}${sideLine()}` +
+    (state.act === 1 ? `\n本幕程序进度：${firstActProgress().items.map(g => g.name + (g.done ? "已到手" : "未到手")).join("；")}。${firstActProgress().hint}已经取得的东西不要再当成未取得，也不要新增程序没有记录的前置手续。关键标记只接受：act1.key=${FLAG_KEYS["act1.key"].join("|")}；取出航海图写act1.chart=opened；act1.ship=${FLAG_KEYS["act1.ship"].join("|")}（海鸥号seagull，黑鳗号black_eel，偷船stolen，雇船hired）。船在正式获准使用时登记，不需要再跑手续。` : "") +
     (state.combat ? combatBrief(mode) : state.camp ? campBrief() : encs.length || done.length ? (encs.length ? `\n可开战的遭遇：${encs.map(id => id + "（" + ENCOUNTERS[id].brief + "）").join("；")}` : "") + (done.length ? `\n这一场已经打完的遭遇（不能再写 combat）：${done.join("、")}。玩家再要动手，就用检定或叙述处理，不要写成一直对峙` : "") : "") +
     `\n\n【玩家角色】${p.name}，${p.gender}，${p.level} 级${RACES[p.race].name}${CLASSES[p.cls].name}，背景：${BACKGROUNDS[p.bg].name}（灵感条件：${BACKGROUNDS[p.bg].insp}）。外貌：${p.appearance}` +
     `\n属性：${AB_KEYS.map(k => AB[k] + p.abilities[k] + "(" + sgn(mod(p.abilities[k])) + ")").join(" ")}；熟练技能：${profs}` +
@@ -2586,6 +2625,7 @@ function buildPrompt(action, mode) {
     (chapters ? `\n\n【往事】（已经结束的各章纪要）\n${chapters}` : "") +
     `\n\n【前情提要】${m.summary || (chapters ? "（往事之后的事都在下面的最近剧情里）" : "（还没有，更早的剧情都在下面的最近剧情里）")}` +
     (memLines ? `\n\n【角色记得的事】\n${memLines}` : "") +
+    (facts ? `\n\n【有原文出处的记事】仅记原文实际说过或发生的内容；承诺不等于已经完成，程序状态优先。\n${facts}` : "") +
     (mode !== "narrate" && winsLines() ? `\n\n【已经成功的检定】（玩家已经查到、做到的事。照着结果往下写，不要当作没发生，也不要为同一件事再要求检定）\n${winsLines()}` : "") +
     (recall ? `\n\n【想起的旧事】（玩家这次提到的人或事，以前发生时的原文片段。用来回忆细节、让角色自然地想起当时，不要整段复述）\n${recall}` : "") +
     `\n\n【最近剧情】\n${recent || "（冒险刚开始）"}` +
@@ -2658,7 +2698,99 @@ function recallLines(action) {
   }
   return out.join("\n");
 }
-function chapterLines() { return memo().chapters.map(c => `· ${c.title}：${c.text}`).join("\n"); }
+const FACT_KINDS = { promise: "承诺", read: "读过", clue: "线索" };
+const factsOf = () => state.memory?.facts || [];
+// 只改变本轮取出的上下文，不修改或截短存档中的纪要与原文。
+function memoryScores(query, texts) {
+  const grams = new Set();
+  for (const part of String(query || "").slice(0, 1800).split(/[\s\p{P}\p{S}\d]+/u)) {
+    if (/^[a-z_]+$/i.test(part)) { if (part.length > 2) grams.add(part.toLowerCase()); continue; }
+    for (let n = 2; n <= 4 && grams.size < 512; n++) for (let i = 0; i + n <= part.length && grams.size < 512; i++) grams.add(part.slice(i, i + n));
+  }
+  const lower = texts.map(t => t.toLowerCase()), scores = texts.map(() => 0);
+  for (const term of grams) {
+    const hits = lower.map(t => t.includes(term.toLowerCase()));
+    const df = hits.filter(Boolean).length;
+    if (!df || (texts.length > 6 && df > texts.length * .5)) continue;
+    const w = Math.log(1 + texts.length / df) * (term.length - 1);
+    hits.forEach((hit, i) => { if (hit) scores[i] += w; });
+  }
+  return scores;
+}
+function selectedFacts(action, budget = 2400) {
+  const facts = factsOf(), scores = memoryScores(action, facts.map(f => `${whoName(f.who)} ${f.text}`));
+  const ranked = facts.map((f, i) => ({ f, i, score: scores[i] + (f.pinned ? 100000 : 0) + (f.kind === "promise" ? 2 : 0) + (f.who === state.camp?.talk ? 8 : 0) + i / Math.max(1, facts.length) }))
+    .sort((a, b) => b.score - a.score);
+  const chosen = []; let size = 0;
+  for (const row of ranked) { const n = row.f.text.length + 35; if (size + n <= budget) { chosen.push(row); size += n; } }
+  return chosen.sort((a, b) => a.i - b.i).map(row => row.f);
+}
+function factLines(action, mode) {
+  return selectedFacts(action, mode === "narrate" ? 1400 : 2400).map(f => `· [${FACT_KINDS[f.kind]}] ${whoName(f.who)}：${f.text}（${SCENES[f.scene]?.title || f.scene}的原文摘记）`).join("\n");
+}
+function chapterLines(query = "", mode) {
+  const chapters = state.memory?.chapters || [], budget = mode === "narrate" ? 5000 : mode === "memory" ? 5000 : 9000;
+  const line = c => `· ${c.title}：${c.text}`;
+  if (chapters.reduce((n, c) => n + line(c).length + 1, 0) <= budget) return chapters.map(line).join("\n");
+  const scores = memoryScores(`${query}\n${SCENES[state.scene].title} ${state.location}`, chapters.map(c => `${c.title} ${c.text}`));
+  const chosen = new Set(); let size = 0;
+  const take = i => { const n = line(chapters[i]).length + 1; if (!chosen.has(i) && size + n <= budget) { chosen.add(i); size += n; } };
+  // 最近三章始终优先，相关旧事按稀有关键词加权，剩余空间补近一些的往事。
+  for (let i = chapters.length - 1; i >= Math.max(0, chapters.length - 3); i--) take(i);
+  chapters.map((c, i) => ({ i, score: scores[i] + (c.id?.split("#")[0] === state.scene ? 30 : 0) }))
+    .filter(row => row.score > 0).sort((a, b) => b.score - a.score || b.i - a.i).forEach(row => take(row.i));
+  for (let i = chapters.length - 1; i >= 0; i--) take(i);
+  const selected = chapters.filter((_, i) => chosen.has(i)).map(line).join("\n");
+  const index = chapters.filter((_, i) => !chosen.has(i)).map(c => c.title).join("、");
+  return `（本轮取出 ${chosen.size}/${chapters.length} 篇完整纪要；其余原文仍完整保存在存档。没取出的往事不等于没发生，不能凭标题编造细节。）\n${selected}\n其他往事索引：${index}`;
+}
+function factQuoteAllowed(kind, quote) {
+  if (quote.length < 6 || quote.length > 160 || /[？?]|如果|假如|是否/.test(quote)) return false;
+  return kind !== "read" || /读完|读过|看完|阅读完/.test(quote) && !/没有|还没|尚未|并未|未曾|没能|不曾|还未|没读|没看|未读|未看|准备|打算|想要|计划|将要|你将|你会/.test(quote);
+}
+function readBy(quote, who) {
+  const subject = who === "player" ? "你(?:们)?" : PEOPLE[who].name;
+  return new RegExp(subject + "(?:(?:已经|刚刚|终于|早已|早就|也|又|仔细地|认真地|慢慢地|默默地|逐字)?(?:读完|读过|看完|阅读完)|把.{0,16}(?:读完|看完))").test(quote);
+}
+function addFact(kind, who, quote, entry) {
+  if (!Object.hasOwn(FACT_KINDS, kind) || !(who === "player" || MEM_IDS.includes(who)) || !entry || entry.live || entry.failed
+      || !["you", "gm"].includes(entry.k) || !entry.t?.includes(quote) || !factQuoteAllowed(kind, quote)) return false;
+  if (!state.log.includes(entry) || entry.k === "you" && who !== "player" || who !== "player" && !quote.includes(PEOPLE[who].name)) return false;
+  if (kind === "read" && (entry.k !== "gm" || !readBy(quote, who))) return false;
+  const m = memo(); m.facts ||= [];
+  const text = quote.trim();
+  if (m.facts.some(f => f.kind === kind && f.who === who && f.scene === entry.s && f.text === text)) return false;
+  m.factSeq = Math.max(m.factSeq || 0, m.facts.length) + 1;
+  m.facts.push({ id: "fact-" + m.factSeq, kind, who, text, scene: entry.s, source: entry.k, logIndex: state.log.indexOf(entry), pinned: false });
+  return true;
+}
+function indexEntryFacts(entry) {
+  if (!entry.t || entry.failed || entry.live || !["you", "gm"].includes(entry.k)) return;
+  const sentences = entry.t.match(/[^。！？\n]+[。！？]?/g) || [];
+  let count = 0;
+  for (const raw of sentences) {
+    const quote = raw.trim(); if (quote.length > 160 || /没有|还没|尚未|并未|未曾|没能|准备|打算|想要/.test(quote)) continue;
+    let kind = "";
+    if (entry.k === "you" && /(?:我|我们)(?:答应|承诺|保证)/.test(quote)) kind = "promise";
+    else if (entry.k === "gm" && readBy(quote, "player")) kind = "read";
+    else if (entry.k === "gm" && /你.{0,12}(?:发现|得知|查明|找到|确认)/.test(quote) && /线索|秘密|证据|来信|真名|信件|日记|钥匙|航海图/.test(quote)) kind = "clue";
+    if (kind && addFact(kind, "player", quote, entry) && ++count >= 2) break;
+  }
+}
+function indexOldFacts() {
+  const m = memo(); if (m.factVersion === 1) return;
+  for (const entry of state.log) indexEntryFacts(entry);
+  m.factVersion = 1;
+}
+function recordTurnFacts(proposed, gmEntry, playerEntry) {
+  indexOldFacts();
+  for (const entry of [playerEntry, gmEntry].filter(Boolean)) indexEntryFacts(entry);
+  for (const f of (Array.isArray(proposed) ? proposed : []).slice(0, 3)) {
+    if (!saveRecord(f) || typeof f.quote !== "string") continue;
+    const quote = f.quote.trim(), entry = [gmEntry, playerEntry].find(e => e?.t?.includes(quote));
+    addFact(f.kind, f.who || "player", quote, entry);
+  }
+}
 function remember(id, note) {
   note = str(note, 50).trim();
   if (!MEM_IDS.includes(id) || !note) return false;
@@ -2670,7 +2802,7 @@ function remember(id, note) {
 function memoryPrompt(chunk) {
   const m = memo(), p = state.player;
   const old = MEM_IDS.filter(id => m.people[id]?.length).map(id => `${id}（${PEOPLE[id].name}）：${m.people[id].join("；")}`).join("\n");
-  const ch = chapterLines();
+  const ch = chapterLines(chunk.map(e => e.t).join("\n"), "memory");
   return `你是跑团游戏《醉龙酒馆：龙誓》的记录员。玩家角色叫${p.name}（${p.gender}，${RACES[p.race].name}${CLASSES[p.cls].name}）。根据【旧的前情提要】和【新发生的剧情】，写出更新后的前情提要，并整理每个角色记得的事。
 
 要求：
@@ -2944,6 +3076,41 @@ async function apiNarrate(prompt, onText, signal) {
   return text;
 }
 
+function progressName(key) {
+  if (key.startsWith("side.")) return Object.hasOwn(SIDE, key.slice(5)) ? SIDE[key.slice(5)].name : "支线进度";
+  if (Object.hasOwn(questKeys, key)) return QUESTS[questKeys[key][0]].name;
+  const names = { "act1.key": "守誓人的钥匙", "act1.chart": "航海图", "act1.ship": "船", "act2.heart": "誓约之心", "act2.darin": "达林的情况", "act1.naia_fate": "奈雅的去留" };
+  return Object.hasOwn(names, key) ? names[key] : "剧情进度";
+}
+function validFlagValue(rule, value) {
+  return rule === "bool" ? typeof value === "boolean" : rule === "count" ? Number.isInteger(value) && value >= 0 && value <= 3
+    : rule === "id" ? value === false || typeof value === "string" && Object.hasOwn(COMPANIONS, value) : Array.isArray(rule) && rule.includes(value);
+}
+function progressClaims(text) {
+  if (state.act !== 1 || state.pendingCheck || state.combat) return [];
+  const rules = [
+    ["act1.key", /你(?:们)?.{0,16}(?:接过|拿到|拿回|取得).{0,10}守誓人.{0,6}钥匙|守誓人.{0,6}钥匙.{0,12}(?:交到|放进|塞进|递到)你(?:的)?手/],
+    ["act1.chart", /你(?:们)?.{0,16}(?:取出|取到|拿到|获得|接过).{0,12}航海图|航海图.{0,12}(?:交到|递到|放到).{0,3}你(?:的)?手/],
+    ["act1.ship", /(?:海鸥号|黑鳗号).{0,18}(?:批准借给你|已经交给你|由你(?:们)?使用)|(?:正式批准|同意借出|正式借给).{0,15}(?:海鸥号|黑鳗号)/],
+  ];
+  const lines = (String(text).match(/[^。！？\n]+[。！？]?/g) || []).filter(t => !/[?？]|没有|还没|尚未|并未|未曾|不能|不会|不曾|不肯|不允许|不愿|不是|拒绝|如果|只要|假如|等到|准备|打算|想要|将会|将要|(?:将|会)把|(?:将|会|可以|能)(?:先|再|随后|很快|立刻|马上|亲自|直接)?(?:取出|取到|拿到|拿回|取得|接过|批准|同意|借给|交到|交给|使用)|希望|要求|请求|也许|可能|能否|是否|了吗|此前|先前|当时|曾经|回忆/.test(t));
+  const issues = rules.filter(([key, pattern]) => !state.flags[key] && lines.some(t => pattern.test(t))).map(([key]) => ({ key, reason: "叙述提到已经取得，当前进度还没有记录；请核对是否确实到手" }));
+  if (state.flags["act1.ship"]) for (const [name, value] of [["海鸥号", "seagull"], ["黑鳗号", "black_eel"]]) {
+    const claimed = new RegExp(name + ".{0,18}(?:批准借给你|已经交给你|由你(?:们)?使用)|(?:正式批准|同意借出|正式借给).{0,15}" + name);
+    if (state.flags["act1.ship"] !== value && lines.some(t => claimed.test(t))) { issues.push({ key: "act1.ship", reason: "叙述中获准使用的船与当前记录不同，请核对实际安排" }); break; }
+  }
+  return issues;
+}
+function progressReviewLine() {
+  const r = state.progressReview; if (!r) return "";
+  return `\n【上轮待核对的进度】${r.issues.map(i => `${i.key}：${i.reason}${Array.isArray(FLAG_KEYS[i.key]) ? `；合法结果${FLAG_KEYS[i.key].join("|")}` : ""}`).join("；")}。实际进度以世界标记为准；若确已发生就补正确记录，尚未发生就说明原因，不补造经过。`;
+}
+function reviewProgress() {
+  if (busy || state.ended || state.combat || state.pendingCheck || state.pendingFinal) return false;
+  const r = state.progressReview;
+  const action = `只核对已发生的进度，不继续剧情。${r ? r.issues.map(i => `${i.key}：${i.reason}`).join("；") + `\n需要核对的原文：${r.quote}` : "核对守誓人的钥匙、航海图和船是否已实际取得。"}\n请对照原文和世界标记，确实到手才补正确的flags；否则说明还差什么。不能为消除提醒补造选择、付费或检定成功。这轮只接收相关进度，不推进场景和时间。`;
+  gm(action, null, "review"); return true;
+}
 function parseGMReply(text, mode) {
   const [narr, tail] = splitReply(text);
   if (narr && mode === "narrate" && !text.includes("@@@")) return [narr, {}];
@@ -2967,7 +3134,9 @@ async function gm(action, shown, mode) {
     await memJob;
     busy = false; memWait = false;
   }
-  const prompt = buildPrompt(action, mode);
+  const priorReview = mode === "review" ? state.progressReview : null;
+  const reviewKeys = mode === "review" ? [...new Set([...(priorReview?.issues.map(i => i.key) || []), ...(state.act === 1 ? ["act1.key", "act1.chart", "act1.ship"] : [])])] : null;
+  const prompt = buildPrompt(action, mode) + progressReviewLine();
   const playerEntry = shown ? push("you", shown) : null;
   state.suggestions = [];
   const entry = push("gm", "", { live: true });
@@ -2979,8 +3148,17 @@ async function gm(action, shown, mode) {
     }, ctl.signal);
     const [narr, data] = parseGMReply(text, mode);
     entry.t = narr; delete entry.live;
-    applyGM(data, mode);
-    if (mode !== "narrate") state.turns++;
+    const issues = [];
+    const changes = reviewKeys ? { flags: saveRecord(data.flags) ? Object.fromEntries(Object.entries(data.flags).filter(([key]) => reviewKeys.includes(key))) : data.flags } : data;
+    applyGM(changes, mode, issues);
+    if (mode !== "narrate" && mode !== "review") state.turns++;
+    if (mode !== "narrate" && mode !== "review") recordTurnFacts(data.facts, entry, playerEntry);
+    if (mode !== "narrate") {
+      if (mode !== "review") for (const claim of progressClaims(narr)) if (!issues.some(i => i.key === claim.key)) issues.push(claim);
+      state.progressReview = issues.length ? { scene: entry.s, quote: narr.slice(0, 1800), issues: issues.slice(0, 6) } : null;
+      if (priorReview && issues.length) state.progressReview = { ...priorReview, issues: [...priorReview.issues, ...issues.filter(i => !priorReview.issues.some(old => old.key === i.key))].slice(0, 6) };
+      for (const issue of issues.slice(0, 6)) push("sys", `待核对 · ${progressName(issue.key)}：${issue.reason}`, { cls: "appr-down" });
+    }
     lastAction = null;
   } catch (e) {
     delete entry.live; entry.failed = true;
@@ -3004,8 +3182,9 @@ async function gm(action, shown, mode) {
   }
 }
 
-function applyGM(d, mode) {
+function applyGM(d, mode, issues = []) {
   const notes = [], inCb = !!state.combat, loc0 = state.location;
+  const block = (key, reason) => { if (issues.length < 6) issues.push({ key: String(key).slice(0, 100), reason: String(reason).slice(0, 160) }); };
   const wantCamp = !inCb && !state.camp && d.camp === true && mode !== "morning"; // 睡醒后不能自动再扎营
   if (d.location) state.location = str(d.location, 30);
   if (Array.isArray(d.speakers)) state.speakers = d.speakers.filter(id => PEOPLE[id]).slice(0, 3);
@@ -3013,30 +3192,35 @@ function applyGM(d, mode) {
   if (d.expressions && typeof d.expressions === "object") for (const [k, v] of Object.entries(d.expressions)) if (PEOPLE[k] && EXPRS.includes(v)) state.expressions[k] = v;
 
   // flags
-  if (d.flags && typeof d.flags === "object") for (let [k, v] of Object.entries(d.flags)) {
-    const rule = FLAG_KEYS[k]; if (!rule) { console.warn("未定义的标记被丢弃", k); continue; }
+  if (d.flags != null && !saveRecord(d.flags)) block("", "说书人的进度记录格式不完整，本轮没有登记这些进度");
+  for (let [k, v] of Object.entries(saveRecord(d.flags) ? d.flags : {}).sort(([a], [b]) => Number(b === "act1.key") - Number(a === "act1.key"))) {
+    const rule = Object.hasOwn(FLAG_KEYS, k) && FLAG_KEYS[k]; if (!rule) { block(k, "说书人给出的进度名称无法识别"); continue; }
     if (k === "act1.invite" && v === true) v = "invited"; // 正式受邀
+    if (!validFlagValue(rule, v)) { block(k, "说书人给出的结果不在可用选项中"); continue; }
+    if (state.flags[k] === v || rule === "count" && (state.flags[k] || 0) === v) continue;
     if (k === "act1.lise" && state.flags[k]) { // 莉丝的结局定了就不再改；只有债到期后的那一轮可以撤销误判
       if (v === "saved" && state.flags[k] === "sold" && state.liseSale) {
         state.flags[k] = "saved"; const vx = state.companions.vex;
         changeApproval("vex", state.liseSale.approval);
         const mm = memo().people.vex || []; const i = mm.indexOf("你没能在期限内救下莉丝"); if (i >= 0) mm.splice(i, 1);
         state.liseSale = null; notes.push(["莉丝其实早就救出来了：撤销债务到期，维克斯的赞同度恢复", "up"]);
-      }
+      } else block(k, "这件事已有结果，当前不能改写");
       continue;
     }
-    if (SCENES[state.scene].split?.flag === k) continue; // 分头行动那一边的结果只由代码结算
-    if (k === "act1.chart" && !state.flags["act1.key"] && !d.flags["act1.key"]) continue; // 没有守誓人的钥匙打不开地窖暗格
-    if (questKeys[k]) { const why = questBlock(k); if (why) { console.warn("个人任务标记被丢弃", k, why); continue; } }
+    if (SCENES[state.scene].split?.flag === k) { block(k, "这项结果需要先在界面分派队伍，再按实际行动结算"); continue; }
+    if (k === "act1.chart" && !state.flags["act1.key"]) { block(k, "还没有有效取得守誓人的钥匙，暂时不能登记已打开暗格"); continue; }
+    if (questKeys[k]) { const why = questBlock(k); if (why) { block(k, why); continue; } }
     const tid = /^quest\.(\w+)\.tested$/.exec(k)?.[1];
     if (tid) { // 暧昧或恋人阶段完成的考验都保留
       const c = state.companions[tid]; if (v && ["hint", "together"].includes(c?.romance) && !c.tested) { c.tested = true; state.flags[k] = true; notes.push([`${PEOPLE[tid].name}看到了你的心意`, "up"]); }
+      else block(k, "这次个人考验还没有满足关系条件，或已经完成");
       continue;
     }
     const sid = /^side\.(\w+)$/.exec(k)?.[1];
     if (sid) { // 支线：先接下才能完成；完成时代码发奖励
       const cur = state.flags[k];
-      if (cur === "done" || cur === "failed" || v === cur || (v !== "taken" && cur !== "taken") || (!cur && SIDE[sid].need && !SIDE[sid].need())) continue;
+      if (cur === "done" || cur === "failed") { block(k, "这条支线已经结束"); continue; }
+      if ((v !== "taken" && cur !== "taken") || (!cur && SIDE[sid].need && !SIDE[sid].need())) { block(k, "需要先接下支线并满足前置条件，才能登记后续结果"); continue; }
       state.flags[k] = v;
       if (v === "done") { const r = SIDE[sid].reward || {};
         if (r.gold) state.player.gold += r.gold;
@@ -3049,19 +3233,19 @@ function applyGM(d, mode) {
     }
     if (rule === "count") { // 计数：每次最多 +1，最多 3
       const cur = state.flags[k] || 0;
-      if (k === "act2.egg_warmed" && !eggHere()) continue;
+      if (k === "act2.egg_warmed" && !eggHere()) { block(k, "龙蛋当前不在队伍中，不能增加保温次数"); continue; }
       if (v === cur + 1 && v <= 3) { state.flags[k] = v; notes.push([v === 3 ? "龙蛋的壳上出现了一道裂纹" : `龙蛋保温了 ${v}/3 次`, "up"]); }
+      else block(k, "次数只能按实际发生的行动逐次增加");
       continue;
     }
-    if (k === "act2.sacrifice" && v === "draconic") { if (state.player.draconic < 20 || state.flags[k]) continue; addDraconic("player", -20, notes); }
-    if (k === "act2.heart" && (state.flags[k] || v === "cult" || v === "destroyed" && state.flags["act2.tideborn"] !== "ally")) continue; // 抢走由代码写；销毁要潮裔是盟友
+    if (k === "act2.sacrifice" && v === "draconic") { if (state.player.draconic < 20 || state.flags[k]) { block(k, "需要至少20点龙化值，而且不能重复献出"); continue; } addDraconic("player", -20, notes); }
+    if (k === "act2.heart" && (state.flags[k] || v === "cult" || v === "destroyed" && state.flags["act2.tideborn"] !== "ally")) { block(k, "誓约之心已有去向，或当前选择尚未满足条件；被教团夺走由实际剧情结算"); continue; }
     if (k === "act2.heart" && v === "player") addDraconic("player", 30, notes);
-    if (CODE_FLAGS.has(k) || k === "act2.darin" && v === "woke") continue; // 达林唤醒由战歌结算；killed/left 仍可由剧情写入
-    if (k === "act3.route" && !({ charge: () => allies().length >= 2, tunnel: () => state.flags["quest.naia"] === "double" || state.flags["prologue.rat_king"] === "spared" || !!state.flags["tavern.intel"], wings: () => state.player.draconic >= 80 })[v]?.()) { console.warn("这条路的条件不满足", v); continue; }
-    if (k === "act3.valdo" && v === "convinced" && !((state.flags["act2.eve"] || state.flags["side.eve_letter"] === "done") && state.flags["quest.selene.diary"])) continue; // 说服主教要有证据
+    if (CODE_FLAGS.has(k) || k === "act2.darin" && v === "woke") { block(k, "这项结果由战斗、检定或玩家在界面的选择结算"); continue; }
+    if (k === "act3.route" && !({ charge: () => allies().length >= 2, tunnel: () => state.flags["quest.naia"] === "double" || state.flags["prologue.rat_king"] === "spared" || !!state.flags["tavern.intel"], wings: () => state.player.draconic >= 80 })[v]?.()) { block(k, "这条攻山路线还没有满足条件"); continue; }
+    if (k === "act3.valdo" && v === "convinced" && !((state.flags["act2.eve"] || state.flags["side.eve_letter"] === "done") && state.flags["quest.selene.diary"])) { block(k, "说服主教需要伊芙的证据和骑士团日记"); continue; }
     const was = state.flags[k];
-    if (rule === "bool") state.flags[k] = !!v;
-    else if (rule === "id") { if (v === false || COMPANIONS[v]) state.flags[k] = v; }
+    if (rule === "bool" || rule === "id") state.flags[k] = v;
     else if (Array.isArray(rule) && rule.includes(v)) {
       state.flags[k] = v;
       const [qid] = questKeys[k] || []; if (qid && QUESTS[qid].choice.flag === k) QUESTS[qid].choice.on?.[v]?.(state.companions[qid], notes);
@@ -3087,6 +3271,7 @@ function applyGM(d, mode) {
     else if (fate === "recruited") { nc.left = false; nc.jailed = false; if (!nc.recruited) { nc.recruited = true; notes.push(["奈雅留在了队伍里", "up"]); } }
   }
 
+  if (mode === "review") { for (const [t, kind] of notes) push("sys", t, { cls: kind === "up" ? "appr-up" : kind === "down" ? "appr-down" : "" }); return; }
   // approval
   const pres = present();
   const offer = d.vessel_consent;
@@ -3246,15 +3431,22 @@ const isPlace = id => !!(SCENES[id]?.hub || SCENES[id]?.walk || isLoc(id) || Obj
 const placeName = id => SCENES[id].loc.split(" · ").pop();
 // 说书人写了新地点却忘了 advance：地点对得上一个现在能去的地方，就跟过去（叙述里排在后面的地名算数）
 function walkTarget(sc, where) {
-  if (!isPlace(state.scene)) return null;
+  if (!isPlace(state.scene) || state.pendingCheck) return null;
   const here = where.lastIndexOf(placeName(state.scene));
-  const cands = [...nextOf(sc), ...hubSubs(sc).map(([, y]) => y)].filter(id => id !== state.scene && isPlace(id) && route(sc, id))
+  const cands = [...nextOf(sc), ...hubSubs(sc).map(([, y]) => y), ...firstActTransfers(sc)].filter(id => id !== state.scene && isPlace(id) && route(sc, id)
+      && !(isLoc(id) && nextOf(SCENES[id]).includes(state.scene) && !where.trim().endsWith(placeName(id))))
     .map(id => [id, where.lastIndexOf(placeName(id))]).filter(([, i]) => i >= 0 && i > here);
   return cands.sort((a, b) => b[1] - a[1])[0]?.[0] || null;
 }
 // 港口这样的枢纽可以直接去某个地点里面的小场景：先经过地点入口（算走过这个地点），再进去
+function firstActTransfers(sc) {
+  if (state.act !== 1 || sc.act !== 1 || sc.hub || sc.interlude || !canGo(sc, "act1_hub") || state.combat || state.camp || state.pendingCheck || state.ended || state.pendingCombat) return [];
+  const hub = SCENES.act1_hub;
+  return nextOf(hub).filter(id => id !== state.scene && id !== "act1_lighthouse" && SCENES[id].act === 1 && canGo(hub, id));
+}
 function route(sc, id) {
   if (canGo(sc, id)) return [id];
+  if (firstActTransfers(sc).includes(id)) return ["act1_hub", id];
   if (!sc.hub) return null;
   const via = nextOf(sc).find(x => isLoc(x) && canGo(sc, x) && canGo(SCENES[x], id));
   return via ? [via, id] : null;
@@ -3930,11 +4122,38 @@ function loverTalks() {
 }
 function eventFor(id) { return CAMP_EVENTS.find(e => e.id === id) || loverTalks().find(e => e.id === id) || null; }
 // 每晚的事件安排：重要事件只挑一个；群戏可以有好几个
-function planNight() {
+function availableCampEvents() {
   const seen = new Set(state.campSeen || []), here = campers();
   const ok = e => !seen.has(e.id) && (e.group ? e.when() : e.pair ? e.pair.every(id => here.includes(id)) && (!e.when || e.when()) : here.includes(e.who) && e.when(state.companions[e.who]));
-  const important = [...CAMP_EVENTS.filter(e => !LISTED.includes(e.kind)), ...loverTalks()].filter(ok).sort((a, b) => KIND_ORDER[a.kind] - KIND_ORDER[b.kind])[0];
-  return { important: important?.id || null, banter: CAMP_EVENTS.filter(e => LISTED.includes(e.kind) && ok(e)).map(e => e.id) };
+  return [...CAMP_EVENTS, ...loverTalks()].filter(ok);
+}
+function planNight() {
+  const available = availableCampEvents(), important = available.filter(e => !LISTED.includes(e.kind)).sort((a, b) => KIND_ORDER[a.kind] - KIND_ORDER[b.kind])[0];
+  return { important: important?.id || null, banter: available.filter(e => LISTED.includes(e.kind)).map(e => e.id) };
+}
+function pendingSideTasks() {
+  return Object.entries(SIDE).filter(([id, q]) => q.act === state.act && state.flags[`side.${id}`] === "taken").map(([id, q]) => ({ id, name: q.name }));
+}
+function debtReminder() {
+  if (!state.flags["act1.debt_known"] || !debtOpen()) return "";
+  return debtDays() <= 1 ? "莉丝的期限将到，再长休一次就会结算；可以先处理或核对这件事。" : `莉丝的事还剩${debtDays()}天；每次长休推进一天。`;
+}
+function personalOpportunities() {
+  if (state.ended || state.combat || state.pendingCheck || state.pendingFinal || SCENES[state.scene].interlude || (!state.camp && !canCamp())) return [];
+  return availableCampEvents().filter(e => (e.scene || e.kind === "farewell") && (!state.camp || LISTED.includes(e.kind) || state.camp.plan?.important === e.id));
+}
+function sleepNotices() {
+  const k = state.camp; if (!k) return [];
+  const notes = [], debt = debtReminder(), available = availableCampEvents();
+  if (debt) notes.push(debt);
+  if (k.talk) notes.push("当前谈话还没结束，休息会结束这段谈话。");
+  const important = available.find(e => e.id === k.plan?.important);
+  if (important) notes.push(important.who ? `${PEOPLE[important.who].name}今晚还有话想对你说。` : "营火边还有一段尚未展开的谈话。");
+  const farewell = available.filter(e => e.kind === "farewell");
+  if (farewell.length) notes.push(`今晚还可以与${farewell.map(e => PEOPLE[e.who].name).join("、")}聊聊。`);
+  const pending = pendingSideTasks();
+  if (pending.length && campNextOf(SCENES[state.scene])) notes.push(`休息后主线将继续，已接事项还没结束：${pending.map(q => q.name).join("、")}。`);
+  return notes;
 }
 
 // 恋爱、关系、补给等字段，营地内外都能用（只在描写战况时不处理）
@@ -4011,6 +4230,12 @@ function talkTo(target) {
   let ev = null;
   if (target.startsWith("event:")) ev = eventFor(target.slice(6));
   else if (k.plan.important && eventFor(k.plan.important)?.who === target) ev = eventFor(k.plan.important);
+  if (target.startsWith("event:") && (!ev || k.plan.important !== ev.id && !k.plan.banter.includes(ev.id))) return;
+  if (ev && !availableCampEvents().some(e => e.id === ev.id)) {
+    if (target.startsWith("event:")) { toast("这段谈话现在还不合适，可以先聊别的。"); return; }
+    if (k.plan.important === ev.id) k.plan.important = null;
+    ev = null;
+  }
   if (ev?.scene) { // 恋爱的关键场景：离开篝火，进入单独的小场景，结束后回来
     state.campSeen = [...(state.campSeen || []), ev.id];
     if (k.plan.important === ev.id) k.plan.important = null;
@@ -4043,14 +4268,17 @@ function endTalk() {
 }
 function goSleep() {
   const k = state.camp; if (!k || busy) return;
-  if (k.talk) endTalk();
+  const notes = sleepNotices();
   const near = lovers().filter(id => campers().includes(id));
-  if (!near.length) return restNight(null);
+  const sleep = partner => { if (busy || state.camp !== k) return; closeModal(); if (k.talk) endTalk(); restNight(partner); };
+  if (!near.length && !notes.length) return sleep(null);
   modal("夜深了", s => {
+    for (const note of notes) s.append(el("p", "note", note));
     s.append(el("p", null, "营火渐渐暗下去。今晚——"));
     const row = el("div", "row");
-    for (const id of near) { const b = el("button", "btn", `和${PEOPLE[id].name}一起`); b.type = "button"; b.onclick = () => { closeModal(); restNight(id); }; row.append(b); }
-    const alone = el("button", "btn", "独自睡"); alone.type = "button"; alone.onclick = () => { closeModal(); restNight(null); }; row.append(alone);
+    for (const id of near) { const b = el("button", "btn", `和${PEOPLE[id].name}一起`); b.type = "button"; b.onclick = () => sleep(id); row.append(b); }
+    const alone = el("button", "btn", near.length ? "独自睡" : "继续休息"); alone.type = "button"; alone.onclick = () => sleep(null); row.append(alone);
+    if (notes.length) { const back = el("button", "btn", "先不睡，回到营地"); back.type = "button"; back.onclick = closeModal; row.append(back); }
     s.append(row);
   });
 }
@@ -4114,10 +4342,13 @@ function wakePrompt(partner, after, dreamt, night = "") {
 }
 function renderCamp(box) {
   const k = state.camp, wrap = el("div", "combat");
+  k.plan ||= planNight();
+  const available = availableCampEvents();
+  k.plan.banter = available.filter(e => LISTED.includes(e.kind)).map(e => e.id);
   const head = el("div", "cb-head");
   head.append(el("span", "t", `营地 · 第 ${state.day} 夜`), el("span", "label", busy ? "说书人正在描写营地……" : `补给 ${state.supplies ?? 0} · 找人聊聊，或者睡觉`));
   wrap.append(head);
-  const grid = el("div", "zones"), imp = k.plan.important ? eventFor(k.plan.important) : null;
+  const grid = el("div", "zones"), imp = available.find(e => e.id === k.plan.important) || null;
   for (const id of campers()) {
     const c = state.companions[id], has = imp?.who === id;
     const card = el("div", "zone" + (has ? " here" : "")), top = el("div", "zn");
@@ -4296,7 +4527,7 @@ function partyUnit(ref, zone) {
   };
 }
 function foeUnit(type, zone, side) {
-  const c = state.combat, e = ENEMIES[type], sc = { hp: 1, ac: 0, hit: 0, dmg: 0, ...(ENCOUNTERS[c.id]?.scale || {}) }; // scale：遭遇的强度（玩家有了装备、印记和职业能力之后，第二三幕要跟着变强）
+  const c = state.combat, e = ENEMIES[type], sc = { hp: 1, ac: 0, hit: 0, dmg: 0, ...(c.scale || ENCOUNTERS[c.id]?.scale || {}) };
   c.count[type] = (c.count[type] || 0) + 1;
   const n = c.count[type];
   return {
@@ -4317,6 +4548,7 @@ function startCombat(id) {
     zones: E.zones.map(z => ({ n: z.n, tags: z.tags || [], adj: z.adj, burning: 0 })) };
   const c = state.combat;
   for (const ref of ["player", ...present().filter(id => !state.companions[id].jailed)]) c.units[ref] = partyUnit(ref, E.startAt?.[ref] ?? E.start);
+  c.scale = encounterScale(E, cbList().filter(u => u.side === "party").length);
   for (const [type, n, zone] of E.foes) for (let i = 0; i < n; i++) { const u = foeUnit(type, zone, "enemy"); c.units[u.id] = u; }
   for (const u of cbList()) if (u.type && ENEMIES[u.type].shift) disguise(u);
   if (E.bout) boutRules(c);
@@ -4326,6 +4558,7 @@ function startCombat(id) {
   sortOrder();
   state.suggestions = []; state.pendingCheck = null; pick = null;
   push("chapter", "战斗 · " + E.title);
+  if (E.largeParty && cbList().filter(u => u.side === "party").length > 4) clog(`本场为大队伍遭遇（${cbList().filter(u => u.side === "party").length}人参战），敌方更耐战、攻势更强。`, "event");
   clog("先攻：" + c.order.map(i => (c.units[i].guise ? "？？？" : c.units[i].name) + " " + c.units[i].init).join("　"));
   save(); renderPlay(); advanceCombat();
 }
@@ -5272,8 +5505,15 @@ function renderPlay() {
     if (!pt.length) rail.append(el("div", "note", "还没有同伴。酒馆里的人，也许会成为你的伙伴。"));
   }
   rail.append(el("div", "note", `金币 ${p.gold} · 补给 ${state.supplies ?? 0} · 灵感 ${p.inspiration} · 龙化 ${p.draconic}${marksOf("player").length ? "（" + marksOf("player").map(m => m.name).join("、") + "）" : ""}`));
-  if (state.flags["act1.debt_known"] && debtOpen()) rail.append(el("div", "note", `莉丝：还剩 ${debtDays()} 天`));
-  if (sc.hub && sc.goals?.length) rail.append(el("div", "note", "目标：" + sc.goals.map(g => `${g.name} ${state.flags[g.flag] ? "✓" : "✗"}`).join(" · ")));
+  const debt = debtReminder(); if (debt) rail.append(el("div", "note", debt));
+  if (!state.combat && !state.pendingFinal && !state.ended) {
+    const personal = personalOpportunities(), pending = pendingSideTasks();
+    if (personal.length) rail.append(el("div", "note", `${[...new Set(personal.map(e => PEOPLE[e.who].name))].join("、")}还有相处的机会，可以在营地留意。`));
+    if (pending.length && (state.act === 1 && firstActProgress().ready || state.act === 2 && canGo(SCENES[state.scene], "act2_temple") || state.scene === "act3_whisper")) rail.append(el("div", "note", `继续主线前，日志里还有${pending.length}件本幕已接事项未结束。`));
+  }
+  if (state.act === 1 && !["act1_lighthouse", "act1_dawn"].includes(state.scene)) {
+    const progress = firstActProgress(); rail.append(el("div", "note", "本幕目标：" + progress.items.map(g => `${g.name} ${g.done ? "✓" : "✗"}`).join(" · ")), el("div", "note", progress.hint));
+  } else if (sc.hub && sc.goals?.length) rail.append(el("div", "note", "目标：" + sc.goals.map(g => `${g.name} ${state.flags[g.flag] ? "✓" : "✗"}`).join(" · ")));
 
   // stage
   const st = $("stage"); st.textContent = "";
@@ -5325,12 +5565,15 @@ function renderPlay() {
     });
   }
   const optBtn = (k, text, fn) => { const b = el("button", "opt"); b.type = "button"; b.append(el("span", "k", k), el("span", "tx", text)); b.onclick = fn; opts.append(b); };
+  if (state.progressReview && !cb && !busy && !state.pendingCheck && !state.pendingFinal && !state.ended) optBtn("↺", "核对这轮进度", reviewProgress);
   if (camp?.talk && !busy && !state.pendingCheck) optBtn("↩", "结束谈话，回到篝火边", () => { endTalk(); save(); renderPlay(); });
   if (!camp && !cb && !busy && !state.ended && splitPending() && !state.pendingCheck) {
     if (state.pendingCombat || state.pendingAdvance) opts.textContent = "";
     optBtn("⚑", state.pendingCombat ? "开战前先分派队伍：谁去" + sc.split.place + "？" : state.pendingAdvance ? "离开前先分派队伍：谁去" + sc.split.place + "？" : `分派队伍：谁跟你走，谁去${sc.split.place}（${sc.split.job}）`, openSplit);
   }
   if (state.pendingFinal && !busy) { opts.textContent = ""; optBtn("★", "做出最终抉择……", openFinal); }
+  if (state.act === 1 && firstActProgress().ready && !camp && !cb && !busy && !state.pendingCheck && !state.ended && !["act1_lighthouse", "act1_dawn"].includes(state.scene)
+      && (state.scene === "act1_hub" || route(sc, "act1_hub"))) optBtn("⚓", state.scene === "act1_hub" ? "在酒馆扎营，继续主线" : "出海准备就绪，返回酒馆", continueFirstAct);
   if (SHOPS[state.scene] && !camp && !cb && !busy && !state.pendingFinal) optBtn("¤", `逛逛${SHOPS[state.scene].name}`, openShop);
   if (sc.tavern && !camp && !cb && !busy && !state.pendingFinal) optBtn("⌂", `和${tavernKeeper()}商量修整酒馆（${Object.keys(TAVERN).filter(tavernHas).length}/${Object.keys(TAVERN).length}）`, openTavern);
   if (!camp && !cb && !busy && !state.pendingCheck && SCENES[state.scene].camp !== false && (state.shortRests || 0) < 2 && hurtParty().length) optBtn("☕", `短暂歇脚（短休，恢复一半伤势；今天还能歇 ${2 - (state.shortRests || 0)} 次）`, () => { shortRest(); save(); renderPlay(); });
@@ -5466,8 +5709,44 @@ function memList(id) {
   if (!l.length) return el("div", "label", "还没有特别记住什么。");
   const ul = el("ul", "mem"); for (const n of l) ul.append(el("li", null, n)); return ul;
 }
+function journalSearch(query, limit = 50) {
+  const terms = String(query).trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (!terms.length) return { total: 0, items: [] };
+  const m = state.memory || {}, records = [];
+  for (const f of factsOf().slice().reverse()) records.push({ type: FACT_KINDS[f.kind], title: `${whoName(f.who)} · ${SCENES[f.scene]?.title || f.scene}`, text: f.text });
+  for (const c of (m.chapters || []).slice().reverse()) records.push({ type: "往事", title: c.title, text: c.text });
+  for (const j of state.journal.slice().reverse()) records.push({ type: "任务", title: j.quest, text: j.note });
+  for (const [who, notes] of Object.entries(m.people || {})) for (const text of notes) records.push({ type: "角色记忆", title: whoName(who), text });
+  if (m.summary) records.push({ type: "前情提要", title: "前情提要", text: m.summary });
+  for (const e of state.log.slice().reverse()) if (e.t && e.k !== "chapter") records.push({ type: e.failed ? "未完成，未计入剧情" : e.live ? "正在生成，未结算" : e.k === "cb" ? "战斗记录" : "剧情原文", title: `${SCENES[e.s]?.title || "剧情"} · ${LINE_TAG[e.k] || ""}`, text: e.t });
+  const matches = records.filter(r => terms.every(t => `${r.title}\n${r.text}`.toLowerCase().includes(t)));
+  return { total: matches.length, items: matches.slice(0, limit) };
+}
 function openJournal() {
-  modal("日志", s => {
+  modal("日志", sheet => {
+    const search = el("input"), searchField = el("div", "field"); search.type = "search"; search.id = "journalSearch"; search.placeholder = "搜索人物、剧情、承诺或信件…"; search.setAttribute("aria-label", "搜索完整日志"); searchField.append(search);
+    const resultBox = el("div", "step"), s = el("div", "step"); sheet.append(searchField, resultBox, s);
+    let searchLimit = 50;
+    const drawResults = () => {
+      const q = search.value.trim(); s.hidden = !!q; resultBox.hidden = !q; resultBox.textContent = ""; if (!q) return;
+      const results = journalSearch(q, searchLimit); resultBox.append(el("div", "label", `找到 ${results.total} 条记录`));
+      for (const item of results.items) { const row = el("div", "slot journal-result"); row.append(el("div", "label", `${item.type} · ${item.title}`), el("p", "recap", item.text)); resultBox.append(row); }
+      if (results.total > results.items.length) { const more = el("button", "btn small", "再显示 50 条"); more.type = "button"; more.onclick = () => { searchLimit += 50; drawResults(); }; resultBox.append(more); }
+    };
+    search.oninput = () => { searchLimit = 50; drawResults(); }; drawResults();
+    if (state.progressReview) {
+      s.append(el("div", "label", "本轮待核对的进度"));
+      for (const issue of state.progressReview.issues) s.append(el("p", "meta", `${progressName(issue.key)}：${issue.reason}`));
+      const check = el("button", "btn small", "核对这轮进度"); check.type = "button"; check.disabled = busy || !!state.combat || !!state.pendingCheck || !!state.pendingFinal || state.ended;
+      check.onclick = () => { closeModal(); reviewProgress(); }; s.append(check);
+    }
+    const debt = debtReminder(), pending = pendingSideTasks(), personal = personalOpportunities();
+    if (debt || pending.length || personal.length) {
+      s.append(el("div", "label", "眼下的事"));
+      if (debt) s.append(el("p", "note", debt));
+      if (personal.length) s.append(el("p", "meta", `${[...new Set(personal.map(e => PEOPLE[e.who].name))].join("、")}还有相处的机会。营地每晚安排一段重要谈话，可以留意谁想与你单独待一会儿。`));
+      if (pending.length) s.append(el("p", "meta", `本幕已接、尚未结束：${pending.map(q => q.name).join("、")}。`));
+    }
     const goals = actGoals();
     if (goals.length) {
       s.append(el("div", "label", "本幕目标"));
@@ -5477,11 +5756,27 @@ function openJournal() {
       }
       if (goals.some(g => !state.flags[g.flag]) && state.log.slice(-40).some(e => (e.k === "you" || e.k === "gm") && /钥匙|航海图|船/.test(e.t))) {
         const check = el("button", "btn small", "我已经拿到了，请说书人核对"); check.type = "button";
-        check.onclick = () => { closeModal(); gm("（玩家认为自己已经拿到了钥匙、航海图或船。请对照最近剧情核对：如果剧情里确实已经到手，就在 flags 里补写 act1.key / act1.chart / act1.ship；如果没有，用一句话说明还差什么。不要推进场景。）", null); };
+        check.onclick = () => { closeModal(); reviewProgress(); };
         s.append(check);
       }
     }
     const m = memo();
+    if (factsOf().length) {
+      s.append(el("div", "label", "记事 · 有原文出处的承诺、读过的信件和线索"));
+      const factBox = el("div", "step"); s.append(factBox); let allFacts = false;
+      const drawFacts = () => {
+        factBox.textContent = "";
+        const facts = factsOf().slice().reverse().sort((a, b) => Number(b.pinned) - Number(a.pinned));
+        for (const f of (allFacts ? facts : facts.slice(0, 12))) {
+          const row = el("div", "slot"), text = el("div"), tools = el("div", "row");
+          text.append(el("div", "label", `${f.pinned ? "★ " : ""}${FACT_KINDS[f.kind]} · ${whoName(f.who)} · ${SCENES[f.scene]?.title || f.scene}`), el("p", "recap", f.text));
+          const pin = el("button", "btn small", f.pinned ? "取消重点" : "设为重点"); pin.type = "button"; pin.disabled = busy; pin.onclick = () => { f.pinned = !f.pinned; save(); drawFacts(); };
+          tools.append(pin); row.append(text, tools); factBox.append(row);
+        }
+        if (!allFacts && facts.length > 12) { const more = el("button", "btn small", `展开全部 ${facts.length} 条记事`); more.type = "button"; more.onclick = () => { allFacts = true; drawFacts(); }; factBox.append(more); }
+        factBox.append(el("div", "label", "重点记事会优先用于回忆。承诺的原文不代表已经完成；完整剧情可以在上方搜索。"));
+      }; drawFacts();
+    }
     if (m.chapters.length) {
       s.append(el("div", "label", "往事"));
       for (const c of m.chapters) { const d = el("div", "slot"); const t = el("div"); t.append(el("b", null, c.title), el("p", "recap", c.text)); d.append(t); s.append(d); }
@@ -5527,6 +5822,25 @@ function openJournal() {
 }
 const SLOT_LABEL = { auto: "自动存档", slot1: "存档 1", slot2: "存档 2", slot3: "存档 3" };
 const metaLine = m => `${m.name} · ${SCENES[m.scene]?.title || m.scene} · ${new Date(m.t).toLocaleString("zh-CN")}${m.combat ? " · 战斗中" : ""}`;
+async function renameSave(key, label) {
+  if (busy || key === AUTO || ![SLOT(1), SLOT(2), SLOT(3)].includes(key)) return false;
+  const saved = await loadSave(key); if (!saved || !validState(saved.state)) return false;
+  const p = { ...saved, label: String(label).trim().slice(0, 40), t: Math.max(Date.now(), saved.t + 1) }, slot = DISK_KEY(key);
+  const latest = readSave(key);
+  if (latest && (latest.t > saved.t || latest.revision && latest.revision !== saved.revision)) return keepSaveConflict(key, p);
+  if (disk.on && (disk.conflicts[slot] || (saved.revision ?? null) !== (disk.base[slot] ?? null))) return keepSaveConflict(key, p);
+  let local = true; try { localStorage.setItem(key, JSON.stringify(p)); } catch (e) { local = false; }
+  if (disk.on) diskWrite(key, p);
+  return local || disk.on;
+}
+function openSaveName(key, name) {
+  modal("命名" + SLOT_LABEL[DISK_KEY(key)], s => {
+    const input = el("input"), field = el("div", "field"); input.type = "text"; input.maxLength = 40; input.value = name || ""; input.placeholder = "例如：出海之前、与赛勒涅的约定"; input.setAttribute("aria-label", "存档名称"); field.append(input);
+    const hint = el("p", "label", "只更改这份存档的名称，不替换当前游玩进度。留空可以清除名称。"), saveName = el("button", "btn gold", "保存名称"); saveName.type = "button";
+    saveName.onclick = async () => { saveName.disabled = true; const ok = await renameSave(key, input.value); if (ok) { toast(disk.conflicts[DISK_KEY(key)] ? "命名冲突副本已保留，请在存档菜单选择" : "存档名称已保存"); await openSaves(); } else { saveName.disabled = false; toast("名称保存失败，请重试", "down"); } };
+    s.append(field, hint, saveName);
+  });
+}
 async function openSaves(loadOnly) {
   if (disk.on) await diskList(); // 先刷新列表，避免异步重画把正在确认的导入窗口移除
   const playing = state?.phase === "play";
@@ -5551,16 +5865,17 @@ async function openSaves(loadOnly) {
       for (const key of [AUTO, SLOT(1), SLOT(2), SLOT(3)]) {
         const m = slotMeta(key), label = SLOT_LABEL[DISK_KEY(key)];
         const row = el("div", "slot"), t = el("div"), btns = el("div", "row");
-        t.append(el("b", null, label), el("div", "meta", m ? metaLine(m) : "空"));
+        t.append(el("b", null, label + (m?.label ? " · " + m.label : "")), el("div", "meta", m ? metaLine(m) : "空"));
         if (!loadOnly && playing && key !== AUTO) btns.append(btn("保存到这里", () => { const ok = save(key); toast(ok ? "已保存到" + label : "保存失败", ok ? undefined : "down"); draw(); }));
         if (m) { const b = btn("读取", () => open(b, () => loadSave(key), label)); btns.append(b); }
+        if (m && key !== AUTO) btns.append(btn("命名", () => openSaveName(key, m.label)));
         row.append(t, btns); body.append(row);
       }
       if (disk.backups.length) {
         body.append(el("div", "label", "硬盘上的历史备份：覆盖存档前自动保留的旧版本，最近的在前"));
         for (const bk of disk.backups) {
           const row = el("div", "slot"), t = el("div"), btns = el("div", "row");
-          t.append(el("b", null, "备份 · " + SLOT_LABEL[bk.slot]), el("div", "meta", metaLine(bk)));
+          t.append(el("b", null, "备份 · " + SLOT_LABEL[bk.slot] + (bk.label ? " · " + bk.label : "")), el("div", "meta", metaLine(bk)));
           const b = btn("读取", () => open(b, () => diskGet("backup/" + bk.id), "备份")); btns.append(b);
           row.append(t, btns); body.append(row);
         }
@@ -5573,7 +5888,7 @@ async function openSaves(loadOnly) {
         }
         for (const item of conflicts) {
           const row = el("div", "slot"), b = btn("读取此冲突副本", () => open(b, async () => item.data, "冲突副本"));
-          row.append(el("div", "meta", metaLine(metaOf(item.data))), b); body.append(row);
+          row.append(el("div", "meta", (item.data.label ? item.data.label + " · " : "") + metaLine(metaOf(item.data))), b); body.append(row);
         }
       }
       // 导出 / 导入：所有入口都能用，用来换电脑或在入口之间搬存档
@@ -5735,6 +6050,9 @@ function openEnd() {
   modal(act === 3 ? "终章" : act ? ACT_NAMES[act].split(" · ")[0] + "完" : "序幕完", s => {
     s.classList.add("endcard");
     s.append(el("p", null, act === 3 ? `【${ENDINGS[state.flags["act3.ending"]]?.name || ""}】${endingText(state.flags["act3.ending"])}` : END_TEXT[act] || ""));
+    const pending = pendingSideTasks();
+    if (nextSc && pending.length) s.append(el("p", "note", `日志中尚未标记结束的本幕已接事项：${pending.map(q => q.name).join("、")}。进入下一幕后会离开当前地区。`));
+    if (nextSc && debtReminder()) s.append(el("p", "note", "莉丝的事仍未在当前进度中解决。进入下一幕后会离开当前地区。"));
     const list = el("div", "step"); list.style.width = "100%";
     for (const id of Object.keys(COMPANIONS).filter(id => inAct(id))) {
       const c = state.companions[id];

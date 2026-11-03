@@ -7,6 +7,11 @@ const option = (name, fallback) => { const i = args.indexOf(name); return i < 0 
 const runs = Number(option('--runs', '300'));
 const seed = Number(option('--seed', '20261027'));
 const only = option('--encounter', '');
+const partySize = Number(option('--party', '4')), playerClass = option('--class', 'paladin'), actOnly = Number(option('--act', '0'));
+const omitted = option('--omit', '');
+if (!Number.isInteger(partySize) || partySize < 2 || partySize > 7 || !['fighter','ranger','rogue','wizard','warlock','cleric','paladin','bard'].includes(playerClass) || ![0,1,2,3].includes(actOnly)) throw new Error('--party 2至7；--class 职业id；--act 1、2或3');
+if ((partySize !== 4 || omitted) && ![2,3].includes(actOnly)) throw new Error('自选队伍人数或成员时请指定 --act 2 或 --act 3');
+if (omitted && (!['selene','kassian','borin','vex','lyra','naia'].includes(omitted) || partySize===7)) throw new Error('--omit 同伴id；省略一人后队伍最多6人');
 if (!Number.isInteger(runs) || runs < 1 || !Number.isInteger(seed)) throw new Error('用法：node tests/combat-sim.mjs [--runs 300] [--seed 20261027] [--encounter tavern_ambush]');
 
 const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
@@ -23,6 +28,7 @@ let randomState = seed >>> 0;
 const randomMath = Object.create(Math);
 randomMath.random = () => { randomState = (Math.imul(randomState, 1664525) + 1013904223) >>> 0; return randomState / 4294967296; };
 const context = vm.createContext({
+  simSetup: { partySize, playerClass, omitted },
   Math: randomMath, console, setTimeout, clearTimeout, AbortController,
   window: {}, location: { hostname: 'test.invalid', protocol: 'file:' },
   document: { getElementById: node, createElement: node, addEventListener() {} },
@@ -40,27 +46,28 @@ hurt = function(u, n, o) {
   return result;
 };
 globalThis.simulate = function(id, level, scene, away = [], allyFlags = {}) {
-  const d = freshDraft(); d.cls = 'paladin'; d.race = 'half_orc'; classPreset(d);
+  const d = freshDraft(); d.cls = simSetup.playerClass; d.race = 'half_orc'; classPreset(d);
   state = newGame(d); state.act = id === 'tavern_ambush' ? 0 : scene.startsWith('act3') ? 3 : scene.startsWith('act2') ? 2 : 1; state.scene = scene;
-  for (const id of ['selene', 'kassian', 'borin']) state.companions[id].recruited = true;
-  if (id === 'tower_spies' || id.startsWith('docks')) state.companions.borin.recruited = false; // 场景里遇到莉拉或维克斯，仍为四人
+  const recruits = ['selene', 'kassian', 'borin', 'vex', 'lyra', 'naia'].filter(id=>id!==simSetup.omitted).slice(0,simSetup.partySize-1);
+  for (const id of recruits) state.companions[id].recruited = true;
+  if (simSetup.partySize===4 && (id === 'tower_spies' || id.startsWith('docks'))) state.companions.borin.recruited = false; // 场景里遇到莉拉或维克斯，仍为四人
   if (id === 'tavern_ambush') state.companions.vex.taken = true; // 序幕在场者自动参战，控制为四人
   levelUp(level);
-  if (state.pendingAsi) applyAsi({ str: 2 });
+  while (state.pendingAsi) { const k=CLASSES[d.cls].prime.find(k=>state.player.abilities[k]<=18); if(!k)throw Error('模拟属性提升未完成'); applyAsi({ [k]: 2 }); }
   Object.assign(state.flags, allyFlags); // 第三幕的盟友由标记算出
   // 印记：第二幕起同伴各 +15 龙化，玩家按常见进度给一点（第二幕 20、第三幕 40）
   if (state.act >= 2) { for (const c of Object.values(state.companions)) c.draconic = 15 * (state.act - 1); state.player.draconic = 20 * (state.act - 1); }
   // 装备：按一路拿到的战利品估——第二幕全队护甲 +1、玩家武器 +1；第三幕全队护甲 +2、饰品命中 +1
   if (state.act >= 2) {
-    const ids = ['player', 'selene', 'kassian', 'borin'];
+    const ids = ['player', ...recruits];
     for (const id of ids) { const a = state.act >= 3 ? '龙鳞甲' : '加固皮甲'; state.player.inventory.push(a); equip(id, 'armor', a); if (state.act >= 3) { state.player.inventory.push('精准指环'); equip(id, 'trinket1', '精准指环'); } }
-    state.player.inventory.push('精钢长剑'); equip('player', 'melee', '精钢长剑');
+    if(['fighter','paladin'].includes(d.cls)){state.player.inventory.push('精钢长剑'); equip('player', 'melee', '精钢长剑');}
   }
   if (away.length) state.split = { scene, away, text: '' }; // 灯塔之夜分头行动：去码头的人不参战
   simDown = 0; simDownFirst = 0; simCultistFirst = 0;
   startCombat(id);
   const c = state.combat;
-  if (Object.values(c.units).filter(u => u.side === 'party').length !== 4 - away.length) throw new Error(id + ': 队伍人数不对');
+  if (Object.values(c.units).filter(u => u.side === 'party').length !== simSetup.partySize - away.length) throw new Error(id + ': 队伍人数不对');
   let result = null, steps = 0;
   while (!(result = combatResult()) && steps++ < 1500) {
     const u = cbCur();
@@ -101,12 +108,12 @@ const scenarios = [
   ['ember_king', 12, 'act3_king', [], { 'act1.sath_trust': true, 'act2.tideborn': 'ally' }],
   ['ember_king', 12, 'act3_king', [], { 'act1.sath_trust': true, 'act2.tideborn': 'ally', 'act2.darin': 'woke', 'prologue.rat_king': 'spared' }],
   ['ember_king', 12, 'act3_king'],
-].filter(([id]) => !only || id === only);
+].filter(([id,,scene]) => (!only || id === only) && (!actOnly || scene.startsWith('act'+actOnly)));
 if (!scenarios.length) throw new Error('未知遭遇：' + only);
 const results = scenarios.map(([id, level, scene, away = [], allyFlags = {}]) => {
   const rows = Array.from({ length: runs }, () => context.simulate(id, level, scene, away, allyFlags));
   const avg = key => rows.reduce((n, r) => n + (Number(r[key]) || 0), 0) / runs;
-  return { id: id + (away.length ? `（${4 - away.length} 人）` : '') + (id === 'ember_king' ? `（${Object.keys(allyFlags).length} 方盟友）` : '') + (allyFlags['side.arena_champion'] ? '（讲好规矩）' : ''), level, runs, winRate: avg('win'), avgRounds: avg('rounds'), avgDown: avg('down'), deathRate: avg('died'), playerDeathRate: avg('playerDied'), avgFirstCultists: avg('firstCultists'), avgFirstDown: avg('firstDown') };
+  return { id: id + (away.length ? `（${partySize - away.length} 人）` : '') + (id === 'ember_king' ? `（${Object.keys(allyFlags).length} 方盟友）` : '') + (allyFlags['side.arena_champion'] ? '（讲好规矩）' : ''), level, party:partySize-away.length, playerClass, runs, winRate: avg('win'), avgRounds: avg('rounds'), avgDown: avg('down'), deathRate: avg('died'), playerDeathRate: avg('playerDied'), avgFirstCultists: avg('firstCultists'), avgFirstDown: avg('firstDown') };
 });
 if (args.includes('--json')) console.log(JSON.stringify({ seed, results }, null, 2));
 else console.table(results.map(r => ({ 遭遇: r.id, 等级: r.level, 局数: r.runs, 胜率: (r.winRate * 100).toFixed(1) + '%', 平均回合: r.avgRounds.toFixed(2), 平均倒地: r.avgDown.toFixed(2), 阵亡比例: (r.deathRate * 100).toFixed(1) + '%', 首回合狂信徒死亡: r.avgFirstCultists.toFixed(2), 首回合倒地: r.avgFirstDown.toFixed(2) })));

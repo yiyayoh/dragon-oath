@@ -1,0 +1,30 @@
+{
+  "date": "2026-11-03",
+  "tool": "built-in image_gen",
+  "intent": "edit",
+  "input": "portraits/emberking_neutral.webp",
+  "inputSha256": "23873ae356f01369dd3012f33c13d3901ba87651ba7ea71c606b46a93da1e902",
+  "output": "portraits/emberking_neutral_v3.webp",
+  "outputSha256": "8383914cfccd249964eff9a52aacc1d3e47fd4929e7726e2caef97769f654133",
+  "generatedFile": "exec-70cfbcbf-7785-4548-8016-8c3e7f4f7f81.png",
+  "generatedSize": [
+    1024,
+    1536
+  ],
+  "deliverySize": [
+    768,
+    1152
+  ],
+  "postprocess": "Downsample and encode WebP only; no creative alteration after image_gen.",
+  "prompt": "Edit target: the supplied existing Ember King dragon portrait for the same fantasy RPG. Make a restrained composition correction, not a redesign. Preserve exactly this individual dragon's head shape, angular black obsidian armor scales, dense jagged crown of horns, molten orange cracks, two orange vertical-slit eyes, exposed teeth, dripping golden acidic saliva, volcanic setting and highly detailed painterly fantasy realism. Pull the camera back slightly and reconstruct the cut-off upper-left horns so the ENTIRE crown and every horn tip is fully visible inside the image, with 7–10% breathing room above the highest horn and a little margin on both sides. Keep a powerful chest-up vertical portrait, 2:3 aspect ratio, intended delivery 768 by 1152 pixels. Keep the face as the focal point. Slightly quiet the oversaturated red sky using darker charcoal smoke while preserving the threatening red volcanic moon, orange lava and warm rim light; do not wash out the fire. Preserve anatomy and identity, no extra eyes or new horns, no humans, no armor redesign, no text, no border. The desired difference is complete uncut horn silhouette and cleaner framing, with otherwise minimal changes.",
+  "review": {
+    "hornSilhouetteComplete": true,
+    "identityAndFireRetained": true,
+    "darkerSmoke": true,
+    "originalRetained": true,
+    "otherPortraitsUnchanged": [
+      "hestia_dragon.webp",
+      "naia_drac80.webp"
+    ]
+  }
+}

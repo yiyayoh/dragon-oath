@@ -1450,3 +1450,217 @@ test('战况提示精简重复人物资料，其他幕支线保留索引，长�
     return {smaller:battle.length<normal.length,remembers:battle.includes('你答应玛莎战后回来修好吧台'),index:battle.includes('其他幕未完成的支线'),unchanged:JSON.stringify(state.memory)===before};
   })()`);assert.deepEqual(result,{smaller:true,remembers:true,index:true,unchanged:true});
 });
+
+test('长局取出相关旧纪要和最近三章，保留完整原文与其余索引', () => {
+  const run=game();const result=run(`(()=>{
+    state=newGame(freshDraft());state.act=3;state.scene='act3_haven';
+    const m=memo();m.chapters=Array.from({length:90},(_,i)=>({id:'old-'+i,title:'往事第'+i+'章',text:('这是一段独立往事，记着港口的风与灯。').repeat(30)}));
+    m.chapters[2].text='你答应赛勒涅把月桂吊坠交还给她，这是只有你们知道的约定。'+m.chapters[2].text;
+    const before=JSON.stringify(m.chapters),out=chapterLines('我拿出月桂吊坠，向赛勒涅提起约定。');
+    return {recalled:out.includes(m.chapters[2].text),recent:[87,88,89].every(i=>out.includes('· '+m.chapters[i].title+'：')),indexed:out.includes('其他往事索引：'),bounded:out.length<12000,unchanged:JSON.stringify(m.chapters)===before};
+  })()`);assert.deepEqual(result,{recalled:true,recent:true,indexed:true,bounded:true,unchanged:true});
+});
+
+test('记事只接纳已发生原文，拒绝伪造、错误主体、未读和失败回复，重复不堆叠', () => {
+  const run=game();const result=run(`(()=>{
+    state=newGame(freshDraft());const read=push('gm','你已经读完这封月桂来信。'),npc=push('gm','莉拉已经读完这份研究日记。'),promise=push('you','我答应明天回来帮你修好吧台。');
+    recordTurnFacts([{kind:'read',who:'player',quote:read.t},{kind:'read',who:'lyra',quote:npc.t},{kind:'clue',quote:'你获得了不存在的钥匙。'}],read,promise);
+    const before=factsOf().length;addFact('read','lyra',npc.t,npc);addFact('read','player',read.t,read);
+    const failed=push('gm','你读完了不应记下的密信。',{failed:true}),negative=push('gm','你还没有读完这封信。'),future=push('gm','你准备读完下一封信。');
+    const claimed=push('you','我已经读完了那本航海日记。');
+    const rejects=[!addFact('read','player',failed.t,failed),!addFact('read','player',negative.t,negative),!addFact('read','player',future.t,future),!addFact('promise','vex',promise.t,promise),!addFact('read','player','你读完了伪造的信件。',read),!addFact('read','player',npc.t,npc),!addFact('read','player',claimed.t,claimed)];
+    return {before,count:factsOf().length,player:factsOf().filter(f=>f.kind==='read'&&f.who==='player').length,npc:factsOf().filter(f=>f.who==='lyra').length,promise:factsOf().filter(f=>f.kind==='promise').length,rejects,flags:Object.keys(state.flags).length};
+  })()`);assert.equal(result.before,2);assert.equal(result.count,3);assert.equal(result.player,1);assert.equal(result.npc,1);assert.equal(result.promise,1);assert(result.rejects.every(Boolean));assert.equal(result.flags,0);
+});
+
+test('旧档记事迁移不修改传入存档，问句、NPC读信与中断内容不冒充玩家已读', () => {
+  const run=game();const result=run(`(()=>{
+    state=newGame(freshDraft());push('you','我承诺回来给玛莎帮忙。');push('gm','你已经读完了萨丝的来信。');push('gm','莉拉读完日记后看着你。');push('gm','你读完那封信了吗？');push('gm','你读完了中断的信件。',{failed:true});
+    const old=JSON.parse(JSON.stringify(state)),before=JSON.stringify(old);loadState(old);const first=JSON.stringify(factsOf());indexOldFacts();
+    return {untouched:JSON.stringify(old)===before,read:factsOf().filter(f=>f.kind==='read').length,promise:factsOf().filter(f=>f.kind==='promise').length,idempotent:JSON.stringify(factsOf())===first,raw:state.log.length===old.log.length};
+  })()`);assert.deepEqual(result,{untouched:true,read:1,promise:1,idempotent:true,raw:true});
+});
+
+test('成功说书回复登记原文记事，损坏JSON与失败重试不提前登记', async () => {
+  const run=asyncGame();const result=await run(`(async()=>{
+    state=newGame(freshDraft());narrate=async()=> '你已经读完这封月桂来信。@@@{"facts":';await gm('读信','读信');const bad=factsOf().length;
+    narrate=async()=> '你已经读完这封月桂来信。@@@{"facts":[{"kind":"read","who":"player","quote":"你已经读完这封月桂来信。"}]}';await gm('读信','读信');
+    return {bad,good:factsOf().length,turns:state.turns,source:factsOf()[0].source};
+  })()`);assert.deepEqual(result,{bad:0,good:1,turns:1,source:'gm'});
+});
+
+test('日志全文检索覆盖远期纪要、原文和人物记忆，按多关键词匹配且不改存档', () => {
+  const run=game();const result=run(`(()=>{
+    state=newGame(freshDraft());memo().chapters=[{id:'act1_1',title:'赛勒涅的旧约',text:'你与赛勒涅约定归还月桂吊坠。'}];memo().people.selene=['你答应陪她找回吊坠'];push('gm','莉拉收好了另一封信。');push('gm','赛勒涅拿起月桂吊坠。');
+    const before=JSON.stringify(state),match=journalSearch('赛勒涅 月桂'),literal=journalSearch('[不存在]');
+    return {total:match.total,all:match.items.every(x=>(x.title+x.text).includes('赛勒涅')&&(x.title+x.text).includes('月桂')),literal:literal.total,unchanged:JSON.stringify(state)===before};
+  })()`);assert.deepEqual(result,{total:2,all:true,literal:0,unchanged:true});
+});
+
+test('手动存档命名保留原档内容与当前角色，覆盖保存保留名称，旧版本命名另存冲突', async () => {
+  const run=asyncGame();const result=await run(`(async()=>{
+    state=newGame(freshDraft());state.player.name='当前角色';const active=state,stored=newGame(freshDraft());stored.player.name='另一份存档';
+    localStorage.setItem(SLOT(1),JSON.stringify({t:1,state:stored}));const renamed=await renameSave(SLOT(1),' 出海之前 '),named=readSave(SLOT(1));
+    const untouched=state===active&&named.state.player.name==='另一份存档';save(SLOT(1));const retained=readSave(SLOT(1)).label;
+    const p=readSave(SLOT(1));p.revision='b'.repeat(64);localStorage.setItem(SLOT(1),JSON.stringify(p));disk.on=true;disk.base.slot1='a'.repeat(64);
+    const conflict=await renameSave(SLOT(1),'过期改名'),copy=readSave(disk.conflicts.slot1);
+    return {renamed,label:named.label,untouched,retained,conflict,main:readSave(SLOT(1)).label,preserved:copy.label,active:state.player.name};
+  })()`);assert.deepEqual(result,{renamed:true,label:'出海之前',untouched:true,retained:'出海之前',conflict:true,main:'出海之前',preserved:'过期改名',active:'当前角色'});
+});
+
+test('第一幕进度提示以实际标记为准，继续主线遵守未完成检定与正常回酒馆路径', () => {
+  const run=game();const result=run(`(()=>{
+    state=newGame(freshDraft());state.act=1;state.scene='act1_manor';gm=()=>{};render=()=>{};let camps=0;enterCamp=()=>{camps++};
+    const missing=!firstActProgress().ready&&!continueFirstAct();state.flags['act1.key']='legal';const chartHint=firstActProgress().hint.includes('取出航海图');state.flags['act1.chart']='opened';const shipHint=firstActProgress().hint.includes('安排船');state.flags['act1.ship']='seagull';
+    state.pendingCheck={skill:'stealth',dc:12,who:'player'};const blocked=!continueFirstAct();state.pendingCheck=null;const moved=continueFirstAct(),scene=state.scene;const camp=continueFirstAct();
+    return {missing,chartHint,shipHint,blocked,moved,scene,camp,camps,keys:Object.keys(state.flags).sort()};
+  })()`);assert.deepEqual(result,{missing:true,chartHint:true,shipHint:true,blocked:true,moved:true,scene:'act1_hub',camp:true,camps:1,keys:['act1.chart','act1.key','act1.ship']});
+});
+
+test('第一幕普通地点一次经过港口转场，未完成检定和灯塔剧情不能借此跳过', () => {
+  const run=game();const result=run(`(()=>{
+    state=newGame(freshDraft());state.act=1;state.scene='act1_docks';const normal=route(SCENES[state.scene],'act1_manor'),prompt=nextLine(SCENES[state.scene]).includes('经港口街直接前往');
+    state.pendingCheck={skill:'stealth',dc:12,who:'player'};const checked=route(SCENES[state.scene],'act1_manor');state.pendingCheck=null;
+    const noLighthouse=route(SCENES[state.scene],'act1_lighthouse');state.flags['act1.chart']='opened';state.flags['act1.ship']='seagull';const stillNoSkip=route(SCENES[state.scene],'act1_lighthouse');
+    applyGM({advance:'act1_manor',location:'灰帆港 · 总督府'});const arrived=state.scene,via=state.visits.act1_hub;
+    return {normal,prompt,checked,noLighthouse,stillNoSkip,arrived,via};
+  })()`);assert.deepEqual(result,{normal:['act1_hub','act1_manor'],prompt:true,checked:null,noLighthouse:null,stillNoSkip:null,arrived:'act1_manor',via:1});
+});
+
+test('金库内的总督府地点前缀不会误退回入口，检定未完成不跟随地点移动', () => {
+  const run=game();const result=run(`(()=>{
+    state=newGame(freshDraft());state.act=1;state.scene='act1_manor_vault';
+    applyGM({location:'总督府地下楼梯',check:{skill:'stealth',dc:14,who:'player'}});const during=state.scene;
+    state.pendingCheck=null;applyGM({location:'总督府保险室门前'});const inside=state.scene;
+    applyGM({advance:'act1_manor',location:'总督府'});return {during,inside,returned:state.scene};
+  })()`);assert.deepEqual(result,{during:'act1_manor_vault',inside:'act1_manor_vault',returned:'act1_manor'});
+});
+
+test('进度值严格区分布尔与字符串，未知标记和继承属性不会生效', () => {
+  const run=game();const r=run(`(()=>{state=newGame(freshDraft());const issues=[];
+    applyGM({flags:JSON.parse('{"prologue.tom_saved":"false","prologue.betrayed_companion":"constructor","act1.ship":"watch","constructor":true,"missing.flag":true}')},undefined,issues);
+    const untouched=JSON.stringify(state.flags)==='{}';applyGM({flags:{'prologue.tom_saved':true}});applyGM({flags:{'prologue.tom_saved':false}});
+    return {untouched,issues:issues.length,falseValue:state.flags['prologue.tom_saved'],taken:Object.values(state.companions).some(c=>c.taken),label:progressName('constructor')};})()`);
+  assert.deepEqual(r,{untouched:true,issues:5,falseValue:false,taken:false,label:'剧情进度'});
+});
+
+test('同批无效钥匙不能解锁航海图，有效钥匙与图不受字段顺序影响', () => {
+  const run=game();const r=run(`(()=>{state=newGame(freshDraft());state.act=1;state.scene='act1_hub';const issues=[];
+    applyGM({flags:{'act1.chart':'opened','act1.key':'watch'}},undefined,issues);const blocked=!state.flags['act1.chart']&&!state.flags['act1.key'];
+    applyGM({flags:{'act1.chart':'opened','act1.key':'legal'}});return {blocked,issues:issues.length,key:state.flags['act1.key'],chart:state.flags['act1.chart']};})()`);
+  assert.deepEqual(r,{blocked:true,issues:2,key:'legal',chart:'opened'});
+});
+
+test('明确交付缺少进度时只提醒，否定、条件、提问与未完成检定不会冒充已取得', () => {
+  const run=game();const r=run(`(()=>{state=newGame(freshDraft());state.act=1;state.scene='act1_hub';const before=JSON.stringify(state);
+    const yes=progressClaims('你接过守誓人的钥匙。你取出暗格里的航海图。萨丝同意借出海鸥号。').map(i=>i.key);
+    const no=['你还没有拿到守誓人的钥匙。','你将取出航海图。','如果取出航海图，就能出海。','你拿到航海图了吗？','萨丝不允许正式借给你海鸥号。'].map(t=>progressClaims(t).length);
+    const unchanged=JSON.stringify(state)===before;state.flags['act1.ship']='hired';const mismatch=progressClaims('萨丝将信收好，说：“海鸥号由我批准借给你们。”').some(i=>i.key==='act1.ship'),history=progressClaims('此前萨丝同意借出海鸥号。').length;
+    state.pendingCheck={skill:'sleight',dc:15,who:'player'};const pending=progressClaims('你取出航海图。').length;
+    return {yes,no,unchanged,mismatch,history,pending};})()`);
+  assert.deepEqual(r,{yes:['act1.key','act1.chart','act1.ship'],no:[0,0,0,0,0],unchanged:true,mismatch:true,history:0,pending:0});
+});
+
+test('部分进度被拒绝时保留成功内容、正文和核对入口，刷新后仍可核对', async () => {
+  const run=asyncGame();const r=await run(`(async()=>{state=newGame(freshDraft());state.act=1;state.scene='act1_manor';levelUp(2);state.levelNote=null;
+    narrate=async()=> '萨丝同意借出海鸥号。@@@{"gold":5,"flags":{"act1.ship":"watch","constructor":true}}';await gm('提交密信','提交密信');
+    const quote=state.progressReview.quote,issues=state.progressReview.issues.length,valid=validState(state),raw=state.log.some(e=>e.k==='gm'&&e.t===quote&&!e.failed),gold=state.player.gold;
+    const portable=JSON.parse(JSON.stringify(state));loadState(portable);return {issues,valid,raw,gold,turns:state.turns,ship:state.flags['act1.ship']||null,restored:state.progressReview.quote===quote,prompt:progressReviewLine().includes('seagull')};})()`);
+  assert.deepEqual(r,{issues:2,valid:true,raw:true,gold:20,turns:1,ship:null,restored:true,prompt:true});
+});
+
+test('核对仅接收相关进度，模型附带的伤害、金钱、选择、检定、转场和扎营不执行', async () => {
+  const run=asyncGame();const r=await run(`(async()=>{state=newGame(freshDraft());state.act=1;state.scene='act1_manor';state.flags['act1.key']='legal';state.flags['act1.chart']='opened';
+    state.progressReview={scene:state.scene,quote:'萨丝同意借出海鸥号。',issues:[{key:'act1.ship',reason:'待核对'}]};
+    const hp=state.player.hp,items=JSON.stringify(state.player.inventory),day=state.day;
+    narrate=async()=> '已核对，获准借用的是海鸥号。@@@{"flags":{"act1.ship":"seagull","act1.governor":"blackmailed"},"gold":50,"items_add":["额外物品"],"hp":[{"id":"player","delta":-15}],"advance":"act1_hub","location":"新地点","camp":true,"check":{"skill":"persuasion","dc":15},"combat":"manor_guards"}';
+    await gm('核对',null,'review');return {ship:state.flags['act1.ship'],governor:state.flags['act1.governor']||null,gold:state.player.gold,hp:state.player.hp===hp,items:JSON.stringify(state.player.inventory)===items,day:state.day===day,turns:state.turns,scene:state.scene,camp:!!state.camp,combat:!!state.combat,check:!!state.pendingCheck,review:state.progressReview};})()`);
+  assert.deepEqual(r,{ship:'seagull',governor:null,gold:15,hp:true,items:true,day:true,turns:0,scene:'act1_manor',camp:false,combat:false,check:false,review:null});
+});
+
+test('核对失败保留待办；确认未到手可结束提醒，不强行授予进度', async () => {
+  const run=asyncGame();const r=await run(`(async()=>{state=newGame(freshDraft());state.act=1;state.scene='act1_manor';state.progressReview={scene:state.scene,quote:'萨丝谈起海鸥号。',issues:[{key:'act1.ship',reason:'待核对'}]};
+    narrate=async()=> '正文@@@{"flags":';await gm('核对',null,'review');const kept=!!state.progressReview;
+    narrate=async()=> '核对记录格式有误。@@@{"flags":[]}';await gm('核对',null,'review');const badShapeKept=state.progressReview.quote==='萨丝谈起海鸥号。'&&state.progressReview.issues.some(i=>i.key==='act1.ship');
+    narrate=async()=> '核对后发现她只是提出条件，尚未批准借船。@@@{}';await gm('核对',null,'review');
+    return {kept,badShapeKept,cleared:state.progressReview===null,ship:state.flags['act1.ship']||null,turns:state.turns};})()`);
+  assert.deepEqual(r,{kept:true,badShapeKept:true,cleared:true,ship:null,turns:0});
+});
+
+test('核对仍受支线、代码结算和已结束选择约束，相同合法标记不反复告警', () => {
+  const run=game();const r=run(`(()=>{state=newGame(freshDraft());state.act=2;state.scene='act2_ember';const issues=[];
+    applyGM({flags:{'act2.darin':'woke','side.tom_leg':'done','act2.heart':'destroyed'}},'review',issues);
+    state.flags['act1.ship']='seagull';const repeated=[];applyGM({flags:{'act1.ship':'seagull'}},'review',repeated);
+    return {blocked:!state.flags['act2.darin']&&!state.flags['side.tom_leg']&&!state.flags['act2.heart'],issues:issues.length,repeated:repeated.length};})()`);
+  assert.deepEqual(r,{blocked:true,issues:3,repeated:0});
+});
+
+test('第二幕人数补强只作用于新开战的大队伍，阵亡、增援与读档保持开战时强度', () => {
+  const run=game();const r=run(`(()=>{const setup=n=>{state=newGame(freshDraft());state.act=2;state.scene='act2_ghost';for(const id of ['selene','kassian','borin','vex','lyra','naia'].slice(0,n-1))state.companions[id].recruited=true;levelUp(6);startCombat('ghost_ship');};
+    const base=JSON.stringify(ENCOUNTERS.ghost_ship.scale);setup(4);const four=JSON.stringify(state.combat.scale)===base;
+    setup(7);const boosted=state.combat.scale.hp>ENCOUNTERS.ghost_ship.scale.hp,gentle=state.combat.scale.hit===ENCOUNTERS.ghost_ship.scale.hit&&state.combat.scale.dmg===ENCOUNTERS.ghost_ship.scale.dmg,scale=JSON.stringify(state.combat.scale),type=ENCOUNTERS.ghost_ship.foes[0][0];
+    state.companions.naia.left=true;state.companions.naia.recruited=false;const spawned=foeUnit(type,0,'enemy').max;const portable=JSON.parse(JSON.stringify(state));loadState(portable);
+    const frozen=JSON.stringify(state.combat.scale)===scale&&foeUnit(type,0,'enemy').max===spawned;delete state.combat.scale;const legacy=foeUnit(type,0,'enemy').max===Math.round(ENEMIES[type].hp*ENCOUNTERS.ghost_ship.scale.hp);
+    setup(7);state.combat=null;state.companions.naia.jailed=true;state.companions.vex.left=true;state.companions.vex.recruited=false;state.companions.borin.alive=false;startCombat('ghost_ship');const eligible=cbList().filter(u=>u.side==='party').length===4&&JSON.stringify(state.combat.scale)===base;
+    return {four,boosted,gentle,frozen,legacy,eligible,baseUnchanged:JSON.stringify(ENCOUNTERS.ghost_ship.scale)===base,third:JSON.stringify(encounterScale(ENCOUNTERS.ember_king,7))===JSON.stringify(ENCOUNTERS.ember_king.scale)};})()`);
+  assert.deepEqual(r,{four:true,boosted:true,gentle:true,frozen:true,legacy:true,eligible:true,baseUnchanged:true,third:true});
+});
+
+test('新增核对记录与冻结战斗强度拒绝坏档，同时旧档仍可读取', () => {
+  const run=game();const r=run(`(()=>{state=newGame(freshDraft());const old=JSON.parse(JSON.stringify(state)),legacy=validState(old);const bad=JSON.parse(JSON.stringify(old));bad.progressReview={scene:'act1_hub',quote:'原文',issues:[{key:'act1.ship',reason:{}}]};const review=!validState(bad);
+    state.act=2;state.scene='act2_ghost';startCombat('ghost_ship');const combat=JSON.parse(JSON.stringify(state));combat.combat.scale.hp='bad';return {legacy,review,scale:!validState(combat)};})()`);
+  assert.deepEqual(r,{legacy:true,review:true,scale:true});
+});
+
+test('事项提醒只列本幕已接任务，未知债务和已结束债务不提前揭示', () => {
+  const run=game();const r=run(`(()=>{state=newGame(freshDraft());state.act=1;state.scene='act1_manor';state.act1Day=1;state.day=3;
+    const hidden=debtReminder()==='';Object.assign(state.flags,{'act1.debt_known':true,'side.watch_mole':'taken','side.tom_leg':'done','side.eve_letter':'taken'});
+    const before=JSON.stringify(state),tasks=pendingSideTasks(),urgent=debtReminder(),unchanged=JSON.stringify(state)===before;
+    state.flags['act1.lise']='saved';const solved=debtReminder()==='';delete state.flags['act1.lise'];state.flags['act1.vex_debt']=true;const paid=debtReminder()==='';
+    return {hidden,ids:tasks.map(q=>q.id),urgent:urgent.includes('再长休一次'),solved,paid,unchanged};})()`);
+  assert.deepEqual(r,{hidden:true,ids:['watch_mole'],urgent:true,solved:true,paid:true,unchanged:true});
+});
+
+test('相处机会遵守在队、关系、身份、已看与当前场景条件，不提前揭示奈雅身份', () => {
+  const run=game();const r=run(`(()=>{state=newGame(freshDraft());state.act=1;state.scene='act1_hub';const c=state.companions.selene;c.recruited=true;c.approval=24;
+    const low=personalOpportunities().length===0;c.approval=25;const ready=personalOpportunities().some(e=>e.id==='selene_scene');const before=JSON.stringify(state);personalOpportunities();const pure=JSON.stringify(state)===before;
+    state.campSeen=['selene_scene'];const seen=!personalOpportunities().some(e=>e.who==='selene');state.campSeen=[];c.romance='together';const lover=!personalOpportunities().some(e=>e.id==='selene_scene');c.romance='none';c.jailed=true;
+    const jailed=!personalOpportunities().some(e=>e.who==='selene');const n=state.companions.naia;n.recruited=true;n.approval=40;const hidden=!personalOpportunities().some(e=>e.who==='naia');state.flags['act1.naia_exposed']=true;const known=personalOpportunities().some(e=>e.who==='naia');
+    state.ended=true;const ended=personalOpportunities().length===0;return {low,ready,pure,seen,lover,jailed,hidden,known,ended};})()`);
+  assert(Object.values(r).every(Boolean));
+});
+
+test('同晚只提示已安排的重要相处，不通过事件id绕过每晚名额', () => {
+  const run=game();const r=run(`(()=>{state=newGame(freshDraft());state.act=1;state.scene='act1_hub';gm=()=>{};for(const id of ['selene','lyra']){state.companions[id].recruited=true;state.companions[id].approval=30;}
+    state.campSeen=['act1_home'];state.camp={talk:null,done:[],plan:planNight()};const shown=personalOpportunities().map(e=>e.id),before=JSON.stringify(state);
+    talkTo('event:lyra_scene');const blocked=JSON.stringify(state)===before;talkTo('selene');return {shown,blocked,scene:state.scene,seen:state.campSeen.includes('selene_scene')};})()`);
+  assert.deepEqual(r,{shown:['selene_scene'],blocked:true,scene:'love_selene',seen:true});
+});
+
+test('关系改变后过期的重要场景退回普通聊天，不锁死同伴也不强开亲密场景', () => {
+  const run=game();const r=run(`(()=>{state=newGame(freshDraft());state.act=1;state.scene='act1_hub';gm=()=>{};const c=state.companions.selene;c.recruited=true;c.approval=30;
+    state.campSeen=['act1_home'];state.camp={talk:null,done:[],plan:planNight()};c.approval=0;talkTo('selene');
+    return {scene:state.scene,talk:state.camp.talk,event:state.camp.event,seen:state.campSeen.includes('selene_scene'),important:state.camp.plan.important};})()`);
+  assert.deepEqual(r,{scene:'act1_hub',talk:'selene',event:null,seen:false,important:null});
+});
+
+test('打开休息提醒不结束当前谈话、不结算赞同；没有事项时保留直接休息', () => {
+  const run=game();const r=run(`(()=>{state=newGame(freshDraft());state.act=1;state.scene='act1_hub';state.act1Day=1;state.day=3;state.flags['act1.debt_known']=true;
+    state.companions.selene.recruited=true;state.companions.selene.approval=10;state.turns=3;state.camp={talk:'selene',event:null,talkAt:0,done:[],plan:{important:null,banter:[]}};
+    let modals=0,sleeps=0;modal=()=>{modals++};restNight=()=>{sleeps++};const before=JSON.stringify(state);goSleep();const held=JSON.stringify(state)===before&&sleeps===0;
+    delete state.flags['act1.debt_known'];state.camp.talk=null;goSleep();return {held,modals,sleeps};})()`);
+  assert.deepEqual(r,{held:true,modals:1,sleeps:1});
+});
+
+test('主线推进前仅提示已接未完事项和当前可聊的人，告别不会提前出现在其他场景', () => {
+  const run=game();const r=run(`(()=>{state=newGame(freshDraft());state.act=1;state.scene='act1_hub';state.flags['act1.chart']='opened';state.flags['act1.ship']='seagull';state.flags['side.watch_mole']='taken';state.camp={talk:null,done:[],plan:{important:null,banter:[]}};
+    const notes=sleepNotices().join(' '),known=notes.includes('港卫军的内鬼'),hidden=!notes.includes('霍布')&&!notes.includes('总督接受教团资助');
+    state.act=3;state.scene='act3_haven';state.camp=null;state.companions.selene.recruited=true;const ordinary=!personalOpportunities().some(e=>e.kind==='farewell');state.scene='act3_whisper';const farewell=personalOpportunities().some(e=>e.kind==='farewell'&&e.who==='selene');
+    return {known,hidden,ordinary,farewell};})()`);
+  assert(Object.values(r).every(Boolean));
+});
+
+test('烬王优先使用完整龙角版，加载失败可回退原图，其余角色和玩家图保持原路径', () => {
+  const run=game();const r=run(`(()=>{state=newGame(freshDraft());failed.clear();const im={};portrait(im,'emberking','neutral');const current=im.src;im.onerror();const fallback=im.src;const other={};portrait(other,'hestia','neutral');state.player.portraitData='data:image/png;base64,test';const player={};portrait(player,'player');return {current,fallback,other:other.src,player:player.src};})()`);
+  assert.deepEqual(r,{current:'portraits/emberking_neutral_v3.webp',fallback:'portraits/emberking_neutral.webp',other:'portraits/hestia_neutral.webp',player:'data:image/png;base64,test'});
+});
