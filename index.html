@@ -1,4 +1,4 @@
-<meta charset="utf-8">
+﻿<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>醉龙酒馆：龙誓</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -526,6 +526,11 @@ const SCENES = {
   love_naia: {
     title: "哪一张脸", loc: "无人处 · 只有你们两个", bg: "linear-gradient(160deg,#4f6a6a,#1b2626 55%,#090d0d)", interlude: true, with: "naia", camp: false, endNeeds: { turns: 2 },
     anchor: "（单独相处的场景，从营地进入。）奈雅约你到没人的地方（码头尽头、船尾、礁石后面）。她一张张地换脸给你看：米拉的脸、教团给她的脸、几张你没见过的脸——最后，她第一次以真面目站在你面前（她自己都不太确定这是不是“真的”）。她问：“你喜欢的是哪一张脸？”素材：她习惯了被当成工具和面具，害怕你喜欢的只是某个伪装；回答“哪张都是你”或“你自己想用的那张”能打动她，选某一张伪装会让她失落（但不是关系的终点）；她可以在任何性别的形象之间切换，按玩家的偏好和她自己的意愿来，不要强迫；她可能会问起你的名字对你意味着什么。若玩家的回答打动了她，可以用 romance 推进一格。2~4 轮后，写 scene_end: true，程序会把玩家带回营地。",
+    next: null,
+  },
+  intimacy: {
+    title: "亲密时刻", loc: "只有你们两个人", bg: "linear-gradient(160deg,#5a3a48,#21141b 55%,#0b0709)", interlude: true, intimacy: true, camp: false, endNeeds: { turns: 2 },
+    anchor: "（单独的亲密场景，从当前场景进入，不是长休，不推进天数。）只有你们两个人。按双方的关系、亲密值、性格和现场互动写这一刻；可以详细描写成年人之间双方自愿的性行为，不要用转场跳过，除非玩家明确要求跳过。尊重对方边界，任何一方喊停就停止。结束时写 scene_end: true，程序会结算亲密值、次数、已记录的方式和受孕结果。",
     next: null,
   },
   hestia_dream1: {
@@ -1918,12 +1923,17 @@ const AUTO = "dragon-oath-auto";
 const CHECKPOINT = "dragon-oath-checkpoint"; // 检查点的浏览器副本；正式检查点同时随本局存档携带
 const SLOT = n => "dragon-oath-slot-" + n;
 const PREF = "dragon-oath-pref";
+const LOCAL_GPT = /^(127\.0\.0\.1|localhost|\[::1\])$/.test(location.hostname);
 let state = null;
 let draft = null;
 let sample = null, sampleKnown = false, busy = false, memWait = false, ctl = null, lastAction = null;
-let pref = { tier: "default", api: "claude", base: "https://api.openai.com/v1", model: "gpt-4o", key: "", narr: "round", gptModel: "", gptMemModel: "", rules: "" };
+let pref = { tier: "default", api: LOCAL_GPT ? "chatgpt" : "openai", base: "https://api.openai.com/v1", model: "gpt-4o", key: "", narr: "round", gptModel: "", gptMemModel: "", rules: "",
+  // 私密场景（露骨内容）单独走一个接口；主说书人默认只看中性版上下文
+  priv: { on: true, base: "https://api.deepseek.com/v1", model: "", key: "", note: "" }, explicitOk: false, think: false };
 let prefSaved = false;
+let testMode = false; // 快速测试模式：在内存里搭局面，完全不写存档
 try { const stored = localStorage.getItem(PREF); prefSaved = stored !== null; pref = Object.assign(pref, JSON.parse(stored || "{}")); } catch (e) {}
+if (pref.api === "claude") pref.api = LOCAL_GPT ? "chatgpt" : "openai";
 let chatgpt = { known: false, checking: false, available: false, ready: false, authenticated: false, model: null, error: null };
 
 function freshDraft() {
@@ -1956,7 +1966,7 @@ function newGame(d) {
   const ab = finalAbilities(d), c = CLASSES[d.cls];
   const hp = c.hd + mod(ab.con);
   const companions = {};
-  for (const [id, cd] of Object.entries(COMPANIONS)) companions[id] = { recruited: false, alive: true, taken: false, approval: 0, romance: "none", hp: cd.hp, hpMax: cd.hp };
+  for (const [id, cd] of Object.entries(COMPANIONS)) companions[id] = { recruited: false, alive: true, taken: false, approval: 0, romance: "none", hp: cd.hp, hpMax: cd.hp, intimacy: { value: 0, count: 0, lastDay: 0, positions: [] } };
   return {
     version: 1, runId: newRunId(), phase: "play", act: 0, scene: "prologue_1", day: 1, location: SCENES.prologue_1.loc,
     player: { name: d.name, gender: d.gender, appearance: d.appearance, race: d.race, cls: d.cls, bg: d.bg, level: 1,
@@ -1964,7 +1974,7 @@ function newGame(d) {
       draconic: 0, inspiration: 0, portraitData: d.portraitData },
     companions, flags: {}, hestiaTrust: 0, journal: [{ quest: "暴风之夜", note: "在醉龙酒馆躲雨。" }],
     log: [], suggestions: [], speakers: [], expressions: {}, pendingCheck: null, ended: false, turns: 0,
-    supplies: 2, rel: {}, campSeen: [], camp: null,
+    supplies: 2, rel: {}, campSeen: [], camp: null, pregnancy: null, children: [],
   };
 }
 
@@ -1980,6 +1990,7 @@ const metaOf = p => ({ t: p.t, name: p.state.player.name, scene: p.state.scene, 
 function snapshot() { const s = JSON.parse(JSON.stringify(state)); s.log.forEach(e => delete e.live); return { t: Date.now(), state: s }; }
 function save(key) {
   if (!state || state.phase !== "play") return false;
+  if (testMode) return true; // 快速测试模式：一律不写存档（浏览器、硬盘、备份都不动）
   key = key || AUTO;
   let p;
   try { p = snapshot(); } catch (e) { return false; }
@@ -2125,6 +2136,13 @@ function tidyLog(s) {
     const hp = cd.hp + ((s.player.level || 1) - 1) * Math.max(1, Math.floor(CLASSES[cd.kit].hd / 2) + 1 + mod(cd.ab.con));
     s.companions[id] = { recruited: false, alive: true, taken: false, approval: 0, romance: "none", hp, hpMax: hp };
   }
+  for (const c of Object.values(s.companions)) {
+    c.intimacy ||= { value: 0, count: 0, lastDay: 0, positions: [] };
+    c.intimacy.positions = Array.isArray(c.intimacy.positions) ? [...new Set(c.intimacy.positions)] : [];
+  }
+  s.pregnancy ??= null; s.children ||= [];
+  if (s.memory) s.memory.sensitive = Array.isArray(s.memory.sensitive) ? s.memory.sensitive.filter(t => typeof t === "string").slice(-300) : [];
+  s.modelLog = Array.isArray(s.modelLog) ? s.modelLog.filter(e => e && typeof e.m === "string").slice(-60) : [];
   const naia = s.companions.naia;
   if (naia.fate === "imprisoned" && naia.left) { naia.jailed = true; naia.left = false; }
   const chart = s.flags?.["act1.chart"]; if (chart && chart !== "opened" && !s.flags["act1.key"]) s.flags["act1.key"] = chart; // 旧存档：航海图原本直接锁在总督府
@@ -2224,6 +2242,7 @@ async function readImport(file) {
 // 在场的同伴：序幕里酒馆的人都在；之后是入队的同伴，加上这一场能遇到的人（meet）和能救回的人（rescue）
 function present() {
   const sc = SCENES[state.scene];
+  if (sc.intimacy) return state.intimacyWith && party().includes(state.intimacyWith) ? [state.intimacyWith] : [];
   if (sc.with) return party().includes(sc.with) ? [sc.with] : [];
   if (sc.alone) return [];
   if (!state.act) return Object.keys(COMPANIONS).filter(id => {
@@ -2357,7 +2376,7 @@ function relLabel(v) { return v <= -60 ? "敌对" : v <= -20 ? "不满" : v < 20
 const SYSTEM = `你是奇幻跑团游戏《醉龙酒馆：龙誓》的游戏主持人（GM）。风格参考《博德之门3》：高自由度、角色鲜活、选择有后果。
 
 【叙述规则】
-- 简体中文，第二人称“你”。每轮 100–300 字，有画面、声音和气味。
+- 简体中文，第二人称“你”。每轮 100–300 字（亲密场景按场景资料要求的字数），有画面、声音和气味。
 - 不替玩家决定行动、台词和感受。只描写世界和 NPC 的反应。
 - NPC 和同伴用引号说话，严格符合其资料中的性格、喜恶。同伴会主动插话、吐槽、反对玩家。
 - 玩家的任何行动都可以尝试。永远不说“你不能”，只给出检定或后果。
@@ -2365,10 +2384,11 @@ const SYSTEM = `你是奇幻跑团游戏《醉龙酒馆：龙誓》的游戏主�
 - 主线和支线的目标只认锚点和程序列出的条件。不要另外发明程序不记录的前置手续（凑船员、付定金、修帆、备物资、跑公文之类）：玩家做到了锚点写的事，就让它成立。想加波折，用一两轮就能解决的小麻烦，不要变成新的任务链。
 - 不透露标注“GM 不要透露”的秘密，除非玩家通过剧情或检定发现。
 - 角色有记忆：【往事】是已经结束的各章纪要，【前情提要】是之后更早发生的事，【角色记得的事】是每个人亲身经历、对玩家的印象，【想起的旧事】是玩家这次提到的事当初的原文。让 NPC 和同伴记得玩家以前做过、说过、答应过的事，在合适的时候自然地提起、追问或翻旧账，态度要和这些记忆一致。
-- 恋爱内容要大胆直白：可以具体描写亲吻、拥抱、抚摸、体温和心跳，以及情欲张力和调情台词。所有可恋爱角色都是成年人。不写露骨的性行为过程，到那一步时用一句暗示性的转场结束。
+- 恋爱和亲密内容要大胆、详细：可以具体描写亲吻、拥抱、抚摸、体温、心跳、情欲张力和调情台词，也可以详细描写双方自愿的成年人性行为，包括身体反应、触碰、节奏和对话；不要用一句转场直接跳过，除非玩家明确要求跳过。所有参与者都必须是成年人且明确自愿；任何一方提出停止就立即停止，不写未成年人、非自愿或真实人物。
+- 亲密场景里要直白具体：写出性器官和性行为的动作过程，用常用、直接的说法，不要用“那里”“下面”“羞处”之类的代称，也不要用省略号、比喻或镜头切换跳过；双方的生理反应和说出口的话都要写。事后要写出对应的状态和语气变化（呼吸、体温、衣饰、疲惫、嗓音和称呼的变化），不要把刚发生的事当成没发生。
 - 恋爱随时可能发生，不只在营地：关系和气氛到了就可以推进；玩家也可以主动表白，赞同度不够时对方按性格婉拒、装傻或害羞地躲开。
-- 亲密程度跟着关系走：朋友是拍肩、并肩、打闹；暧昧是眼神停留、不经意的触碰、试探的调情；恋人可以亲吻、拥抱、更主动的身体接触，可以共度一夜（转场带过，第二天早上的画面可以亲昵）；誓约是最深的信任。气氛可以稍微超前或保守，但不要跳跃。每个同伴的亲密方式不同，按性格写。
-- 双方都可以拒绝：同伴按性格、心情和对玩家的感情决定接受还是推开；玩家拒绝时同伴停下，可以失落，但不纠缠。
+- 亲密程度跟着关系走：朋友是拍肩、并肩、打闹；暧昧是眼神停留、不经意的触碰、试探的调情；恋人可以亲吻、拥抱、更主动的身体接触，可以共度一夜，并按双方意愿详细描写这一夜（第二天早上的画面可以亲昵）；誓约是最深的信任。气氛可以稍微超前或保守，但不要跳跃。每个同伴的亲密方式不同，按性格写。
+- 所有参与者都可以拒绝或喊停：同伴按性格、心情和对玩家的感情决定接受还是推开；玩家拒绝时同伴停下，可以失落，但不纠缠；一方喊停就立即停止。
 - 玩家可以同时和几个人交往；现任会在意，按性格决定是否接受；瞒着现任的恋情被发现会有后果。
 
 【规则】
@@ -2383,7 +2403,7 @@ const SYSTEM = `你是奇幻跑团游戏《醉龙酒馆：龙誓》的游戏主�
 - 当玩家的举动符合其背景的“灵感条件”时，可给 inspiration: 1。
 
 【输出格式】先写叙述正文（纯文本，可分段，不要标题、不要 Markdown）。然后单独一行写 @@@ 。然后写一个 JSON 对象（不要代码块），没有变化的字段可以省略：
-{"location":"简短地点","speakers":["borin"],"expressions":{"borin":"smile"},"check":null,"approval":[{"id":"selene","delta":3,"reason":"你保护了小汤姆"}],"flags":{},"hp":[{"id":"player","delta":-2}],"gold":0,"items_add":[],"items_remove":[],"draconic":0,"inspiration":0,"recruit":[],"hestia_trust":0,"journal":[{"quest":"任务名","note":"一句话进展"}],"remember":[{"id":"vex","note":"你答应帮他救回妹妹"}],"romance":[],"relation":[],"reputation":[],"advance":null,"scene_end":false,"suggestions":[{"text":"建议行动","check":"说服"}]}
+{"location":"简短地点","speakers":["borin"],"expressions":{"borin":"smile"},"check":null,"approval":[{"id":"selene","delta":3,"reason":"你保护了小汤姆"}],"flags":{},"hp":[{"id":"player","delta":-2}],"gold":0,"items_add":[],"items_remove":[],"draconic":0,"inspiration":0,"recruit":[],"hestia_trust":0,"journal":[{"quest":"任务名","note":"一句话进展"}],"remember":[{"id":"vex","note":"你答应帮他救回妹妹"}],"romance":[],"intimacy":null,"relation":[],"reputation":[],"advance":null,"scene_end":false,"suggestions":[{"text":"建议行动","check":"说服"}]}
 - speakers：本轮主要说话或被聚焦的角色 id（最多 3 个，第一个最重要）。可用 id：${Object.keys(PEOPLE).join(" ")}。
 - expressions：可选，表情取 neutral smile angry sad tender。
 - check：需要检定时写 {"skill":"技能键","dc":15,"who":"player","reason":"一句话难点","advantage":false,"disadvantage":false}，此时 suggestions 写 []。who 可以是 player 或已加入的同伴 id。
@@ -2394,6 +2414,7 @@ const SYSTEM = `你是奇幻跑团游戏《醉龙酒馆：龙誓》的游戏主�
 - remember：本轮发生了某个角色会长久记住的事时写，每轮最多 2 条，每条不超过 40 字，从该角色的角度写关于玩家的事实。只记真正要紧的：承诺、谎言、秘密、恩情、冒犯、救命、亲密时刻、重大分歧。闲聊不要记。id 可用：${MEM_IDS.join(" ")}。
 - facts：本轮确实出现了承诺、读完信件/日记或查明线索时，可写最多3条 {"kind":"promise或read或clue","who":"player或角色id","quote":"本轮正文或玩家原话中的连续原文，6–160字"}。who是作出承诺、读信或得知线索的人；NPC摘记原文必须包含其姓名，玩家自述归player。read必须引用GM正文中明确由该主体完成阅读的句子，玩家提出读信不算已经读完。quote必须逐字来自本轮已发生的内容，不能写建议、假设、未完成动作或自行推断。记事只辅助叙述，不代替任务和物品标记；已有摘记中的承诺不是尚未履行的自动判定，须看后续结果。
 - romance：恋爱推进，[{"id":"selene","to":"hint"}]。阶段 none → hint（暧昧）→ together（恋人）→ vowed（誓约），一次只能推进一格；门槛是赞同度 25 / 40 / 50，誓约还要先通过个人任务的考验。气氛真的到了才写，不是每次都要推进。分手写 "to":"none"。
+- intimacy：只在【亲密场景】使用，可选 {"positions":["面对面"]}。只写本次实际发生、且属于场景资料列出的方式；方式不按亲密值锁定。不要写数值，程序会结算亲密值、次数、方式和受孕结果。
 - caught_lie：玩家被同伴发现撒谎时写，["selene"]。
 - consent：玩家已有恋人又和别人走近时，现任表态：[{"id":"现任","for":"新对象","ok":true}]，不接受写 false。
 - relation：同伴之间关系变化，[{"a":"selene","b":"vex","delta":3}]，每次最多 ±10。
@@ -2460,7 +2481,8 @@ function companionBrief(id, concise = false) {
   秘密：${c.secret}
   加入条件：${c.join}
   专属技能：${signatureOf(id).name}（${signatureOf(id).desc}）${companionEffects(id) ? "；当前后果：" + companionEffects(id) : ""}${featsOf(c.kit, partyLevel()).length ? "；职业能力：" + featsOf(c.kit, partyLevel()).map(f => s.oathbroken ? ({ aura: "恐惧灵光（同区敌人 AC −1）", radiant: "黯蚀打击" }[f.id] || f.name) : f.name).join("、") : ""}
-  印记：龙化值 ${s.draconic || 0}${s.resonance ? "，已经和玩家共鸣过" : ""}；对玩家龙化（现在 ${state.player.draconic}）的看法：${DRAGON_VIEW[id]?.[1] || "说不清"}
+  印记：龙化值 ${s.draconic || 0}${s.resonance ? "，已经和玩家共鸣过" : ""}；对玩家龙化（现在 ${state.player.draconic}）的看法：${DRAGON_VIEW[id]?.[1] || "说不清"}${s.romance !== "none" || intimacyOf(id).count ? `
+  亲密：${intimacyOf(id).value}/100（${intimacyLevel(intimacyOf(id).value).name}），累计 ${intimacyOf(id).count} 次${intimacyOf(id).positions.length ? "；方式：" + intimacyOf(id).positions.join("、") : ""}` : ""}
   ${questBrief(id)}`;
 }
 // 这一幕会出场的 NPC：[id, 从第几幕起, 说明, 到第几幕为止]
@@ -2603,13 +2625,14 @@ function continueFirstAct() {
 }
 function buildPrompt(action, mode) {
   const p = state.player, sc = SCENES[state.scene];
-  const profs = p.profs.map(k => SKILLS[k][0]).join("、");
-  const recent = recentLines(), m = memo(), facts = factLines(action, mode), chapters = chapterLines(action + "\n" + facts, mode), recall = mode === "narrate" ? "" : recallLines(action);
-  const memLines = MEM_IDS.filter(id => m.people[id]?.length).map(id => `· ${PEOPLE[id].name}（${id}）：${m.people[id].join("；")}`).join("\n");
+  const profs = p.profs.map(k => SKILLS[k][0]).join("、"), safe = safeView();
+  const recent = recentLines(safe), m = memo(), facts = factLines(action, mode, safe), chapters = chapterLines(action + "\n" + facts, mode), recall = mode === "narrate" ? "" : recallLines(action, safe);
+  const hidden = safe ? new Set(state.memory?.sensitive || []) : new Set();
+  const memLines = MEM_IDS.map(id => [id, (m.people[id] || []).filter(t => !hidden.has(t))]).filter(([, l]) => l.length).map(([id, l]) => `· ${PEOPLE[id].name}（${id}）：${l.join("；")}`).join("\n");
   const pres = present();
   const encs = (sc.encounters || []).filter(id => !state.fought?.[id]), done = (sc.encounters || []).filter(id => state.fought?.[id]);
   return SYSTEM + rulesBlock() +
-    `\n\n【当前场景】${state.scene}「${sc.title}」，地点：${state.location}\n场景锚点（GM 可见）：${sc.anchor}${dreamLine(sc)}${trialLine()}${intelLine(sc)}\n${nextLine(sc)}${splitLine(sc)}${sideLine()}` +
+    `\n\n【当前场景】${state.scene}「${sc.title}」，地点：${state.location}\n场景锚点（GM 可见）：${sc.anchor}${intimacyLine()}${afterglowLine()}${dreamLine(sc)}${trialLine()}${intelLine(sc)}\n${nextLine(sc)}${splitLine(sc)}${sideLine()}` +
     (state.act === 1 ? `\n本幕程序进度：${firstActProgress().items.map(g => g.name + (g.done ? "已到手" : "未到手")).join("；")}。${firstActProgress().hint}已经取得的东西不要再当成未取得，也不要新增程序没有记录的前置手续。关键标记只接受：act1.key=${FLAG_KEYS["act1.key"].join("|")}；取出航海图写act1.chart=opened；act1.ship=${FLAG_KEYS["act1.ship"].join("|")}（海鸥号seagull，黑鳗号black_eel，偷船stolen，雇船hired）。船在正式获准使用时登记，不需要再跑手续。` : "") +
     (state.combat ? combatBrief(mode) : state.camp ? campBrief() : encs.length || done.length ? (encs.length ? `\n可开战的遭遇：${encs.map(id => id + "（" + ENCOUNTERS[id].brief + "）").join("；")}` : "") + (done.length ? `\n这一场已经打完的遭遇（不能再写 combat）：${done.join("、")}。玩家再要动手，就用检定或叙述处理，不要写成一直对峙` : "") : "") +
     `\n\n【玩家角色】${p.name}，${p.gender}，${p.level} 级${RACES[p.race].name}${CLASSES[p.cls].name}，背景：${BACKGROUNDS[p.bg].name}（灵感条件：${BACKGROUNDS[p.bg].insp}）。外貌：${p.appearance}` +
@@ -2620,13 +2643,13 @@ function buildPrompt(action, mode) {
     (state.vesselAsk ? `\n【容器询问】只回应${PEOPLE[state.vesselAsk]?.name}是否自愿献出身体；用 vessel_consent:{id:"${state.vesselAsk}",ok:true或false} 记录明确答应或拒绝。不能替玩家确认结局。` : "") +
     (state.flags["act3.ending"] === "hestia" ? `\n【银龙容器】${endingText("hestia")}容器与赫斯提雅共用一具身体，不能另写原主人的身体。` : "") +
     `\n\n【NPC】\n${npcLines()}` +
-    `\n\n【世界标记】${JSON.stringify(state.flags)}；赫斯提雅信任 ${state.hestiaTrust}；第 ${state.day} 天，营地补给 ${state.supplies ?? 0}${debtLine()}${allyLine()}${hostageDead() ? `；灯塔之夜的人质${tomGone() ? "小汤姆" : "玛莎"}没能救回来，已经死了：之后的场景里不要再让${tomGone() ? "他" : "她"}出场` : ""}${state.act ? "；阵营声望：" + repLine() : ""}` +
+    `\n\n【世界标记】${JSON.stringify(state.flags)}；赫斯提雅信任 ${state.hestiaTrust}；第 ${state.day} 天，营地补给 ${state.supplies ?? 0}${familyLine()}${debtLine()}${allyLine()}${hostageDead() ? `；灯塔之夜的人质${tomGone() ? "小汤姆" : "玛莎"}没能救回来，已经死了：之后的场景里不要再让${tomGone() ? "他" : "她"}出场` : ""}${state.act ? "；阵营声望：" + repLine() : ""}` +
     (Object.entries(state.rel || {}).some(([, v]) => v) ? `\n【同伴之间】${Object.entries(state.rel).filter(([, v]) => v).map(([k, v]) => k.split("_").map(id => PEOPLE[id].name).join("×") + " " + sgn(v)).join("，")}` : "") +
     (chapters ? `\n\n【往事】（已经结束的各章纪要）\n${chapters}` : "") +
     `\n\n【前情提要】${m.summary || (chapters ? "（往事之后的事都在下面的最近剧情里）" : "（还没有，更早的剧情都在下面的最近剧情里）")}` +
     (memLines ? `\n\n【角色记得的事】\n${memLines}` : "") +
     (facts ? `\n\n【有原文出处的记事】仅记原文实际说过或发生的内容；承诺不等于已经完成，程序状态优先。\n${facts}` : "") +
-    (mode !== "narrate" && winsLines() ? `\n\n【已经成功的检定】（玩家已经查到、做到的事。照着结果往下写，不要当作没发生，也不要为同一件事再要求检定）\n${winsLines()}` : "") +
+    (mode !== "narrate" && winsLines(12, safe) ? `\n\n【已经成功的检定】（玩家已经查到、做到的事。照着结果往下写，不要当作没发生，也不要为同一件事再要求检定）\n${winsLines(12, safe)}` : "") +
     (recall ? `\n\n【想起的旧事】（玩家这次提到的人或事，以前发生时的原文片段。用来回忆细节、让角色自然地想起当时，不要整段复述）\n${recall}` : "") +
     `\n\n【最近剧情】\n${recent || "（冒险刚开始）"}` +
     `\n\n【玩家本回合】${action}`;
@@ -2650,30 +2673,32 @@ const LINE_TAG = { gm: "GM：", you: "玩家：", roll: "检定：", sys: "系�
 const entryLine = e => (LINE_TAG[e.k] || "") + e.t.slice(0, 1200);
 const storyPool = () => state.log.filter(e => e.t && !e.live && !e.failed && !e.m && e.k !== "chapter" && e.k !== "cb");
 // 最近检定成功拿到的东西：检定的难点 + 紧接着那段叙述的开头。说书人常忘了自己写过的线索（读出的字、问到的话），反复要求同一件事再检定
-function winsLines(skip = 12) {
+function winsLines(skip = 12, safe = safeView()) {
   const log = state.log, out = [];
   for (let i = 0; i < log.length - skip; i++) {
     const e = log[i]; if (e.k !== "roll" || !e.ok || !e.why || (SCENES[e.s]?.act ?? state.act) !== state.act) continue; // 只看这一幕的
     const g = log.slice(i + 1, i + 6).find(x => x.k === "gm" && !x.failed);
+    if (safe && g?.x) continue;
     out.push(`· ${e.why}：${g ? str(g.t.replace(/\s+/g, " "), 90) : "成功"}`);
   }
   return out.slice(-5).join("\n");
 }
-function recentLines() {
+function recentLines(safe = safeView()) {
   const pool = storyPool(), out = [];
   let n = 0;
   for (let i = pool.length - 1; i >= 0; i--) {
-    const l = entryLine(pool[i]);
+    const e = pool[i], l = safe && e.x ? SENSITIVE_NOTE : entryLine(e);
     if (n + l.length > RECENT_CHARS && out.length) break;
-    out.unshift(l); n += l.length;
+    if (!(safe && e.x) || out[0] !== SENSITIVE_NOTE) out.unshift(l); // 连续的私密段落只留一句占位
+    n += l.length;
   }
   if (state.combat) out.push("（本场战斗最近的战况）", ...state.log.filter(e => e.k === "cb").slice(-10).map(entryLine));
   return out.join("\n");
 }
 // 想起的旧事：把玩家这句话切成 2–4 字的片段，在已压缩的旧原文里找；越少见的片段权重越高，人名加倍
-function recallLines(action) {
+function recallLines(action, safe = safeView()) {
   if (!action || action.startsWith("【") || action.startsWith("（")) return "";
-  const pool = state.log.filter(e => e.m && !e.failed && e.t && e.k !== "chapter" && e.k !== "cb");
+  const pool = state.log.filter(e => e.m && !e.failed && e.t && e.k !== "chapter" && e.k !== "cb" && !(safe && e.x));
   if (!pool.length) return "";
   const names = new Set(MEM_IDS.map(id => PEOPLE[id].name));
   const grams = new Set();
@@ -2717,16 +2742,16 @@ function memoryScores(query, texts) {
   }
   return scores;
 }
-function selectedFacts(action, budget = 2400) {
-  const facts = factsOf(), scores = memoryScores(action, facts.map(f => `${whoName(f.who)} ${f.text}`));
+function selectedFacts(action, budget = 2400, safe = safeView()) {
+  const facts = factsOf().filter(f => !(safe && f.x)), scores = memoryScores(action, facts.map(f => `${whoName(f.who)} ${f.text}`));
   const ranked = facts.map((f, i) => ({ f, i, score: scores[i] + (f.pinned ? 100000 : 0) + (f.kind === "promise" ? 2 : 0) + (f.who === state.camp?.talk ? 8 : 0) + i / Math.max(1, facts.length) }))
     .sort((a, b) => b.score - a.score);
   const chosen = []; let size = 0;
   for (const row of ranked) { const n = row.f.text.length + 35; if (size + n <= budget) { chosen.push(row); size += n; } }
   return chosen.sort((a, b) => a.i - b.i).map(row => row.f);
 }
-function factLines(action, mode) {
-  return selectedFacts(action, mode === "narrate" ? 1400 : 2400).map(f => `· [${FACT_KINDS[f.kind]}] ${whoName(f.who)}：${f.text}（${SCENES[f.scene]?.title || f.scene}的原文摘记）`).join("\n");
+function factLines(action, mode, safe = safeView()) {
+  return selectedFacts(action, mode === "narrate" ? 1400 : 2400, safe).map(f => `· [${FACT_KINDS[f.kind]}] ${whoName(f.who)}：${f.text}（${SCENES[f.scene]?.title || f.scene}的原文摘记）`).join("\n");
 }
 function chapterLines(query = "", mode) {
   const chapters = state.memory?.chapters || [], budget = mode === "narrate" ? 5000 : mode === "memory" ? 5000 : 9000;
@@ -2761,7 +2786,7 @@ function addFact(kind, who, quote, entry) {
   const text = quote.trim();
   if (m.facts.some(f => f.kind === kind && f.who === who && f.scene === entry.s && f.text === text)) return false;
   m.factSeq = Math.max(m.factSeq || 0, m.facts.length) + 1;
-  m.facts.push({ id: "fact-" + m.factSeq, kind, who, text, scene: entry.s, source: entry.k, logIndex: state.log.indexOf(entry), pinned: false });
+  m.facts.push({ id: "fact-" + m.factSeq, kind, who, text, scene: entry.s, source: entry.k, logIndex: state.log.indexOf(entry), pinned: false, ...(entry.x ? { x: 1 } : {}) });
   return true;
 }
 function indexEntryFacts(entry) {
@@ -2797,6 +2822,7 @@ function remember(id, note) {
   const l = (memo().people[id] ||= []);
   if (l.includes(note)) return false;
   l.push(note); if (l.length > MEM_MAX) l.shift();
+  if (sensitiveTurn) { const m = memo(); m.sensitive ||= []; if (!m.sensitive.includes(note)) m.sensitive.push(note.slice(0, 50)); }
   return true;
 }
 function memoryPrompt(chunk) {
@@ -2839,12 +2865,13 @@ function pendingChapter() {
   return order.find(id => (id !== cur || state.ended) && !done.has(id)
     && state.log.some(e => chKey(e) === id && !e.failed && e.t && e.k !== "chapter" && e.k !== "cb"));
 }
-function chapterPrompt(id, text) {
+function chapterPrompt(id, text, sens = false) {
   const p = state.player;
   return `你是跑团游戏《醉龙酒馆：龙誓》的记录员。玩家角色叫${p.name}（${p.gender}，${RACES[p.race].name}${CLASSES[p.cls].name}）。下面是已经结束的一章「${chTitle(id)}」的完整记录。写一份 250–400 字的章节纪要：
 - 用“你”指玩家，按时间顺序。
 - 必须写进：发生了什么；你做的关键选择；你许下的承诺、撒过的谎；每个在场角色对你的态度怎么变了、为什么；得到的线索和物品；留下的悬念。
-- 人名、地名、物品名照原文写。战斗只写结果。
+- 人名、地名、物品名照原文写。战斗只写结果。${sens ? `
+- 这一章是私密场景：不写露骨的细节和身体描写，用一句“你们共度了一段私密的时间”带过；但要写清楚发生了什么、关系怎么变了、双方说了什么要紧的话。` : ""}
 - 只输出纪要正文，不要标题、不要 JSON。
 
 【本章记录】
@@ -2858,7 +2885,10 @@ async function writeChapter() {
   if (text.length > CHAPTER_SRC) text = entries.map(e => (LINE_TAG[e.k] || "") + e.t.slice(0, 300)).join("\n"); // 太长就每条截短
   if (text.length > CHAPTER_SRC) text = text.slice(0, CHAPTER_SRC / 2) + "\n……\n" + text.slice(-CHAPTER_SRC / 2);
   const st = state;
-  const out = await narrate(chapterPrompt(id, text), () => {}, new AbortController().signal, { memory: true });
+  const sens = PRIVATE_SCENES.has(String(id).split("#")[0]) || entries.some(e => e.x);
+  const mopt = { memory: true, ...(sens && privReady() ? { priv: true } : {}) };
+  const out = await narrate(chapterPrompt(id, text, sens), () => {}, new AbortController().signal, mopt);
+  logModel("章节纪要", narrateTarget(mopt), mopt);
   if (st !== state) return;
   const body = str(splitReply(out)[0].replace(/^[#\s*「」【】]*纪要[:：]?/, "").trim(), 900);
   const m = memo();
@@ -2878,8 +2908,11 @@ async function summarize() {
   if (!chunk.length) return;
   memBusy = true;
   const st = state, before = JSON.stringify(memo().people);
+  const sens = chunk.some(e => e.x);
+  const mopt = { memory: true, ...(sens && privReady() ? { priv: true } : {}) };
   try {
-    const text = await narrate(memoryPrompt(chunk), () => {}, new AbortController().signal, { memory: true });
+    const text = await narrate(memoryPrompt(chunk), () => {}, new AbortController().signal, mopt);
+    logModel("前情提要", narrateTarget(mopt), mopt);
     if (st !== state) return;
     const a = text.indexOf("{"), b = text.lastIndexOf("}");
     const d = JSON.parse(text.slice(a, b + 1));
@@ -2894,6 +2927,8 @@ async function summarize() {
       // 整理期间说书人新记下的条目，接在整理结果后面
       const fresh = (m.people[id] || []).filter(x => !(old[id] || []).includes(x) && !l.includes(x));
       m.people[id] = [...l, ...fresh].slice(-MEM_MAX);
+      // 这批记忆来自私密场景：整理后的新条目也算私密，切回主说书人时不交给它
+      if (sens) { m.sensitive ||= []; for (const t of [...l, ...fresh]) if (!m.sensitive.includes(t)) m.sensitive.push(t); m.sensitive = m.sensitive.slice(-300); }
     }
     for (const e of chunk) e.m = 1;
     save();
@@ -2910,7 +2945,7 @@ const ERR = {
   refused: "说书人拒绝了这个行动，换个说法试试。",
   bad_key: "API 密钥无效，请在设置里检查。",
   network: "连接中断，请检查网络后重试。本机 ChatGPT 模式请确认“开始游玩.cmd”仍在运行；API 模式请检查接口地址。",
-  no_narrator: "没有可用的说书人：双击“开始游玩.cmd”使用本机 ChatGPT，或在设置里选择 Claude / API。",
+  no_narrator: "没有可用的说书人：双击“开始游玩.cmd”使用本机 ChatGPT，或在设置里配置通用 API。",
   chatgpt_auth: "请先在 Codex 中登录 ChatGPT，然后在游戏设置里点“重新检查”。",
   chatgpt_unavailable: "本机 ChatGPT 服务未就绪。请双击“开始游玩.cmd”，从打开的页面游玩，再在设置里点“重新检查”。",
   model_unsupported: "这个模型在你的账号或当前 Codex 版本里用不了。请在设置里换一个说书人模型（整理记忆的模型也检查一下），再点“重试上一步”。",
@@ -2922,6 +2957,7 @@ const ERR = {
 function push(k, t, extra) {
   const e = Object.assign({ k, t, s: state.scene }, extra || {}), v = state.visits?.[state.scene];
   if (v > 1) e.v = v;
+  if (sensitiveTurn) e.x = 1; // 私密轮次的内容：主说书人只看中性版
   state.log.push(e); return e;
 }
 const chKey = e => e.v ? e.s + "#" + e.v : e.s;
@@ -2930,7 +2966,58 @@ const chTitle = k => { const [id, v] = k.split("#"); return (SCENES[id]?.title |
 
 /* 说书人接口：本机 ChatGPT、claude.ai sample、OpenAI 兼容 API（密钥只存在本浏览器）。
    想接别的模型，只需改 narrate()：输入完整提示词，流式回调全文，返回最终文本。 */
-const LOCAL_GPT = /^(127\.0\.0\.1|localhost|\[::1\])$/.test(location.hostname);
+/* 私密场景说书人（档一 + 轻档二）：
+   1) 亲密插曲、和恋人的夜间谈话、输入里明显露骨时，自动改用设置里单独配的接口（默认 DeepSeek）；
+   2) 这些轮次产生的原文、记事、角色记忆会带 x 标记；
+   3) 切回主说书人（不接受露骨内容的模型）时，带标记的内容换成中性描述，避免它读到后被拒；
+   4) 被拒时保留这一轮不推进，给一个“改用私密说书人重试”的按钮。 */
+const PRIVATE_SCENES = new Set(["intimacy", ...Object.keys(SCENES).filter(id => /^love_/.test(id))]);
+// 只收明显露骨的词，避免把普通调情误判成私密轮次（“吻”“抚摸”太常见，故意不收）
+const PRIVATE_WORDS = /(做爱|性交|口交|插入|抽送|高潮|射精|自慰|裸露|全裸|脱光|乳头|阴茎|阴道|下体|私处|呻吟|湿透|勃起)/;
+const SENSITIVE_NOTE = "（此处有一段私密时间，细节略去。）";
+// 模型调用记录：只记“哪一轮用了谁”，方便核对私密路由；最多 60 条，跟着存档走
+function logModel(kind, target, opts) {
+  if (!state) return;
+  const label = target === "priv" ? `私密场景 · ${privCfg().model}`
+    : target === "chatgpt" ? `本机 ChatGPT · ${(opts?.memory && pref.gptMemModel) || pref.gptModel || chatgpt.model || "账号默认"}`
+    : target === "api" ? `API · ${pref.model}`
+    : target === "sample" ? "页面内 Claude" : "没有可用说书人";
+  (state.modelLog ||= []).push({ t: Date.now(), s: state.scene, d: state.day, kind, m: label });
+  if (state.modelLog.length > 60) state.modelLog.splice(0, state.modelLog.length - 60);
+}
+const privCfg = () => (pref.priv ||= { on: true, base: "https://api.deepseek.com/v1", model: "", key: "", note: "" });
+const privReady = () => { const p = privCfg(); return !!(p.on && p.key && p.model); };
+const privScene = (sc = SCENES[state?.scene]) => !!(sc?.intimacy || PRIVATE_SCENES.has(state?.scene) || (sc?.with && isLover(sc.with)));
+let sensitiveTurn = false; // 这一轮是不是私密内容：决定要不要打标记，也决定主说书人拿到的是不是中性版
+let privateRetry = null;   // 被拒的那一轮：{ action, shown, mode }，用来一键换私密说书人重试
+function privTurn(action) {
+  return privScene() || !!(state?.camp?.talk && isLover(state.camp.talk)) || PRIVATE_WORDS.test(String(action || ""));
+}
+const safeView = () => !(sensitiveTurn || pref.explicitOk); // 主说书人是否只能看中性版
+function narrateTarget(opts = {}) {
+  if (opts.priv && privReady()) return "priv";
+  if (pref.api === "chatgpt") return "chatgpt";
+  if (useApi()) return "api";
+  return sample ? "sample" : "none";
+}
+// 说书人是不是拒绝了这段（回复里没有正文+变更对象，或接口直接报 refused）
+function refusalReply(text) {
+  const t = String(text || "").trim();
+  if (!t || t.includes("@@@") || t.includes("{")) return false; // 只要试着写了 JSON，就不当拒绝
+  if (t.length > 320) return false;
+  // 只在明确拒绝的句式上判定，避免把剧情里的“你不能确定方向”误判成拒答
+  return /^(很?抱歉|对不起|我(无法|不能|没办法)|作为一个AI|作为一个人工智能)/.test(t)
+    || /(无法|不能|不可以|不便)(协助|提供|生成|描写|写|回答|继续|满足|参与|完成)/.test(t)
+    || /(I'm sorry|I can't|I cannot|unable to)/i.test(t);
+}
+// 被拒后改用私密说书人重试同一轮：先把上一次那条失败的行动从记录里去掉，避免重复
+function retryPrivateTurn() {
+  const r = privateRetry; if (!r) return false;
+  privateRetry = null;
+  if (r.shown) { const i = state.log.map(e => e.k === "you" && e.t === r.shown).lastIndexOf(true); if (i >= 0) state.log.splice(i, 1); }
+  gm(r.action, r.shown, r.mode, true);
+  return true;
+}
 const useApi = () => pref.api === "openai" && !!pref.key && !!pref.model;
 const narratorReady = () => pref.api === "chatgpt" ? chatgpt.ready : useApi() || !!sample;
 const CHATGPT_ERRORS = ["chatgpt_auth", "chatgpt_unavailable", "rate_limited", "network", "refused", "empty_completion", "timeout", "model_unsupported"];
@@ -2973,15 +3060,18 @@ async function refreshChatgptStatus() {
   }
 }
 function narratorLabel() {
+  if (privReady() && privScene()) return `私密场景说书人：${privCfg().model}（API）；其余场景跟随主说书人。`;
   if (pref.api === "chatgpt") return chatgptLabel();
   if (useApi()) return `说书人：${pref.model}（API）`;
   if (sample) return "AI 说书人已就位。第一次行动时会请你允许使用 Claude（消耗你自己的额度）。";
   return sampleKnown ? ERR.no_narrator : "正在召唤说书人……";
 }
-// opts.memory：后台整理记忆的调用，本机 ChatGPT 下可以用另一个更省额度的模型
+// opts.memory：后台整理记忆的调用，本机 ChatGPT 下可以用另一个更省额度的模型；opts.priv：改用私密场景的接口
 async function narrate(prompt, onText, signal, opts) {
-  if (pref.api === "chatgpt") return chatgptNarrate(prompt, onText, signal, (opts?.memory && pref.gptMemModel) || pref.gptModel, opts?.memory ? "memory" : undefined);
-  if (useApi()) return apiNarrate(prompt, onText, signal);
+  const target = narrateTarget(opts);
+  if (target === "priv") { const p = privCfg(); return apiNarrate(prompt, onText, signal, { base: p.base, model: p.model, key: p.key }); }
+  if (target === "chatgpt") return chatgptNarrate(prompt, onText, signal, (opts?.memory && pref.gptMemModel) || pref.gptModel, opts?.memory ? "memory" : undefined);
+  if (target === "api") return apiNarrate(prompt, onText, signal);
   if (sample) {
     const { text } = await sample(prompt, { cache: false, signal, modelTier: pref.tier, onText: ({ text }) => onText(text) });
     return text;
@@ -3043,18 +3133,29 @@ async function chatgptNarrate(prompt, onText, signal, model, mode) {
     if (reader) { try { await reader.cancel(); } catch (e) {} reader.releaseLock(); }
   }
 }
-async function apiNarrate(prompt, onText, signal) {
+async function apiNarrate(prompt, onText, signal, cfg) {
+  const c = cfg || pref; // cfg：私密场景的接口（base/model/key），不传就用主接口
+  // DeepSeek 的思考模式默认开启（effort=high）：会烧掉大量 token，且让 temperature 失效。写剧情默认关掉
+  const ds = /deepseek/i.test(c.base), think = !!(pref.think && ds);
+  const body = { model: c.model, stream: true, max_tokens: 3000, messages: [{ role: "user", content: prompt }] };
+  if (ds) body.thinking = { type: think ? "enabled" : "disabled" };
+  if (!think) body.temperature = cfg ? 1.0 : 0.9; // 非思考模式下 temperature 才生效；亲密场景给更高温度
   let res;
   try {
-    res = await fetch(pref.base.replace(/\/+$/, "") + "/chat/completions", {
+    res = await fetch(c.base.replace(/\/+$/, "") + "/chat/completions", {
       method: "POST", signal,
-      headers: { "Content-Type": "application/json", Authorization: "Bearer " + pref.key },
-      body: JSON.stringify({ model: pref.model, stream: true, temperature: 0.9, messages: [{ role: "user", content: prompt }] }),
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + c.key },
+      body: JSON.stringify(body),
     });
   } catch (e) {
     throw { code: signal.aborted ? "cancelled" : "network" };
   }
-  if (!res.ok) throw { code: res.status === 401 ? "bad_key" : res.status === 429 ? "rate_limited" : "upstream_error", message: await res.text().catch(() => "") };
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    // 内容审核/安全策略的 400 归到 refused，界面才知道该换私密说书人重试，而不是“上游错误”
+    const refused = res.status === 400 && /(content|policy|safety|moderation|inappropriate|filter)/i.test(body);
+    throw { code: res.status === 401 ? "bad_key" : res.status === 429 ? "rate_limited" : refused ? "refused" : "upstream_error", message: body };
+  }
   const reader = res.body.getReader(), dec = new TextDecoder();
   let buf = "", text = "";
   try {
@@ -3112,21 +3213,43 @@ function reviewProgress() {
   gm(action, null, "review"); return true;
 }
 function parseGMReply(text, mode) {
-  const [narr, tail] = splitReply(text);
+  const [narr0, tail] = splitReply(text);
+  let narr = narr0, raw = tail;
+  if (!tail) { // 模型忘了写 @@@：从正文末尾找一个完整的 JSON 对象，前面都当正文
+    const j = lastJson(text);
+    if (j) { narr = text.slice(0, j.start).trim(); raw = text.slice(j.start, j.end + 1); }
+  }
   if (narr && mode === "narrate" && !text.includes("@@@")) return [narr, {}];
-  const a = tail.indexOf("{"), b = tail.lastIndexOf("}");
+  const a = raw.indexOf("{"), b = raw.lastIndexOf("}");
   try {
     if (!narr || a < 0 || b <= a) throw new Error("missing change object");
-    const data = JSON.parse(tail.slice(a, b + 1));
+    const data = JSON.parse(raw.slice(a, b + 1));
     if (!saveRecord(data)) throw new Error("invalid change object");
     return [narr, data];
   } catch (e) { throw { code: "invalid_reply", text }; }
 }
+// 从结尾往前配对花括号，取最后一个完整的 JSON 对象；找不到就返回 null
+function lastJson(text) {
+  const end = String(text || "").lastIndexOf("}");
+  if (end < 0) return null;
+  let depth = 0;
+  for (let i = end; i >= 0; i--) {
+    if (text[i] === "}") depth++;
+    else if (text[i] === "{") { depth--; if (depth === 0) return { start: i, end: end + 1 }; }
+  }
+  return null;
+}
+// 格式失败时自动重发一次用的追加要求（不再把原回复算作一轮）
+const FORMAT_FIX = `\n\n【格式提醒】上一次的回复没有被接受。这一次请严格只输出：正文（纯文本），然后单独一行写 @@@ ，然后一个完整的 JSON 对象。不要用代码块，不要在 JSON 后面再写任何字，不要把 JSON 写断。`;
 
 // mode：undefined 普通一轮；"narrate" 描写战况（失败不重试）；"improv" 战斗中的即兴行动
-async function gm(action, shown, mode) {
+// forcePriv：被主说书人拒绝后，改用私密场景的接口重试这一轮
+async function gm(action, shown, mode, forcePriv = false) {
   if (busy || state.ended) return;
-  if (!narratorReady()) { if (mode !== "narrate") { push("sys", narratorLabel()); renderPlay(); } return; }
+  if (!narratorReady() && !(forcePriv && privReady())) { if (mode !== "narrate") { push("sys", narratorLabel()); renderPlay(); } return; }
+  const sensitive = mode !== "review" && (forcePriv || privTurn(action));
+  sensitiveTurn = sensitive;
+  if (!forcePriv) privateRetry = null;
   lastAction = mode === "narrate" ? null : { action, shown, mode };
   // 本机 ChatGPT 一次只能处理一个请求：后台还在整理前情提要时先等它写完
   if (memJob && pref.api === "chatgpt") {
@@ -3143,10 +3266,21 @@ async function gm(action, shown, mode) {
   busy = true; ctl = new AbortController();
   renderPlay();
   try {
-    const text = await narrate(prompt, t => {
-      entry.t = splitReply(t)[0]; const n = document.querySelector('[data-live="1"]'); if (n) { n.textContent = entry.t; scrollStory(); }
-    }, ctl.signal);
-    const [narr, data] = parseGMReply(text, mode);
+    const nopts = sensitive && privReady() ? { priv: true } : undefined;
+    const stream = t => { entry.t = splitReply(t)[0]; const n = document.querySelector('[data-live="1"]'); if (n) { n.textContent = entry.t; scrollStory(); } };
+    let text = await narrate(prompt, stream, ctl.signal, nopts);
+    logModel(mode === "narrate" ? "战况" : mode === "review" ? "进度核对" : "说书人", narrateTarget(nopts), nopts);
+    let parsed;
+    try { parsed = parseGMReply(text, mode); }
+    catch (e) {
+      if (mode === "narrate" || mode === "review") throw e;
+      // 格式不完整：自动补一次，把格式要求再说一遍再要一次；仍失败才让玩家看到错误
+      entry.t = "";
+      text = await narrate(prompt + FORMAT_FIX, stream, ctl.signal, nopts);
+      logModel("格式修复", narrateTarget(nopts), nopts);
+      parsed = parseGMReply(text, mode);
+    }
+    const [narr, data] = parsed;
     entry.t = narr; delete entry.live;
     const issues = [];
     const changes = reviewKeys ? { flags: saveRecord(data.flags) ? Object.fromEntries(Object.entries(data.flags).filter(([key]) => reviewKeys.includes(key))) : data.flags } : data;
@@ -3165,11 +3299,17 @@ async function gm(action, shown, mode) {
     if (playerEntry) playerEntry.failed = true;
     entry.t = splitReply(e.text || "")[0];
     if (!entry.t) state.log.splice(state.log.indexOf(entry), 1);
-    if (e.code !== "cancelled") push("sys", ERR[e.code] || "说书人的思路被打断了，点“重试上一步”再来一次。");
+    const refused = e.code === "refused" || (e.code === "invalid_reply" && refusalReply(e.text || entry.t || ""));
+    if (refused) {
+      privateRetry = { action, shown, mode };
+      push("sys", privReady()
+        ? "说书人拒绝了这段内容，本轮没有推进。可以点“改用私密说书人重试这一轮”，或者自己改写一下。"
+        : "说书人拒绝了这段内容，本轮没有推进。先到设置里填好“私密场景的说书人”（例如 DeepSeek），再用它重试这一轮。", { cls: "appr-down" });
+    } else if (e.code !== "cancelled") push("sys", ERR[e.code] || "说书人的思路被打断了，点“重试上一步”再来一次。");
     if (e.code === "not_granted" || e.code === "sampling_disabled") sample = null;
     if (playerEntry && e.code !== "cancelled") playerEntry.retry = true;
   } finally {
-    busy = false; ctl = null;
+    busy = false; ctl = null; sensitiveTurn = false;
     save(); renderPlay();
     if ((state.pendingCombat || state.pendingAdvance) && !state.combat && splitPending()) openSplit();
     else if (state.pendingCombat && !state.combat) { const id = state.pendingCombat; state.pendingCombat = null; startCombat(id); }
@@ -3178,7 +3318,7 @@ async function gm(action, shown, mode) {
     else if (mode === "improv" && state.combat && !state.pendingCheck && !lastAction) { state.combat.improv = false; state.combat.res.action = false; afterAct(); }
     if (state.pendingCheck) openDice();
     else if (state.levelNote && !state.combat && !state.pendingCombat && !state.pendingAdvance) openLevelUp();
-    if (!state.combat && !lastAction) maybeSummarize(); // 后台整理记忆，不挡玩家
+    if (!state.combat && !lastAction && !testMode) maybeSummarize(); // 后台整理记忆，不挡玩家；测试模式不花额度也不写档
   }
 }
 
@@ -3338,7 +3478,8 @@ function applyGM(d, mode, issues = []) {
   for (const r of (Array.isArray(d.remember) ? d.remember : []).slice(0, 2)) {
     if (r && remember(r.id, r.note)) { notes.push([`${PEOPLE[r.id].name} 会记住这件事`, ""]); toast(`${PEOPLE[r.id].name} 会记住这件事`); }
   }
-  // romance, relations, supplies
+  // romance, intimacy, relations, supplies
+  if (mode !== "narrate") applyIntimacy(d, notes);
   if (mode !== "narrate") applyBonds(d, notes);
   if (mode !== "narrate" && state.act === 3 && state.scene !== "act3_end" && !state.combat) resolveCultPact();
   // journal
@@ -3483,6 +3624,7 @@ function enterInterlude(id, back) {
 }
 function leaveInterlude() {
   const it = state.interlude, sc = SCENES[state.scene]; state.interlude = null;
+  if (sc.intimacy) { const note = finishIntimacy(); if (note) push("sys", note, { cls: "appr-up" }); }
   if (sc.dream && state.hestiaTrust >= 20 && state.player.inspiration < 4) { state.player.inspiration++; push("sys", "赫斯提雅的祝福：醒来时精神格外好，获得 1 点灵感", { cls: "appr-up" }); }
   if (it.next) {
     goScene(it.next, false, true);
@@ -3880,6 +4022,179 @@ const ROMANCE_RULES = {
   selene: { noLie: true, poly: 80 }, vex: { poly: 0 }, kassian: { poly: 60 }, borin: { poly: 60 },
   lyra: { noLie: true, poly: 80 }, naia: { poly: 0 },
 };
+/* 亲密系统：与赞同、恋爱阶段分开记录。value 0–100，count 是次数，positions 是已发生的方式。
+   方式不按数值解锁；具体内容由说书人写，代码只记录数值、次数、方式和受孕结果。 */
+const INTIMACY_GAIN = 5;
+const PREGNANCY_DAYS = 30;
+const INTIMACY_LEVELS = [
+  { at: 0, name: "初识" }, { at: 20, name: "熟悉" }, { at: 40, name: "默契" },
+  { at: 60, name: "亲密无间" }, { at: 80, name: "完全交付" }, { at: 100, name: "龙誓般的信任" },
+];
+const INTIMACY_POSITIONS = [
+  { name: "面对面", desc: "能看着彼此，适合慢一点的开始" },
+  { name: "侧卧", desc: "贴近、放松，适合长夜" },
+  { name: "从背后", desc: "更主动、更私密，需要信任" },
+  { name: "骑乘", desc: "由一方主导节奏" },
+  { name: "站立", desc: "急切、带一点冒险" },
+  { name: "坐姿", desc: "在椅子、床边或腿上，距离很近" },
+  { name: "靠墙", desc: "站不稳的时候，墙是唯一的支撑" },
+  { name: "床沿", desc: "半坐半躺，能空出手来" },
+  { name: "镜前", desc: "看得见彼此的反应" },
+  { name: "浴中", desc: "水、雾气和很慢的节奏" },
+  { name: "膝上", desc: "由一方抱着或坐在腿上" },
+  { name: "窗边", desc: "夜色、风和压低的声音" },
+  { name: "口交", desc: "用嘴，节奏由对方给" },
+  { name: "互相抚慰", desc: "不用进入，只用手和触碰" },
+];
+const INTIMACY_STYLE = {
+  selene: { pace: "慢热、克制", likes: ["面对面", "侧卧", "床沿"], note: "先询问，重视眼神和承诺" },
+  vex: { pace: "玩笑、主动", likes: ["从背后", "站立", "镜前"], note: "嘴上不正经，动作会照顾对方" },
+  kassian: { pace: "温柔、照顾", likes: ["面对面", "侧卧", "互相抚慰"], note: "反复确认，怕弄疼对方" },
+  borin: { pace: "笨拙、热烈", likes: ["面对面", "骑乘", "靠墙"], note: "怕自己太用力，会先问" },
+  lyra: { pace: "嘴硬、试探", likes: ["面对面", "从背后", "窗边"], note: "会先研究，再装作不在意" },
+  naia: { pace: "变换、试探", likes: ["骑乘", "站立", "浴中", "镜前"], note: "会换脸或性别形象，先问玩家想看谁" },
+};
+const CARRIERS = new Set(["selene", "lyra", "naia"]);
+const FATHERS = new Set(["vex", "kassian", "borin", "naia"]);
+const canCarry = ref => ref === "player" ? state.player.gender !== "男" : CARRIERS.has(ref);
+const canFather = ref => ref === "player" ? state.player.gender !== "女" : FATHERS.has(ref);
+function carrierOptions(id) {
+  if (state.pregnancy) return [];
+  const out = [];
+  if (canCarry("player") && canFather(id)) out.push("player");
+  if (canCarry(id) && canFather("player")) out.push(id);
+  return out;
+}
+function intimacyOf(id) {
+  const c = state.companions[id]; if (!c) return { value: 0, count: 0, lastDay: 0, positions: [] };
+  c.intimacy ||= { value: 0, count: 0, lastDay: 0, positions: [] };
+  c.intimacy.value = clamp(Math.round(Number(c.intimacy.value) || 0), 0, 100);
+  c.intimacy.count = Math.max(0, Math.round(Number(c.intimacy.count) || 0));
+  c.intimacy.positions = Array.isArray(c.intimacy.positions) ? [...new Set(c.intimacy.positions)] : [];
+  return c.intimacy;
+}
+function intimacyLevel(value) { return INTIMACY_LEVELS.filter(l => value >= l.at).pop() || INTIMACY_LEVELS[0]; }
+function availablePositions() { return INTIMACY_POSITIONS; }
+function pregnancyName(ref) { return ref === "player" ? state.player.name : PEOPLE[ref]?.name || ref; }
+function familyLine() {
+  const bits = [];
+  if (state.pregnancy) {
+    const p = state.pregnancy;
+    bits.push(`怀孕：${pregnancyName(p.carrier)}（与${pregnancyName(p.partner)}），第 ${state.day - p.sinceDay + 1} 天，预计第 ${p.dueDay} 天生产`);
+  }
+  for (const ch of (state.children || []).slice(-3)) bits.push(`孩子：${pregnancyName(ch.carrier)}与${pregnancyName(ch.partner)}，第 ${ch.day} 天出生`);
+  return bits.length ? "；" + bits.join("；") : "";
+}
+function checkPregnancy() {
+  const p = state.pregnancy; if (!p || state.day < p.dueDay) return;
+  state.children ||= [];
+  state.children.push({ carrier: p.carrier, partner: p.partner, day: state.day });
+  push("sys", `${pregnancyName(p.carrier)}和${pregnancyName(p.partner)}的孩子出生了`, { cls: "appr-up" });
+  if (p.carrier !== "player") remember(p.carrier, "你们的孩子出生了");
+  if (p.partner !== "player") remember(p.partner, "你们的孩子出生了");
+  state.pregnancy = null;
+}
+function applyIntimacy(d, notes) {
+  if (state.scene !== "intimacy" || !state.intimacyWith) return;
+  const rec = intimacyOf(state.intimacyWith);
+  for (const name of (Array.isArray(d.intimacy?.positions) ? d.intimacy.positions : []).slice(0, 3)) {
+    const pos = INTIMACY_POSITIONS.find(p => p.name === name);
+    if (pos && !rec.positions.includes(name)) { rec.positions.push(name); notes.push([`记录亲密方式：${name}`, ""]); }
+  }
+}
+function finishIntimacy() {
+  const id = state.intimacyWith;
+  if (!id || !COMPANIONS[id]) { state.intimacyWith = null; state.intimacyRisk = "safe"; state.intimacyCarrier = null; return ""; }
+  const rec = intimacyOf(id);
+  rec.count++; rec.lastDay = state.day; rec.value = clamp(rec.value + INTIMACY_GAIN, 0, 100);
+  const notes = [`和${PEOPLE[id].name}的亲密值 +${INTIMACY_GAIN}（${rec.value}/100，${intimacyLevel(rec.value).name}），累计 ${rec.count} 次`];
+  const options = carrierOptions(id);
+  const carrier = options.includes(state.intimacyCarrier) ? state.intimacyCarrier : null;
+  if (state.intimacyRisk !== "safe" && carrier && !state.pregnancy) {
+    const partner = carrier === "player" ? id : "player";
+    const chance = state.intimacyRisk === "try" ? .25 : .08;
+    if (Math.random() < chance) {
+      state.pregnancy = { carrier, partner, sinceDay: state.day, dueDay: state.day + PREGNANCY_DAYS };
+      notes.push(`受孕：${pregnancyName(carrier)}怀孕了，预计第 ${state.pregnancy.dueDay} 天生产`);
+      if (partner !== "player") remember(partner, "你们有了孩子");
+      if (carrier !== "player") remember(carrier, "你们有了孩子");
+    } else notes.push("这次没有受孕");
+  }
+  state.intimacyWith = null; state.intimacyRisk = "safe"; state.intimacyCarrier = null;
+  state.afterglow = { id, day: state.day, turns: state.turns }; // 之后两轮让说书人接着写对方的状态和语气
+  return notes.join("；");
+}
+// 亲密之后的余韵：只给中性描述（主说书人看到也安全），两轮后自动清掉
+function afterglowLine() {
+  const a = state.afterglow;
+  if (!a || !COMPANIONS[a.id]) return "";
+  if (state.day !== a.day || state.turns > a.turns + 2) { state.afterglow = null; return ""; }
+  return `\n【刚发生的事】你和${PEOPLE[a.id].name}刚独处过（细节略去）。对方还没回到平常：衣饰没整理好、声音比平时低、动作亲昵，写后续时让这份状态和语气延续；在场其他同伴可能看出些什么。`;
+}
+function intimacyLine() {
+  const id = state.intimacyWith;
+  if (state.scene !== "intimacy" || !id || !COMPANIONS[id]) return "";
+  const rec = intimacyOf(id), c = state.companions[id], st = INTIMACY_STYLE[id] || { pace: "按性格", likes: [], note: "先确认" };
+  const positions = availablePositions().map(p => p.name);
+  const likes = st.likes.filter(p => positions.includes(p));
+  const risk = state.intimacyRisk === "try" ? "想要孩子" : state.intimacyRisk === "natural" ? "顺其自然" : "不涉及受孕";
+  const carrier = state.intimacyCarrier ? pregnancyName(state.intimacyCarrier) : "未选择";
+  const tone = str(privCfg().note, 300).trim();
+  return `\n【亲密场景】不是长休，不推进天数。对象：${PEOPLE[id].name}；关系：${ROMANCE[c.romance]?.name || "未恋爱"}；亲密值 ${rec.value}/100（${intimacyLevel(rec.value).name}）；这是第 ${rec.count + 1} 次；节奏：${st.pace}；偏好：${likes.join("、") || "按性格"}；注意：${st.note}。可用方式（不按亲密值锁定）：${positions.join("、")}；本次受孕选择：${risk}${state.intimacyRisk !== "safe" ? `（承担者：${carrier}）` : ""}。这一轮写 300–600 字，比平常长。必须直白具体：写出性器官、性行为的动作过程、进入和节奏的变化、体液、双方的生理反应和说出口的话；用常用、直接的说法，不要用“那里”“下面”“羞处”之类的代称，不要用省略号、比喻或镜头切换跳过。同时写出${PEOPLE[id].name}的状态和语气：呼吸、体温、声音、眼神、身体反应，以及称呼和说话方式的变化；下一次进入这一场时，接着上一轮的状态写，不要重置。可以详细写双方自愿的亲密和性行为；结束时写 scene_end:true。若用到某种方式，在 JSON 写 intimacy:{"positions":["..."]}；程序只记录方式、次数、亲密值和受孕结果。${tone ? `玩家对尺度的额外要求（优先照做）：${tone}。` : ""}`;
+}
+function canIntimate() {
+  const sc = SCENES[state.scene];
+  return state.phase === "play" && !state.combat && !state.camp && !state.ended && !state.pendingCheck && !state.pendingFinal && !state.pendingAdvance && !state.pendingCombat && !state.pendingCamp && !state.interlude && !sc.interlude && (sc.tavern || sc.hub || sc.campFree || sc.loc2) && lovers().some(id => present().includes(id));
+}
+function startIntimacy(id, risk = "safe", carrier = null) {
+  if (!canIntimate() || !lovers().includes(id) || !present().includes(id)) return false;
+  if (risk !== "safe" && !carrier) risk = "safe";
+  state.intimacyWith = id; state.intimacyRisk = risk; state.intimacyCarrier = risk === "safe" ? null : carrier;
+  enterInterlude("intimacy", { who: id });
+  gm(`（你邀请${PEOPLE[id].name}单独留下。按【亲密场景】规则开始：不是长休，不推进天数。描写双方自愿的亲密，可以详细；结束时写 scene_end:true。）`, `你邀请${PEOPLE[id].name}留下。`);
+  return true;
+}
+function openCarrierChoice(id, risk, carriers) {
+  modal("由谁承担", s => {
+    s.append(el("p", null, "如果这次受孕，由谁承担怀孕？"));
+    const row = el("div", "row");
+    for (const ref of carriers) {
+      const b = el("button", "btn", ref === "player" ? `由你（${state.player.name}）` : `由${PEOPLE[ref].name}`); b.type = "button";
+      b.onclick = () => { closeModal(); startIntimacy(id, risk, ref); }; row.append(b);
+    }
+    s.append(row);
+  });
+}
+function openIntimacyOptions(id) {
+  const carriers = carrierOptions(id);
+  const opts = [{ risk: "safe", label: "亲密就好（不涉及受孕）" }];
+  if (carriers.length) opts.push({ risk: "natural", label: "顺其自然" }, { risk: "try", label: "想要孩子" });
+  modal(`和${PEOPLE[id].name}`, s => {
+    s.append(el("p", "note", "这是单独的亲密场景，不替代长休，不推进天数。"));
+    if (state.pregnancy) s.append(el("p", "note", `当前已有怀孕状态：${pregnancyName(state.pregnancy.carrier)}，预计第 ${state.pregnancy.dueDay} 天生产。`));
+    const row = el("div", "row");
+    for (const o of opts) {
+      const b = el("button", "btn", o.label); b.type = "button";
+      b.onclick = () => { closeModal(); if (o.risk !== "safe" && carriers.length > 1) openCarrierChoice(id, o.risk, carriers); else startIntimacy(id, o.risk, carriers[0] || null); };
+      row.append(b);
+    }
+    s.append(row);
+  });
+}
+function openIntimacy() {
+  const near = lovers().filter(id => present().includes(id));
+  if (!near.length) { toast("现在身边没有可以独处的恋人"); return; }
+  if (near.length === 1) { openIntimacyOptions(near[0]); return; }
+  modal("亲密时刻", s => {
+    s.append(el("p", null, "此刻，你想和谁独处？"));
+    const row = el("div", "row");
+    for (const id of near) {
+      const b = el("button", "btn", PEOPLE[id].name); b.type = "button";
+      b.onclick = () => { closeModal(); openIntimacyOptions(id); }; row.append(b);
+    }
+    s.append(row);
+  });
+}
 const isLover = id => ["together", "vowed"].includes(state.companions[id]?.romance);
 const lovers = () => Object.keys(COMPANIONS).filter(id => isLover(id) && state.companions[id].alive && !state.companions[id].taken);
 const relKey = (a, b) => [a, b].sort().join("_");
@@ -4305,7 +4620,7 @@ function restNight(partner) {
   }
   const p = state.player; p.hp = p.hpMax;
   for (const c of Object.values(state.companions)) if (c.alive) c.hp = c.hpMax;
-  state.day++; state.camp = null; state.shortRests = 0;
+  state.day++; state.camp = null; state.shortRests = 0; checkPregnancy();
   if (debtOpen() && state.day >= state.act1Day + DEBT_DAYS) {
     state.flags["act1.lise"] = "sold";
     const v = state.companions.vex; if (v.alive) { changeApproval("vex", -30); remember("vex", "你没能在期限内救下莉丝"); }
@@ -4317,7 +4632,7 @@ function restNight(partner) {
   push("sys", "长休：全员生命恢复", { cls: "appr-up" });
   for (const n of perks) push("sys", n, { cls: "appr-up" });
   for (const n of news) push("sys", n, { cls: "appr-down" });
-  const night = partner ? `【夜里】玩家和${PEOPLE[partner].name}共度一夜：按${PEOPLE[partner].name}的性格写这一夜的亲密与情意，到最亲密的那一步用一句暗示性的转场带过。` : "玩家独自睡下。";
+  const night = partner ? `【夜里】玩家和${PEOPLE[partner].name}共度一夜：按${PEOPLE[partner].name}的性格详细写这一夜的亲密与情意；双方自愿时可以详细描写性行为，不要用转场跳过，除非玩家明确要求跳过。` : "玩家独自睡下。";
   const after = news.length ? `夜里发生了：${news.join("；")}。要写出这件事的余波。` : "";
   const nextId = campNextOf(sc), dream = dreamDue(sc, nextId);
   const sleepLine = partner ? `今晚，你和${PEOPLE[partner].name}在一起。` : state.act >= 2 && sc.voyage ? "你在船舱里睡去。" : "你睡去了。";
@@ -5479,6 +5794,10 @@ function renderNarratorStatus() {
     const model = memory ? (pref.gptMemModel || pref.gptModel || chatgpt.model) : (kind === "story" ? pref.gptModel || chatgpt.model : chatgpt.lastModel || pref.gptModel || chatgpt.model);
     if (model) text += ` · ${memory ? "整理模型" : "说书人"}：${gptModelName(model) || model}`;
   }
+  // 私密说书人的提示：不只在请求进行中显示，停在亲密场景/恋人夜谈时也显示“下一轮会用它”
+  const campLover = !!(state.camp?.talk && isLover(state.camp.talk));
+  if (privReady() && (sensitiveTurn || privScene() || campLover)) text += ` · 私密说书人：${privCfg().model}`;
+  if (testMode) text = "测试模式（不写存档）· " + text;
   target.textContent = text;
 }
 function renderPlay() {
@@ -5578,6 +5897,8 @@ function renderPlay() {
   if (sc.tavern && !camp && !cb && !busy && !state.pendingFinal) optBtn("⌂", `和${tavernKeeper()}商量修整酒馆（${Object.keys(TAVERN).filter(tavernHas).length}/${Object.keys(TAVERN).length}）`, openTavern);
   if (!camp && !cb && !busy && !state.pendingCheck && SCENES[state.scene].camp !== false && (state.shortRests || 0) < 2 && hurtParty().length) optBtn("☕", `短暂歇脚（短休，恢复一半伤势；今天还能歇 ${2 - (state.shortRests || 0)} 次）`, () => { shortRest(); save(); renderPlay(); });
   if (!camp && !cb && !busy && canCamp()) optBtn("⛺", sc.campFree ? (state.act === 2 ? "在船舱里歇下，度过这一夜" : "在壁炉边歇下，度过这一夜") : `扎营休息（消耗 1 份补给，剩 ${state.supplies ?? 0}）`, enterCamp);
+  if (!camp && !cb && !busy && !state.ended && !state.pendingFinal && canIntimate()) optBtn("♥", "亲密时刻（和恋人独处；不替代长休）", openIntimacy);
+  if (!busy && !state.ended && privateRetry) optBtn("♥", "改用私密说书人重试这一轮", retryPrivateTurn);
   if (state.pendingAsi && !cb && !busy) {
     const b = el("button", "opt"); b.type = "button";
     b.append(el("span", "k", "↑"), el("span", "tx", `属性提升：还有 ${state.pendingAsi} 次没分配`));
@@ -5648,6 +5969,8 @@ function openSheet(focus) {
         for (const [k, v] of [["生命", `${p.hp} / ${p.hpMax}`], ["AC", acTotal("player")], ["熟练加值", sgn(profBonus(p.level))], ["金币", p.gold], ["灵感", `${p.inspiration} / 4`], ["龙化值", `${p.draconic} / 100`]]) { const r = el("div", "kv"); r.append(el("span", null, k), el("b", null, String(v))); info.append(r); }
         info.append(el("div", "label", "种族特性：" + RACES[p.race].trait));
         info.append(el("div", "label", "灵感条件：" + BACKGROUNDS[p.bg].insp));
+        if (state.pregnancy?.carrier === "player") info.append(el("div", "label", `怀孕中：与${pregnancyName(state.pregnancy.partner)}，预计第 ${state.pregnancy.dueDay} 天生产`));
+        if (state.children?.length) info.append(el("div", "label", "孩子：" + state.children.map(ch => `${pregnancyName(ch.carrier)}与${pregnancyName(ch.partner)}（第 ${ch.day} 天）`).join("；")));
       } else {
         const c = COMPANIONS[cur], sc = state.companions[cur];
         info.append(el("div", "label", `${c.race}${classLabel(cur)} · ${sc.recruited ? "已加入" : sc.taken ? "被教团带走" : "未加入"}`));
@@ -5664,6 +5987,10 @@ function openSheet(focus) {
         if (rels.length) info.append(el("div", "label", "和同伴：" + rels.join("，")));
         info.append(el("div", "label", "喜欢：" + c.likes));
         info.append(el("div", "label", "反感：" + c.dislikes));
+        const rec = intimacyOf(cur);
+        info.append(el("div", "label", `亲密值 ${rec.value}/100（${intimacyLevel(rec.value).name}） · 累计 ${rec.count} 次`));
+        if (rec.positions.length) info.append(el("div", "label", "经历过的方式：" + rec.positions.join("、")));
+        if (state.pregnancy && (state.pregnancy.carrier === cur || state.pregnancy.partner === cur)) info.append(el("div", "label", `怀孕中：预计第 ${state.pregnancy.dueDay} 天生产`));
       }
       cs.append(info); body.append(cs);
       const abil = el("div", "abil");
@@ -5788,6 +6115,18 @@ function openJournal() {
       s.append(el("div", "label", "他们记得的事"));
       for (const id of who) { const d = el("div", "slot"); const t = el("div"); t.append(el("b", null, PEOPLE[id].name), memList(id)); d.append(t); s.append(d); }
     }
+    const intimate = Object.keys(COMPANIONS).filter(id => { const c = state.companions[id]; return c.intimacy?.count || c.romance !== "none"; });
+    if (intimate.length) {
+      s.append(el("div", "label", "亲密"));
+      for (const id of intimate) {
+        const c = state.companions[id], rec = intimacyOf(id), r = el("div", "kv");
+        r.append(el("span", null, PEOPLE[id].name + (c.romance !== "none" ? ` · ${ROMANCE[c.romance].name}` : "")), el("b", null, `亲密值 ${rec.value}/100 · ${rec.count} 次`));
+        s.append(r);
+        if (rec.positions.length) s.append(el("div", "meta", "经历过的方式：" + rec.positions.join("、")));
+      }
+    }
+    if (state.pregnancy) s.append(el("p", "meta", `怀孕：${pregnancyName(state.pregnancy.carrier)}（与${pregnancyName(state.pregnancy.partner)}），预计第 ${state.pregnancy.dueDay} 天生产。`));
+    if (state.children?.length) s.append(el("p", "meta", "孩子：" + state.children.map(ch => `${pregnancyName(ch.carrier)}与${pregnancyName(ch.partner)}（第 ${ch.day} 天）`).join("；")));
     const qs = Object.keys(QUESTS).filter(id => state.companions[id].recruited || questStep(id) || state.flags[QUESTS[id].choice.flag]);
     if (qs.length) {
       s.append(el("div", "label", "同伴的个人任务"));
@@ -5814,6 +6153,13 @@ function openJournal() {
         d.append(t); s.append(d);
       }
     }
+    if (state.modelLog?.length) {
+      s.append(el("div", "label", "模型调用（最近 20 次）"));
+      const counts = {};
+      for (const e of state.modelLog) counts[e.m] = (counts[e.m] || 0) + 1;
+      s.append(el("p", "meta", `共 ${state.modelLog.length} 次：${Object.entries(counts).map(([k, v]) => `${k} × ${v}`).join("、")}`));
+      for (const e of state.modelLog.slice(-20).reverse()) s.append(el("div", "meta", `${new Date(e.t).toLocaleTimeString("zh-CN")} · 第 ${e.d} 天 · ${SCENES[e.s]?.title || e.s} · ${e.kind} · ${e.m}`));
+    }
     s.append(el("div", "label", "任务"));
     for (const j of state.journal.slice().reverse()) { const d = el("div", "slot"); const t = el("div"); t.append(el("b", null, j.quest), el("div", "meta", j.note)); d.append(t); s.append(d); }
     const f = Object.entries(state.flags);
@@ -5823,7 +6169,7 @@ function openJournal() {
 const SLOT_LABEL = { auto: "自动存档", slot1: "存档 1", slot2: "存档 2", slot3: "存档 3" };
 const metaLine = m => `${m.name} · ${SCENES[m.scene]?.title || m.scene} · ${new Date(m.t).toLocaleString("zh-CN")}${m.combat ? " · 战斗中" : ""}`;
 async function renameSave(key, label) {
-  if (busy || key === AUTO || ![SLOT(1), SLOT(2), SLOT(3)].includes(key)) return false;
+  if (busy || testMode || key === AUTO || ![SLOT(1), SLOT(2), SLOT(3)].includes(key)) return false;
   const saved = await loadSave(key); if (!saved || !validState(saved.state)) return false;
   const p = { ...saved, label: String(label).trim().slice(0, 40), t: Math.max(Date.now(), saved.t + 1) }, slot = DISK_KEY(key);
   const latest = readSave(key);
@@ -5926,7 +6272,7 @@ function openSettings() {
   modal("设置", s => {
     s.append(el("div", "label", "说书人接口"));
     const apis = el("div", "chips"); apis.id = "narratorApis";
-    for (const [k, t, d] of [["chatgpt", "ChatGPT（本机）", "推荐：使用在 Codex 中登录的 ChatGPT 账户，无需 API 密钥"], ["claude", "Claude（claude.ai 内）", "在 claude.ai 以 Artifact 打开时使用，消耗你的 Claude 额度"], ["openai", "OpenAI 兼容 API", "GPT、DeepSeek、Kimi 等。在 GitHub Pages 或本地打开时使用"]].filter(([k]) => k !== "chatgpt" || LOCAL_GPT || pref.api === "chatgpt")) {
+    for (const [k, t, d] of [["chatgpt", "ChatGPT（本机）", "使用在 Codex 中登录的 ChatGPT 账户，无需 API 密钥"], ["openai", "通用 API（OpenAI 兼容）", "使用 GPT、DeepSeek、Kimi 或其他兼容服务，填写接口地址、模型名和密钥"]].filter(([k]) => k !== "chatgpt" || LOCAL_GPT || pref.api === "chatgpt")) {
       const b = el("button", "chip"); b.type = "button"; b.setAttribute("aria-pressed", String(pref.api === k));
       b.append(el("b", null, t), el("small", null, d));
       b.onclick = () => { pref.api = k; savePref(); closeModal(); openSettings(); if (state?.phase !== "play") renderSummary(); };
@@ -5964,15 +6310,96 @@ function openSettings() {
         f.append(i); return f;
       };
       s.append(mk("接口地址", "base", "url", "https://api.openai.com/v1"), mk("模型名", "model", "text", "gpt-4o"), mk("API 密钥", "key", "password", "sk-..."));
+      const [mainPick, mainPickOut] = modelPicker(pref, id => { pref.model = id; savePref(); closeModal(); openSettings(); toast(`主说书人模型改为 ${id}`, "up"); });
+      s.append(mainPick, mainPickOut);
       s.append(el("div", "label", "密钥只保存在这个浏览器里，只会发送到上面的接口地址。在 claude.ai 里打开时外部网络会被拦截，这个选项不起作用。"));
     }
-    s.append(el("div", "label", "Claude 说书人模式"));
-    for (const [k, t, d] of [["default", "精细", "文笔和判断更好，每轮需要 5–30 秒"], ["quick", "快速", "几乎立刻回应，文笔稍简单"], ["complex", "深思", "最强的叙事与推理，回应最慢"]]) {
-      const b = el("button", "chip"); b.type = "button"; b.setAttribute("aria-pressed", String(pref.tier === k));
-      b.append(el("b", null, t), el("small", null, d));
-      b.onclick = () => { pref.tier = k; savePref(); closeModal(); openSettings(); };
-      s.append(b);
+    s.append(el("div", "label", "私密场景说书人（亲密内容）"));
+    s.append(el("div", "label", "亲密插曲、和恋人的夜间谈话、以及输入里出现露骨内容时，自动改用下面这个接口；离开后自动回到主说书人。主说书人只看到“细节略去”的中性版上下文。"));
+    const pv = privCfg();
+    const pvToggle = el("button", "chip"); pvToggle.type = "button"; pvToggle.setAttribute("aria-pressed", String(!!pv.on));
+    pvToggle.append(el("b", null, pv.on ? "已启用" : "未启用"), el("small", null, "需要填接口地址、模型名和密钥"));
+    pvToggle.onclick = () => { pv.on = !pv.on; savePref(); closeModal(); openSettings(); };
+    s.append(pvToggle);
+    const mkp = (label, key, type, ph) => {
+      const f = el("label", "field"); f.append(el("span", "label", label));
+      const i = el("input"); i.type = type; i.value = pv[key] || ""; i.placeholder = ph; i.autocomplete = "off";
+      i.onchange = () => { pv[key] = i.value.trim(); savePref(); };
+      f.append(i); return f;
+    };
+    s.append(mkp("接口地址", "base", "url", "https://api.deepseek.com/v1"), mkp("模型名", "model", "text", "deepseek-v4-pro（点下面查看可用模型）"), mkp("API 密钥", "key", "password", "sk-..."));
+    s.append(el("div", "label", "DeepSeek 一般填 https://api.deepseek.com/v1；模型名别猜，点下面的“查看这个接口可用的模型”按列表选（目前常见的是 deepseek-flash 和 deepseek-v4-pro）。这一套和“说书人接口”是分开存的，密钥要单独填一次；只保存在这个浏览器里，只发给这个接口。"));
+    const toneField = el("label", "field"); toneField.append(el("span", "label", "私密场景的写法要求（可选，会加进亲密场景的提示里）"));
+    const tone = el("textarea"); tone.id = "privTone"; tone.maxLength = 300; tone.value = pv.note || "";
+    tone.placeholder = "例如：多用露骨的对白和身体细节；少用比喻；节奏快一点；不要一句带过";
+    tone.onchange = () => { pv.note = tone.value.trim(); savePref(); toast("已保存私密场景的写法要求"); };
+    toneField.append(tone); s.append(toneField);
+    const [privPick, privPickOut] = modelPicker(pv, id => { pv.model = id; pv.on = true; savePref(); closeModal(); openSettings(); toast(`私密场景模型改为 ${id}`, "up"); });
+    s.append(privPick, privPickOut);
+    // 列出一个 OpenAI 兼容接口实际可用的模型名（GET /models），省得猜版本
+async function listModels(cfg) {
+  const res = await fetch(cfg.base.replace(/\/+$/, "") + "/models", { headers: { Authorization: "Bearer " + cfg.key } });
+  if (!res.ok) throw { code: res.status === 401 ? "bad_key" : res.status === 404 ? "no_models" : "http_" + res.status };
+  const d = await res.json().catch(() => ({}));
+  const raw = Array.isArray(d.data) ? d.data : Array.isArray(d.models) ? d.models : [];
+  return raw.map(m => (typeof m === "string" ? m : m?.id || m?.model || m?.name)).filter(x => typeof x === "string" && x);
+}
+// 设置里的“查看可用模型”：点一下列出来，点某个名字就填进模型名
+function modelPicker(cfg, onPick) {
+  const btn = el("button", "btn small", "查看这个接口可用的模型"); btn.type = "button";
+  const out = el("div", "step");
+  btn.onclick = async () => {
+    btn.disabled = true; out.textContent = "正在查询……";
+    try {
+      const list = await listModels(cfg);
+      out.textContent = "";
+      if (!list.length) { out.append(el("div", "label", "接口没有返回模型列表，按平台文档填即可。")); return; }
+      out.append(el("div", "label", `这个接口可用的模型（点一下填入）：${list.join("、")}`));
+      const row = el("div", "row");
+      for (const id of list) {
+        const b = el("button", "btn small", id); b.type = "button";
+        b.onclick = () => onPick(id);
+        row.append(b);
+      }
+      out.append(row);
+    } catch (e) {
+      out.textContent = e.code === "bad_key" ? "密钥无效（401），先检查密钥" : e.code === "no_models" ? "这个接口没有 /models（404），按平台文档填模型名" : e.code === "http_" + 403 ? "接口不允许查询模型（403）" : "查询失败：检查接口地址和网络";
+      toast("查询模型列表失败", "down");
+    } finally { btn.disabled = false; }
+  };
+  return [btn, out];
+}
+    if (pref.key && pref.model) {
+      const reuse = el("button", "btn small", "沿用主接口已填的地址、模型和密钥"); reuse.type = "button";
+      reuse.onclick = () => { pv.base = pref.base; pv.model = pref.model; pv.key = pref.key; pv.on = true; savePref(); closeModal(); openSettings(); toast("已把主接口的配置填到私密场景", "up"); };
+      s.append(reuse);
     }
+    // 一键测试：发一句很小的话给私密接口，直接告诉玩家密钥、模型名和余额通不通，不用等第一次亲密场景
+    const testBtn = el("button", "btn", "测试私密接口"); testBtn.type = "button";
+    const testOut = el("div", "label", "");
+    testBtn.onclick = async () => {
+      testBtn.disabled = true; testOut.textContent = "正在连接……";
+      const ctl2 = new AbortController(), timer = setTimeout(() => ctl2.abort(), 25000);
+      try {
+        if (!pv.on) throw { code: "off" };
+        if (!pv.base || !pv.model || !pv.key) throw { code: "empty" };
+        const text = await apiNarrate("只回复四个字：连接正常。不要写别的。", () => {}, ctl2.signal, { base: pv.base, model: pv.model, key: pv.key });
+        testOut.textContent = `连接正常：${pv.model} 返回「${str(String(text).trim(), 40)}」`;
+        toast("私密接口连接正常", "up");
+      } catch (e) {
+        const msg = e.code === "off" ? "先打开上面的开关" : e.code === "empty" ? "先填好接口地址、模型名和密钥"
+          : e.code === "bad_key" ? "密钥无效（401），检查密钥有没有多余的空格" : e.code === "network" ? "连不上：检查接口地址和网络"
+          : e.code === "rate_limited" ? "请求太频繁或额度用尽（429）" : e.code === "refused" ? "接口拒绝了测试请求（内容审核）"
+          : e.code === "cancelled" ? "超时（25 秒没有回应）" : `调用失败（${e.code || "未知"}）`;
+        testOut.textContent = msg + (e.message && e.code !== "off" && e.code !== "empty" ? `：${str(String(e.message), 120)}` : "");
+        toast("私密接口连接失败", "down");
+      } finally { clearTimeout(timer); testBtn.disabled = false; }
+    };
+    s.append(testBtn, testOut);
+    const pvOk = el("button", "chip"); pvOk.type = "button"; pvOk.setAttribute("aria-pressed", String(!!pref.explicitOk));
+    pvOk.append(el("b", null, pref.explicitOk ? "主说书人也可以写露骨内容" : "主说书人只看中性版"), el("small", null, "只有自建或本地模型才建议打开"));
+    pvOk.onclick = () => { pref.explicitOk = !pref.explicitOk; savePref(); closeModal(); openSettings(); };
+    s.append(pvOk);
     s.append(el("div", "label", "给说书人的额外要求"));
     s.append(el("div", "label", "用你自己的话写，比如篇幅、文风、想多看什么少看什么。说书人会在不违反游戏规则的前提下照做。改完点别处就会保存。"));
     const ruleBox = (label, value, onSave, id) => {
@@ -5992,6 +6419,14 @@ function openSettings() {
       quick.append(b);
     }
     s.append(quick);
+    s.append(el("div", "label", "思考模式（只对 DeepSeek 接口生效）"));
+    s.append(el("div", "label", "DeepSeek 默认开着思考模式（effort=high）：每轮先生成一大段思维链，慢、烧 token，而且会让 temperature 失效。写剧情一般不需要，默认关闭。"));
+    for (const [v, t, d] of [[false, "关闭（推荐）", "更快、更省；temperature 生效，文风更放得开"], [true, "开启", "推理更严谨，但更慢更贵，且 temperature 不生效"]]) {
+      const b = el("button", "chip"); b.type = "button"; b.setAttribute("aria-pressed", String(!!pref.think === v));
+      b.append(el("b", null, t), el("small", null, d));
+      b.onclick = () => { pref.think = v; savePref(); closeModal(); openSettings(); };
+      s.append(b);
+    }
     s.append(el("div", "label", "战斗描写"));
     for (const [k, t, d] of [["round", "每回合描写", "轮到你之前，说书人把这一轮的战况写成一段文字"], ["key", "只在关键时刻", "只描写即兴行动和战斗结束，打得更快、更省额度"]]) {
       const b = el("button", "chip"); b.type = "button"; b.setAttribute("aria-pressed", String(pref.narr === k));
@@ -5999,6 +6434,14 @@ function openSettings() {
       b.onclick = () => { pref.narr = k; savePref(); closeModal(); openSettings(); };
       s.append(b);
     }
+    // 快速测试：设置写档逻辑里 testMode 为真时 save() 直接返回，不动浏览器和硬盘上的任何存档
+    s.append(el("div", "label", "快速测试（开发用）"));
+    s.append(el("div", "label", testMode
+      ? "当前在测试模式：所有存档写入已暂停。刷新页面或点下面的按钮就回到真实进度。"
+      : "先在内存里搭一个“第一幕 · 醉龙酒馆”的局面，再让你选和谁测试亲密场景；用来验证私密说书人是否切换、正文和 JSON 是否正常。完全不写存档。"));
+    const tbtn = el("button", "btn", testMode ? "退出测试模式（回到真实存档）" : "进入快速测试（亲密场景）"); tbtn.type = "button";
+    tbtn.onclick = openTestMode;
+    s.append(tbtn);
     const nb = el("button", "btn", "放弃本局，重新创建角色"); nb.type = "button";
     nb.onclick = () => {
       if (!nb.dataset.armed) { nb.dataset.armed = "1"; nb.textContent = "再点一次确认（自动存档会被覆盖）"; return; }
@@ -6007,6 +6450,48 @@ function openSettings() {
     };
     s.append(nb);
   });
+}
+/* 快速测试模式（开发/验收用）：在内存里搭一个“第一幕 · 醉龙酒馆 + 你选的恋人”的局面，直接打开亲密时刻。
+   用来验证私密说书人是否切换、正文尺度和 JSON 是否正常；testMode 为真时 save() 一律不写，刷新页面即回到真实存档。 */
+function enterTestMode(lover = "selene", autoOpen = true) {
+  if (testMode) return false;
+  const who = COMPANIONS[lover] ? lover : "selene";
+  const prev = state;
+  try {
+    const base = newGame(freshDraft());
+    if (prev?.player) base.player = JSON.parse(JSON.stringify(prev.player));
+    base.act = 1; base.scene = "act1_hub"; base.location = SCENES.act1_hub.loc; base.day = 10;
+    const v = base.companions[who];
+    v.recruited = true; v.romance = "together"; v.approval = 65;
+    state = base; testMode = true; lastAction = null; pick = null; closeModal();
+    push("sys", `快速测试模式：不写存档。局面是“第一幕 · 醉龙酒馆 + 恋人${PEOPLE[who].name}”，可以直接点亲密时刻；结束后随便发一句话，就能看到说书人切回主接口。刷新页面或点“退出测试”回到真实存档。`, { cls: "appr-up" });
+    render();
+    if (autoOpen) setTimeout(() => { if (testMode) openIntimacy(); }, 50);
+    toast(`已进入快速测试模式（恋人：${PEOPLE[who].name}，不存档）`, "up");
+    return true;
+  } catch (e) {
+    console.warn("测试模式启动失败", e);
+    state = prev; testMode = false; render();
+    return false;
+  }
+}
+// 进测试前先选恋人：测试局只影响内存，不写存档，也不改变真实进度里的关系
+function openTestMode() {
+  if (testMode) { exitTestMode(); return; }
+  modal("快速测试：和谁", s => {
+    s.append(el("p", "recap", "只在测试局面里生效：会新建一个“第一幕 · 醉龙酒馆”的进度，把选中的同伴设成恋人，并直接打开亲密时刻。不写任何存档，刷新页面就回到真实进度。"));
+    const row = el("div", "row");
+    for (const id of Object.keys(COMPANIONS)) {
+      const b = el("button", "btn", PEOPLE[id].name); b.type = "button";
+      b.onclick = () => { closeModal(); enterTestMode(id); };
+      row.append(b);
+    }
+    s.append(row);
+  });
+}
+function exitTestMode() {
+  testMode = false;
+  location.reload(); // 真实存档全程没被写过，刷新就回到原进度
 }
 function openLevelUp() {
   const note = state.levelNote; state.levelNote = null; save();
@@ -6061,6 +6546,8 @@ function openEnd() {
     }
     const ht = el("div", "kv"); ht.append(el("span", null, "赫斯提雅的信任"), el("b", null, sgn(state.hestiaTrust))); list.append(ht);
     s.append(list);
+    if (state.pregnancy) s.append(el("div", "label", `怀孕：${pregnancyName(state.pregnancy.carrier)}（与${pregnancyName(state.pregnancy.partner)}），预计第 ${state.pregnancy.dueDay} 天生产`));
+    if (state.children?.length) s.append(el("div", "label", "孩子：" + state.children.map(ch => `${pregnancyName(ch.carrier)}与${pregnancyName(ch.partner)}（第 ${ch.day} 天）`).join("；")));
     const end = state.flags["act3.ending"];
     if (act === 3 && end) for (const id of lovers().filter(id => !state.companions[id].betrayed).sort((a, b) => (state.companions[b].romance === "vowed") - (state.companions[a].romance === "vowed"))) {
       const card = el("div", "step lover-end");
@@ -6102,7 +6589,7 @@ $("freeForm").addEventListener("submit", e => {
   if (!t || busy || state.pendingCheck) return;
   if (state.combat) {
     if (!myTurn() || !state.combat.res.action || state.combat.res.attackOnly) return;
-    if (!narratorReady()) { toast("即兴行动需要可用的说书人，请在设置里连接 ChatGPT、Claude 或 API。"); return; }
+    if (!narratorReady()) { toast("即兴行动需要可用的说书人，请在设置里连接本机 ChatGPT 或通用 API。"); return; }
     state.combat.improv = true;
   }
   $("freeText").value = "";
@@ -6134,3 +6621,7 @@ window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude
 if (LOCAL_GPT) refreshChatgptStatus(); else { chatgpt.known = true; chatgpt.error = "chatgpt_unavailable"; }
 diskInit();
 </script>
+
+
+
+

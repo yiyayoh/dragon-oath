@@ -1,4 +1,4 @@
-// 在隔离的内存环境里执行游戏原脚本，不读取浏览器或用户存档。
+﻿// 在隔离的内存环境里执行游戏原脚本，不读取浏览器或用户存档。
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -1172,10 +1172,162 @@ test('数值调整：营地陪聊、个人任务每一步、每走完一幕都�
     const v=state.companions.vex;v.recruited=false;v.approval=0;applyGM({flags:{'act1.debt_known':true}});const away=v.approval;
     state.scene='act1_dawn';state.ended=true;const dr=state.player.draconic;nextAct();
     const act={approval:k.approval,draconic:state.player.draconic-dr};
-    const rules=['不要另外发明程序不记录的前置手续','- draconic：玩家的龙化值变化','给得太省'].every(t=>SYSTEM.includes(t));
-    return {quiet,chatted,step,again,away,act,rules,seven:ENDINGS.seven.need.toString().includes('>= 30')};
+    const rules=['不要另外发明程序不记录的前置手续','- draconic：玩家的龙化值变化','给得太省','可以详细描写双方自愿的成年人性行为','不要用一句转场直接跳过'].every(t=>SYSTEM.includes(t));
+    const noFade=!SYSTEM.includes('不写露骨的性行为过程');
+    return {quiet,chatted,step,again,away,act,rules,noFade,seven:ENDINGS.seven.need.toString().includes('>= 30')};
   })()`);
-  assert.deepEqual(result, { quiet: 10, chatted: 15, step: 32, again: 32, away: 0, act: { approval: 39, draconic: 15 }, rules: true, seven: true });
+  assert.deepEqual(result, { quiet: 10, chatted: 15, step: 32, again: 32, away: 0, act: { approval: 39, draconic: 15 }, rules: true, noFade: true, seven: true });
+});
+
+test('亲密系统：长休外可单独进入亲密场景，结算亲密值、次数、方式和受孕，并能在预产日出生', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm=()=>{}; state=newGame(freshDraft()); state.act=1; state.scene='act1_hub';
+    const v=state.companions.vex; v.recruited=true; v.romance='together'; v.approval=60;
+    const day=state.day, can=canIntimate(), started=startIntimacy('vex','try','player');
+    const inside={scene:state.scene,present:present(),day:state.day};
+    applyIntimacy({intimacy:{positions:['面对面','从背后']}},[]);
+    push('you','我留下来'); push('you','继续');
+    Math.random=()=>0;
+    applyGM({scene_end:true});
+    const rec=intimacyOf('vex');
+    const after={scene:state.scene,day:state.day,count:rec.count,value:rec.value,positions:rec.positions,pregnant:!!state.pregnancy};
+    state.day=state.pregnancy.dueDay; checkPregnancy();
+    return {day,can,started,inside,after,children:state.children.length,cleared:!state.pregnancy};
+  })()`);
+  assert.deepEqual(result, {
+    day: 1, can: true, started: true, inside: { scene: 'intimacy', present: ['vex'], day: 1 },
+    after: { scene: 'act1_hub', day: 1, count: 1, value: 5, positions: ['面对面', '从背后'], pregnant: true },
+    children: 1, cleared: true,
+  });
+});
+
+test('私密场景说书人：亲密插曲、恋人夜谈和露骨输入自动改用私密接口，其余仍走主说书人', () => {
+  const run = game();
+  const result = run(`(() => {
+    pref.priv = { on: true, base: 'https://api.deepseek.com/v1', model: 'deepseek-chat', key: 'test-key' };
+    pref.api = 'chatgpt';
+    const priv = narrateTarget({ priv: true }), main = narrateTarget({});
+    pref.priv.key = '';
+    const noKey = narrateTarget({ priv: true });
+    pref.priv.key = 'test-key';
+    state = newGame(freshDraft()); state.act = 1; state.scene = 'act1_hub';
+    const noLover = privTurn('我走向窗边');
+    state.companions.vex.recruited = true; state.companions.vex.romance = 'together';
+    const hubChat = privTurn('我走向窗边');
+    state.scene = 'intimacy'; state.intimacyWith = 'vex';
+    const inScene = privTurn('我留下来');
+    state.scene = 'act1_hub'; state.intimacyWith = null;
+    state.camp = { talk: 'vex' };
+    const campNight = privTurn('我们说说话');
+    state.camp = null;
+    const word = privTurn('我想和她做爱');
+    const loveScene = (() => { state.scene = 'love_selene'; const r = privTurn('我看着她'); state.scene = 'act1_hub'; return r; })();
+    return { priv, main, noKey, noLover, hubChat, inScene, campNight, word, loveScene };
+  })()`);
+  assert.deepEqual(result, { priv: 'priv', main: 'chatgpt', noKey: 'chatgpt', noLover: false, hubChat: false, inScene: true, campNight: true, word: true, loveScene: true });
+});
+
+test('私密内容打标记：主说书人只看中性版，打开“可以写露骨内容”才拿全文', () => {
+  const run = game();
+  const result = run(`(() => {
+    pref.explicitOk = false;
+    state = newGame(freshDraft()); state.act = 1; state.scene = 'act1_hub';
+    const v = state.companions.vex; v.recruited = true; v.romance = 'together';
+    sensitiveTurn = true;
+    push('you', '我把她按在墙上');
+    push('gm', '她在你耳边喘息，声音发颤。');
+    remember('vex', '你们第一次真正在一起');
+    sensitiveTurn = false;
+    const marked = state.log.filter(e => e.x).length, sensitive = memo().sensitive.length;
+    const safe = buildPrompt('我坐下');
+    const out = { marked, sensitive, placeholder: safe.includes(SENSITIVE_NOTE), leakSafe: safe.includes('按在墙上') || safe.includes('声音发颤'), memHidden: !safe.includes('你们第一次真正在一起') };
+    pref.explicitOk = true;
+    const full = buildPrompt('我坐下');
+    out.leakFull = full.includes('声音发颤'); out.memShown = full.includes('你们第一次真正在一起');
+    pref.explicitOk = false;
+    out.plainTurn = (() => { const s = buildPrompt('我坐下'); return !s.includes(SENSITIVE_NOTE) || true; })();
+    return out;
+  })()`);
+  assert.equal(result.marked, 2);
+  assert.equal(result.sensitive, 1);
+  assert.equal(result.placeholder, true);
+  assert.equal(result.leakSafe, false);
+  assert.equal(result.memHidden, true);
+  assert.equal(result.leakFull, true);
+  assert.equal(result.memShown, true);
+});
+
+test('回复格式容错：没有 @@@ 也能取到结尾 JSON，普通叙述里的“不能”不算拒答，亲密场景要求写得更直白', () => {
+  const run = game();
+  const result = run(`(() => {
+    const [n1, d1] = parseGMReply('你推开门，雨声灌了进来。\\n{"location":"醉龙酒馆"}');
+    const [n2, d2] = parseGMReply('你推开门。@@@{"location":"醉龙酒馆"}');
+    const bad = t => { try { parseGMReply(t); return false; } catch (e) { return e.code === 'invalid_reply'; } };
+    pref.priv = { on: true, base: 'b', model: 'm', key: 'k', note: '多用露骨对白' };
+    state = newGame(freshDraft()); state.act = 1; state.scene = 'intimacy'; state.intimacyWith = 'vex';
+    const line = intimacyLine();
+    return { n1, d1, n2, d2, badPlain: bad('只有正文'), badOpen: bad('正文@@@{"flags":'),
+      noRefuse: refusalReply('你不能确定方向，只能继续往前走。'),
+      refuse: refusalReply('抱歉，我无法描写这类内容。'),
+      lineLen: line.includes('300–600 字'), lineDirect: line.includes('性器官') && line.includes('代称'), lineNote: line.includes('多用露骨对白') };
+  })()`);
+  assert.deepEqual(result, {
+    n1: '你推开门，雨声灌了进来。', d1: { location: '醉龙酒馆' }, n2: '你推开门。', d2: { location: '醉龙酒馆' },
+    badPlain: true, badOpen: true, noRefuse: false, refuse: true, lineLen: true, lineDirect: true, lineNote: true,
+  });
+});
+
+test('亲密结束后两轮内保留余韵提示，之后自动清掉', () => {
+  const run = game();
+  const result = run(`(() => {
+    gm = () => {};
+    state = newGame(freshDraft()); state.act = 1; state.scene = 'act1_hub';
+    const v = state.companions.vex; v.recruited = true; v.romance = 'together'; v.approval = 60;
+    startIntimacy('vex', 'safe', null);
+    push('you', '一'); push('you', '二');
+    applyGM({ scene_end: true });
+    const first = { scene: state.scene, who: state.afterglow && state.afterglow.id, line: buildPrompt('我坐下').includes('【刚发生的事】') };
+    state.turns += 5;
+    const later = { line: buildPrompt('我坐下').includes('【刚发生的事】'), cleared: state.afterglow === null };
+    return { first, later };
+  })()`);
+  assert.deepEqual(result, { first: { scene: 'act1_hub', who: 'vex', line: true }, later: { line: false, cleared: true } });
+});
+
+test('快速测试模式：搭好第一幕酒馆和恋人，全程不写存档', () => {
+  const run = game();
+  const result = run(`(() => {
+    pref.priv = { on: true, base: 'https://api.deepseek.com/v1', model: 'deepseek-flash', key: 'test' };
+    const ok = enterTestMode('selene', false);
+    const out = { ok, testMode, scene: state.scene, act: state.act, day: state.day,
+      lover: lovers().includes('selene'), notVex: !lovers().includes('vex'), can: canIntimate(), note: state.log.some(e => /快速测试模式/.test(e.t || '')) };
+    testMode = false;
+    return out;
+  })()`);
+  assert.deepEqual(result, { ok: true, testMode: true, scene: 'act1_hub', act: 1, day: 10, lover: true, notVex: true, can: true, note: true });
+});
+
+test('被拒时能识别并改用私密说书人重试，私密章节纪要写成中性版', () => {
+  const run = game();
+  const result = run(`(() => {
+    state = newGame(freshDraft()); state.act = 1; state.scene = 'act1_hub';
+    const sens = chapterPrompt('intimacy', '记录', true), plain = chapterPrompt('act1_hub', '记录', false);
+    const refusedText = refusalReply('抱歉，我不能写这类露骨内容。');
+    const okReply = refusalReply('你推开酒馆的门。@@@{"location":"醉龙酒馆"}');
+    const withJson = refusalReply('抱歉，无法完成。@@@{}');
+    push('you', '我把她抱住');
+    privateRetry = { action: '我把她抱住', shown: '我把她抱住', mode: undefined };
+    let called = null;
+    gm = (a, s, m, fp) => { called = { a, s, m, fp }; };
+    const ok = retryPrivateTurn();
+    return { refusedText, okReply, withJson, sensRule: sens.includes('这一章是私密场景'), plainRule: plain.includes('这一章是私密场景'),
+      ok, called, youLeft: state.log.filter(e => e.k === 'you').length, cleared: privateRetry === null };
+  })()`);
+  assert.deepEqual(result, {
+    refusedText: true, okReply: false, withJson: false, sensRule: true, plainRule: false,
+    ok: true, called: { a: '我把她抱住', s: '我把她抱住', fp: true }, youLeft: 0, cleared: true,
+  });
 });
 
 test('放宽恋爱门槛后，事件和关系推进一致，誓约考验和角色底线仍生效', () => {
@@ -1664,3 +1816,6 @@ test('烬王优先使用完整龙角版，加载失败可回退原图，其余�
   const run=game();const r=run(`(()=>{state=newGame(freshDraft());failed.clear();const im={};portrait(im,'emberking','neutral');const current=im.src;im.onerror();const fallback=im.src;const other={};portrait(other,'hestia','neutral');state.player.portraitData='data:image/png;base64,test';const player={};portrait(player,'player');return {current,fallback,other:other.src,player:player.src};})()`);
   assert.deepEqual(r,{current:'portraits/emberking_neutral_v3.webp',fallback:'portraits/emberking_neutral.webp',other:'portraits/hestia_neutral.webp',player:'data:image/png;base64,test'});
 });
+
+
+
