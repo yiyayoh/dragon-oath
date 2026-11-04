@@ -1278,6 +1278,25 @@ test('回复格式容错：没有 @@@ 也能取到结尾 JSON，普通叙述里�
   });
 });
 
+test('补救招募：漏招的莉拉能补进队伍并补记笔记被抄，已入队/已死时无效', () => {
+  const run = game();
+  const result = run(`(() => {
+    state = newGame(freshDraft()); state.act = 2; state.scene = 'act2_hub';
+    const first = lateRecruitLyra();
+    const ok = { first, recruited: state.companions.lyra.recruited, party: party().includes('lyra'), copied: state.flags['act1.notes_copied'], note: state.log.some(e => /莉拉循着银光/.test(e.t || '')) };
+    const again = lateRecruitLyra();
+    state = newGame(freshDraft()); state.act = 2; state.companions.lyra.alive = false;
+    const dead = lateRecruitLyra();
+    state = newGame(freshDraft()); state.act = 2; state.combat = { id: 'docks_brawl' };
+    const inCombat = lateRecruitLyra();
+    return { ok, again, dead, inCombat };
+  })()`);
+  assert.deepEqual(result.ok, { first: true, recruited: true, party: true, copied: true, note: true });
+  assert.equal(result.again, false);
+  assert.equal(result.dead, false);
+  assert.equal(result.inCombat, false);
+});
+
 test('多人恋爱门槛：赛勒涅和莉拉为 40，卡西安/博林 60，维克斯/奈雅 0', () => {
   const run = game();
   const result = run(`(() => {

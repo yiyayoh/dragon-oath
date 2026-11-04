@@ -6602,6 +6602,17 @@ function modelPicker(cfg, onPick) {
     const tbtn = el("button", "btn", testMode ? "退出测试模式（回到真实存档）" : "进入快速测试（亲密场景）"); tbtn.type = "button";
     tbtn.onclick = openTestMode;
     s.append(tbtn);
+    // 补救招募：第一幕在废塔漏招莉拉时，允许之后补入队伍（只补人，不改写已经发生的剧情）
+    s.append(el("div", "label", "补救招募（开发用）"));
+    const ly = state?.companions?.lyra;
+    const lyOk = !!ly && ly.alive && !ly.taken;
+    s.append(el("div", "label", lyOk
+      ? (ly.recruited ? "莉拉已经在队伍里。" : "第一幕在旧学院废塔漏招莉拉时，可以在这里把她补进队伍：会同时补记“她的笔记被抄过”，个人任务从第二步接上。")
+      : "莉拉已经死亡或被带走，不能补救 recruited。"));
+    const lbtn = el("button", "btn", ly?.recruited ? "莉拉已在队中" : "让莉拉加入队伍"); lbtn.type = "button";
+    lbtn.disabled = !lyOk || !!ly?.recruited;
+    lbtn.onclick = () => { if (!lateRecruitLyra()) lbtn.disabled = true; };
+    s.append(lbtn);
     const nb = el("button", "btn", "放弃本局，重新创建角色"); nb.type = "button";
     nb.onclick = () => {
       if (!nb.dataset.armed) { nb.dataset.armed = "1"; nb.textContent = "再点一次确认（自动存档会被覆盖）"; return; }
@@ -6652,6 +6663,19 @@ function openTestMode() {
 function exitTestMode() {
   testMode = false;
   location.reload(); // 真实存档全程没被写过，刷新就回到原进度
+}
+// 补救招募莉拉：第一幕废塔漏招时用；只补人和任务进度，不改写已发生的剧情
+function lateRecruitLyra() {
+  if (!state || state.phase !== "play") return false;
+  const c = state.companions.lyra;
+  if (!c || c.recruited || !c.alive || c.taken) { toast("莉拉不能补招（已入队、已死或被带走）", "down"); return false; }
+  if (state.combat) { toast("战斗中不能补招，先结束这一场", "down"); return false; }
+  c.recruited = true; c.left = false; c.jailed = false;
+  if (!state.flags["act1.notes_copied"]) state.flags["act1.notes_copied"] = true; // 她自己告诉你笔记被抄过，个人任务从第二步接上
+  push("sys", "莉拉循着银光和导师的踪迹追上来，加入了队伍（补救招募：第一幕在废塔错过了她）", { cls: "appr-up" });
+  save(); renderPlay();
+  toast("莉拉加入了队伍", "up");
+  return true;
 }
 function openLevelUp() {
   const note = state.levelNote; state.levelNote = null; save();
