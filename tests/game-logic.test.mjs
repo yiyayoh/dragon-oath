@@ -1,4 +1,4 @@
-﻿// 在隔离的内存环境里执行游戏原脚本，不读取浏览器或用户存档。
+// 在隔离的内存环境里执行游戏原脚本，不读取浏览器或用户存档。
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -1278,6 +1278,24 @@ test('回复格式容错：没有 @@@ 也能取到结尾 JSON，普通叙述里�
   });
 });
 
+test('多人恋爱门槛：赛勒涅和莉拉为 40，卡西安/博林 60，维克斯/奈雅 0', () => {
+  const run = game();
+  const result = run(`(() => {
+    const rules = Object.fromEntries(Object.entries(ROMANCE_RULES).map(([k, v]) => [k, v.poly]));
+    const apply = approval => {
+      state = newGame(freshDraft()); state.act = 1; state.scene = 'act1_hub';
+      const s = state.companions.selene; s.recruited = true; s.romance = 'together'; s.approval = approval;
+      const v = state.companions.vex; v.recruited = true; v.romance = 'together';
+      applyBonds({ consent: [{ id: 'selene', for: 'vex', ok: true }] }, []);
+      return { consent: s.consent && s.consent.vex, approval: s.approval };
+    };
+    return { rules, at39: apply(39), at40: apply(40) };
+  })()`);
+  assert.deepEqual(result.rules, { selene: 40, vex: 0, kassian: 60, borin: 60, lyra: 40, naia: 0 });
+  assert.deepEqual(result.at39, { consent: false, approval: 24 });
+  assert.deepEqual(result.at40, { consent: true, approval: 40 });
+});
+
 test('亲密结束后两轮内保留余韵提示，之后自动清掉', () => {
   const run = game();
   const result = run(`(() => {
@@ -1451,6 +1469,103 @@ test('小修：说书人提示里列出这一幕已经成功的检定；海妖�
   assert.deepEqual(result, { early: false, has: true, noFail: true, nextAct: false, siren: true, intel: 90, brawl: 45 });
 });
 
+
+test('长期角色档案超过十条仍保留，当前重点有预算并优先未完承诺', () => {
+  const run=game();const result=run(`(()=>{
+    state=newGame(freshDraft());state.act=1;state.scene='act1_hub';state.companions.selene.recruited=true;
+    remember('selene','你答应归还月桂吊坠');for(let i=0;i<35;i++)remember('selene','你们一起走过第'+i+'处河岸');
+    const before=JSON.stringify(state),lines=peopleMemoryLines('今晚聊聊旅途');
+    const picked=selectPeopleMemories().filter(r=>r.id==='selene');
+    return {count:memo().people.selene.length,first:memo().people.selene[0],picked:picked.length,promise:lines.includes('待办')&&lines.includes('月桂吊坠'),bounded:lines.length<7000,unchanged:JSON.stringify(state)===before};
+  })()`);assert.deepEqual(result,{count:36,first:'你答应归还月桂吊坠',picked:10,promise:true,bounded:true,unchanged:true});
+});
+
+test('后台只返回两条重点时不覆盖长期档案，未知条目不能混入已有记忆', async () => {
+  const run=asyncGame();const result=await run(`(async()=>{
+    state=newGame(freshDraft());state.act=1;state.scene='act1_hub';state.companions.selene.recruited=true;
+    remember('selene','你答应归还月桂吊坠');for(let i=0;i<19;i++)remember('selene','你们走过河岸'+i);
+    const before=memo().people.selene.slice();for(let i=0;i<14;i++)push('gm','沿河赶路，营火安稳。'.repeat(130));
+    narrate=async()=>JSON.stringify({summary:'你们继续沿河赶路。',people:{selene:[before[18],before[19],'没有发生过的求婚']}});
+    await summarize();return {same:JSON.stringify(memo().people.selene)===JSON.stringify(before),focus:memo().peopleFocus.selene,source:peopleMemories('selene')[0].origin};
+  })()`);assert.equal(result.same,true);assert.deepEqual(result.focus,['你们走过河岸17','你们走过河岸18']);assert.equal(result.source,'event');
+});
+
+test('后台整理期间新产生的记忆保留，换局后的迟到结果不写入新局', async () => {
+  const run=asyncGame();const result=await run(`(async()=>{
+    state=newGame(freshDraft());remember('selene','你答应修好旧盾');for(let i=0;i<14;i++)push('gm','平静的旅途记录。'.repeat(160));
+    let finish;narrate=()=>new Promise(r=>finish=r);const pending=summarize();remember('selene','你替她保管了旧信');finish(JSON.stringify({summary:'你们在营地休整。',people:{selene:['你答应修好旧盾']}}));await pending;
+    const kept=memo().people.selene.includes('你替她保管了旧信')&&memo().peopleFocus.selene.includes('你替她保管了旧信');
+    for(let i=0;i<14;i++)push('gm','第二段旅途记录。'.repeat(160));const later=summarize();state=newGame(freshDraft());const next=JSON.stringify(state);finish(JSON.stringify({summary:'旧局迟到结果',people:{selene:['你答应修好旧盾']}}));await later;
+    return {kept,newGameUnchanged:JSON.stringify(state)===next};
+  })()`);assert.deepEqual(result,{kept:true,newGameUnchanged:true});
+});
+
+test('旧角色档案迁移保留输入与原文，只从可靠的本人台词补回旧事且可重复加载', () => {
+  const run=game();const result=run(`(()=>{
+    state=newGame(freshDraft());memo().people.selene=['你曾帮她守夜','你答应归还吊坠'];
+    push('gm','玛莎说：“你答应回来修好吧台，我记着呢。”');push('gm','你提起莉拉的名字，但她并不在这里。');push('gm','小汤姆说：“你答应陪我找药了吗？”');
+    push('gm','博林说：“你答应给我带来麦酒。”',{failed:true});
+    for(const e of state.log)delete e.knownBy;
+    const old=JSON.parse(JSON.stringify(state)),raw=JSON.stringify(old);loadState(old);const count=memo().people.martha.length,first=JSON.stringify(state.memory);indexPeopleMemory();
+    const saved=JSON.parse(JSON.stringify(state));loadState(saved);
+    return {inputUntouched:JSON.stringify(old)===raw,rawUnchanged:JSON.stringify(state.log)===JSON.stringify(old.log),selene:memo().people.selene.length,martha:count,tom:(memo().people.tom||[]).length,lyra:(memo().people.lyra||[]).length,borin:(memo().people.borin||[]).length,idempotent:JSON.stringify(state.memory)===first,valid:validState(state),origin:peopleMemories('selene')[0].origin};
+  })()`);assert.deepEqual(result,{inputUntouched:true,rawUnchanged:true,selene:2,martha:1,tom:0,lyra:0,borin:0,idempotent:true,valid:true,origin:'legacy'});
+});
+
+test('单独谈话只让知情角色记住，失败轮次不归档承诺', async () => {
+  const run=asyncGame();const result=await run(`(async()=>{
+    state=newGame(freshDraft());state.act=1;state.scene='act1_hub';state.companions.selene.recruited=true;state.companions.vex.recruited=true;state.camp={talk:'selene',event:null,done:[],plan:{important:null,banter:[]}};
+    narrate=async()=> '她收好吊坠，认真点头。@@@{"remember":[{"id":"selene","note":"你答应修好旧盾"},{"id":"vex","note":"你答应修好旧盾"}]}';
+    await gm('我答应修好你的旧盾。','我答应修好你的旧盾。');
+    const good={selene:memo().people.selene.length,vex:(memo().people.vex||[]).length,witness:state.log.find(e=>e.k==='you').knownBy};
+    const previous=memo().people.selene.length;narrate=async()=> '她说你答应找回旧信。@@@{"remember":';await gm('我答应找回旧信。','我答应找回旧信。');
+    return {good,failedUnchanged:memo().people.selene.length===previous,source:peopleMemories('selene').find(r=>r.origin==='turn').quote};
+  })()`);assert.equal(result.good.selene,2);assert.equal(result.good.vex,0);assert.deepEqual(result.good.witness,['selene']);assert.equal(result.failedUnchanged,true);assert.equal(result.source,'她收好吊坠，认真点头。');
+});
+
+test('补建旧记忆必须有原句和知情证据，不能凭空归给未在场角色', async () => {
+  const run=asyncGame();const result=await run(`(async()=>{
+    state=newGame(freshDraft());state.act=1;state.scene='love_selene';state.companions.selene.recruited=true;state.companions.vex.recruited=true;
+    const quote='你已经把修好的旧盾交还给她。';push('gm',quote);for(let i=0;i<14;i++)push('gm','河岸边的普通旅途记录。'.repeat(120));
+    narrate=async()=>JSON.stringify({summary:'旧盾归还后继续旅行。',recovered:[{id:'selene',quote},{id:'vex',quote},{id:'selene',quote:'你送给她一座不存在的城堡。'},{id:'constructor',quote}]});
+    await summarize();return {selene:memo().people.selene,other:(memo().people.vex||[]).length,quote:peopleMemories('selene')[0].quote,origin:peopleMemories('selene')[0].origin};
+  })()`);assert.deepEqual(result.selene,['你已经把修好的旧盾交还给她。']);assert.equal(result.other,0);assert.equal(result.quote,result.selene[0]);assert.equal(result.origin,'quote');
+});
+
+test('引用缺席同伴过去的台词不会把他变成本次谈话的见证者', () => {
+  const run=game();const result=run(`(()=>{
+    state=newGame(freshDraft());state.act=1;state.scene='act1_hub';state.companions.selene.recruited=true;state.companions.vex.recruited=true;state.camp={talk:'selene',event:null,done:[]};
+    const entry=push('gm','她回忆维克斯说：“我会等你回来。”');
+    applyGM({remember:[{id:'selene',note:'你答应修好旧盾'},{id:'vex',note:'你答应修好旧盾'}]},undefined,[],entry);
+    return {witnesses:entryMemoryAudience(entry),selene:(memo().people.selene||[]).length,vex:(memo().people.vex||[]).length};
+  })()`);assert.deepEqual(result,{witnesses:['selene'],selene:1,vex:0});
+});
+
+test('解决和取代状态只改变提醒，长期条目与任务状态保留并能随档读回', () => {
+  const run=game();const result=run(`(()=>{
+    state=newGame(freshDraft());remember('selene','你答应修好旧盾');remember('selene','她曾误会你的来意');const flags=JSON.stringify(state.flags);
+    updatePeopleMemory('selene','你答应修好旧盾',{status:'resolved'});updatePeopleMemory('selene','她曾误会你的来意',{status:'superseded'});
+    const selected=selectPeopleMemories().filter(r=>r.id==='selene').map(r=>r.record);const original=JSON.parse(JSON.stringify(state));const valid=validState(original);loadState(original);
+    const broken=JSON.parse(JSON.stringify(state));broken.memory.peopleMeta.selene[0].status='pretend-success';
+    return {count:memo().people.selene.length,selected:selected.length,status:selected[0].status,flagsUnchanged:JSON.stringify(state.flags)===flags,valid,roundtrip:peopleMemories('selene')[1].status,badRejected:!validState(broken)};
+  })()`);assert.deepEqual(result,{count:2,selected:1,status:'resolved',flagsUnchanged:true,valid:true,roundtrip:'superseded',badRejected:true});
+});
+
+test('长期档案按话题选出早期细节，多个角色仍受每轮预算约束，检索不修改档案', () => {
+  const run=game();const result=run(`(()=>{
+    state=newGame(freshDraft());state.act=1;state.scene='act1_hub';
+    for(const id of ['selene','vex','kassian','borin']){state.companions[id].recruited=true;remember(id,'你们曾在月桂吊坠上刻下一条银色潮纹');for(let i=0;i<150;i++)remember(id,'你们走过普通河岸的第'+i+'个路标，那里有一排枯树和一片芦苇');}
+    const before=JSON.stringify(state);const normal=peopleMemoryLines('月桂吊坠 银色潮纹'),battle=peopleMemoryLines('月桂吊坠 银色潮纹','narrate');
+    return {recalled:normal.includes('银色潮纹'),bounded:normal.length<7000,battleBounded:battle.length<2500,unchanged:JSON.stringify(state)===before,count:memo().people.selene.length};
+  })()`);assert.deepEqual(result,{recalled:true,bounded:true,battleBounded:true,unchanged:true,count:151});
+});
+
+test('未答应和考虑中的事不自动成为承诺，明确兑现及和解不标成待办', () => {
+  const run=game();const result=run(`(()=>{
+    state=newGame(freshDraft());const notes=['你尚未答应替她修盾','你考虑是否承诺归还旧信','你答应归还吊坠','你兑现了当初的承诺','她原谅了你此前撒谎'];for(const t of notes)remember('selene',t);
+    return peopleMemories('selene').map(r=>r.status);
+  })()`);assert.deepEqual(result,['recorded','recorded','open','resolved','resolved']);
+});
 
 function asyncGame() {
   const nodes = new Map(), storage = new Map();

@@ -1,4 +1,4 @@
-﻿<meta charset="utf-8">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>醉龙酒馆：龙誓</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -2104,6 +2104,9 @@ function validState(s) {
       && ["you", "gm"].includes(f.source) && Number.isInteger(f.logIndex) && typeof f.pinned === "boolean")
       || new Set(s.memory.facts.map(f => f.id)).size !== s.memory.facts.length)) return false;
   if (s.memory?.factSeq != null && (!Number.isInteger(s.memory.factSeq) || s.memory.factSeq < 0)) return false;
+  if (s.memory?.peopleMeta != null && (!saveRecord(s.memory.peopleMeta) || !Object.entries(s.memory.peopleMeta).every(([id, rows]) => MEM_IDS.includes(id) && Array.isArray(rows) && rows.every(validPeopleMemory)))) return false;
+  if (s.memory?.peopleFocus != null && (!saveRecord(s.memory.peopleFocus) || !Object.entries(s.memory.peopleFocus).every(([id, rows]) => MEM_IDS.includes(id) && Array.isArray(rows) && rows.every(t => typeof t === "string")))) return false;
+  if (s.memory?.peopleVersion != null && s.memory.peopleVersion !== 1) return false;
   if (s.progressReview != null && (!saveRecord(s.progressReview) || typeof s.progressReview.scene !== "string" || !Object.hasOwn(SCENES, s.progressReview.scene)
       || typeof s.progressReview.quote !== "string" || s.progressReview.quote.length > 1800 || !Array.isArray(s.progressReview.issues) || !s.progressReview.issues.length || s.progressReview.issues.length > 6
       || !s.progressReview.issues.every(i => saveRecord(i) && typeof i.key === "string" && i.key.length <= 100 && typeof i.reason === "string" && i.reason.length <= 160))) return false;
@@ -2162,7 +2165,7 @@ function loadState(s) {
   const previous = state, previousAction = lastAction, previousPick = pick, next = JSON.parse(JSON.stringify(s));
   try {
     state = next; state.runId ||= newRunId();
-    restoreCombatExit(state); tidyLog(state); indexOldFacts(); catchUpLevel(); lastAction = null; pick = null; render();
+    restoreCombatExit(state); tidyLog(state); indexOldFacts(); indexPeopleMemory(); catchUpLevel(); lastAction = null; pick = null; render();
   } catch (e) { state = previous; lastAction = previousAction; pick = previousPick; render(); return false; }
   cbGen++;
   closeModal();
@@ -2379,6 +2382,7 @@ const SYSTEM = `你是奇幻跑团游戏《醉龙酒馆：龙誓》的游戏主�
 - 简体中文，第二人称“你”。每轮 100–300 字（亲密场景按场景资料要求的字数），有画面、声音和气味。
 - 不替玩家决定行动、台词和感受。只描写世界和 NPC 的反应。
 - NPC 和同伴用引号说话，严格符合其资料中的性格、喜恶。同伴会主动插话、吐槽、反对玩家。
+- 角色只能记得自己亲历或被明确告知的事。分别记录每个人的知情范围，私下说过的话不能自动变成全队都知道；待办记忆只作提醒，事情是否完成以实际剧情和程序状态为准。
 - 玩家的任何行动都可以尝试。永远不说“你不能”，只给出检定或后果。
 - 场景锚点是必然发生的事件，但到达方式由玩家决定。玩家偏离时用世界内的事件自然引导。
 - 主线和支线的目标只认锚点和程序列出的条件。不要另外发明程序不记录的前置手续（凑船员、付定金、修帆、备物资、跑公文之类）：玩家做到了锚点写的事，就让它成立。想加波折，用一两轮就能解决的小麻烦，不要变成新的任务链。
@@ -2628,7 +2632,7 @@ function buildPrompt(action, mode) {
   const profs = p.profs.map(k => SKILLS[k][0]).join("、"), safe = safeView();
   const recent = recentLines(safe), m = memo(), facts = factLines(action, mode, safe), chapters = chapterLines(action + "\n" + facts, mode), recall = mode === "narrate" ? "" : recallLines(action, safe);
   const hidden = safe ? new Set(state.memory?.sensitive || []) : new Set();
-  const memLines = MEM_IDS.map(id => [id, (m.people[id] || []).filter(t => !hidden.has(t))]).filter(([, l]) => l.length).map(([id, l]) => `· ${PEOPLE[id].name}（${id}）：${l.join("；")}`).join("\n");
+  const memLines = peopleMemoryLines(action, mode, hidden);
   const pres = present();
   const encs = (sc.encounters || []).filter(id => !state.fought?.[id]), done = (sc.encounters || []).filter(id => state.fought?.[id]);
   return SYSTEM + rulesBlock() +
@@ -2647,7 +2651,7 @@ function buildPrompt(action, mode) {
     (Object.entries(state.rel || {}).some(([, v]) => v) ? `\n【同伴之间】${Object.entries(state.rel).filter(([, v]) => v).map(([k, v]) => k.split("_").map(id => PEOPLE[id].name).join("×") + " " + sgn(v)).join("，")}` : "") +
     (chapters ? `\n\n【往事】（已经结束的各章纪要）\n${chapters}` : "") +
     `\n\n【前情提要】${m.summary || (chapters ? "（往事之后的事都在下面的最近剧情里）" : "（还没有，更早的剧情都在下面的最近剧情里）")}` +
-    (memLines ? `\n\n【角色记得的事】\n${memLines}` : "") +
+    (memLines ? `\n\n【角色记得的事】分别属于对应角色，不能互相当成自己的经历；待办不等于任务状态，已完成的事按最新结果回应。\n${memLines}` : "") +
     (facts ? `\n\n【有原文出处的记事】仅记原文实际说过或发生的内容；承诺不等于已经完成，程序状态优先。\n${facts}` : "") +
     (mode !== "narrate" && winsLines(12, safe) ? `\n\n【已经成功的检定】（玩家已经查到、做到的事。照着结果往下写，不要当作没发生，也不要为同一件事再要求检定）\n${winsLines(12, safe)}` : "") +
     (recall ? `\n\n【想起的旧事】（玩家这次提到的人或事，以前发生时的原文片段。用来回忆细节、让角色自然地想起当时，不要整段复述）\n${recall}` : "") +
@@ -2669,6 +2673,129 @@ const RECENT_CHARS = 12000, SUM_AT = 10000, SUM_KEEP = 5000, SUM_CHUNK = 12000, 
 // 章节纪要最多读 CHAPTER_SRC 字原文；想起的旧事最多 RECALL_CHARS 字，相关度低于 RECALL_MIN 不算
 const CHAPTER_SRC = 24000, RECALL_CHARS = 2500, RECALL_MIN = 6;
 const memo = () => { const m = (state.memory ||= { summary: "", people: {} }); m.chapters ||= []; return m; };
+const PEOPLE_MEMORY_KINDS = { fact: "经历", promise: "承诺", conflict: "矛盾", relationship: "关系", secret: "知情" };
+function validPeopleMemory(r) {
+  return saveRecord(r) && typeof r.text === "string" && Object.hasOwn(PEOPLE_MEMORY_KINDS, r.kind)
+    && ["recorded", "open", "resolved", "superseded"].includes(r.status) && ["legacy", "event", "turn", "quote"].includes(r.origin)
+    && typeof r.scene === "string" && typeof r.pinned === "boolean"
+    && (r.quote == null || typeof r.quote === "string" && r.quote.length <= 160)
+    && (r.logIndex == null || Number.isInteger(r.logIndex) && r.logIndex >= 0);
+}
+function peopleMemoryKind(text) {
+  if (/答应|承诺|约定|保证|许诺/.test(text) && !/(?:没有|尚未|并未|未曾|还没|拒绝)(?:答应|承诺|许诺)|(?:考虑|是否|如果|假如).{0,12}(?:答应|承诺|保证)/.test(text)) return "promise";
+  if (/矛盾|争执|误会|决裂|撒谎|背叛|不信任/.test(text)) return "conflict";
+  if (/恋人|誓约|告白|分手|原谅|和解|信任|在一起/.test(text)) return "relationship";
+  return /秘密|告诉|得知|读完|看完/.test(text) ? "secret" : "fact";
+}
+function newPeopleMemory(text, entry, origin = "legacy") {
+  const kind = peopleMemoryKind(text), completed = /(?:已经|已)(?:兑现|履行|完成)|(?:兑现|履行)了|(?:承诺|约定)(?:已经|已)(?:兑现|完成)|(?:已经|已)和解|和解了|原谅了|误会(?:已经|已)?解开/.test(text);
+  return { text, kind, status: completed ? "resolved" : ["promise", "conflict"].includes(kind) ? "open" : "recorded", origin,
+    scene: entry?.s || (origin === "legacy" ? "" : state.scene), pinned: false,
+    ...(entry && state.log.includes(entry) ? { logIndex: state.log.indexOf(entry), quote: entry.t.slice(0, 160) } : {}) };
+}
+// people 是长期档案；peopleFocus 只保存后台挑选的重点，整理不能覆盖长期档案。
+function ensurePeopleMemory() {
+  const m = memo(); m.peopleMeta ||= {}; m.peopleFocus ||= {};
+  for (const id of MEM_IDS) {
+    const notes = m.people[id] || [], rows = (m.peopleMeta[id] ||= []), known = new Set(rows.map(r => r.text));
+    for (const text of notes) if (!known.has(text)) { rows.push(newPeopleMemory(text)); known.add(text); }
+  }
+  return m;
+}
+function peopleMemories(id) {
+  const m = state.memory || {}, info = new Map((m.peopleMeta?.[id] || []).map(r => [r.text, r]));
+  return [...new Set(m.people?.[id] || [])].map(text => info.get(text) || newPeopleMemory(text));
+}
+function quotedMemorySpeakers(text) {
+  return MEM_IDS.filter(id => {
+    const names = id === "naia" ? ["奈雅", "米拉"] : [PEOPLE[id].name];
+    return names.some(name => new RegExp(name + "[，, ]*(?:(?:低声|轻声|认真地|笑着)?(?:说|说道|问|回答|告诉你|笑道))?[：:]?[“「]").test(text));
+  });
+}
+function memoryAudience() {
+  const sc = SCENES[state.scene], k = state.camp;
+  if (sc.with) return present();
+  if (k?.talk) {
+    const ev = k.event ? eventFor(k.event) : null;
+    if (ev?.pair) return ev.pair.filter(id => MEM_IDS.includes(id));
+    if (!ev?.group) { const who = ev?.who || k.talk; return MEM_IDS.includes(who) ? [who] : []; }
+  }
+  return present();
+}
+function entryMemoryAudience(entry) {
+  if (!entry || entry.live || entry.failed) return [];
+  const witnessed = Array.isArray(entry.knownBy), quoted = quotedMemorySpeakers(entry.t || "").filter(id => !witnessed || !COMPANIONS[id]);
+  return [...new Set([...(witnessed ? entry.knownBy.filter(id => MEM_IDS.includes(id)) : []), ...quoted])];
+}
+function memoryKnows(id, entry) {
+  return MEM_IDS.includes(id) && (entry ? entryMemoryAudience(entry).includes(id) : memoryAudience().includes(id));
+}
+function appendPeopleMemory(id, text, entry, origin = "event") {
+  const m = ensurePeopleMemory(), notes = (m.people[id] ||= []), rows = m.peopleMeta[id];
+  if (notes.includes(text)) return false;
+  notes.push(text); rows.push(newPeopleMemory(text, entry, origin)); return true;
+}
+function recordPeopleQuote(id, quote, entry) {
+  if (!MEM_IDS.includes(id) || !entry || entry.x || entry.failed || entry.live || !state.log.includes(entry)
+    || !["you", "gm"].includes(entry.k) || typeof quote !== "string" || quote.length < 6 || quote.length > 160 || !entry.t.includes(quote)
+    || !memoryKnows(id, entry) || /[？?]|如果|假如|是否/.test(quote)) return false;
+  const note = entry.k === "you" ? `你当时说：“${quote}”` : quote;
+  if (!appendPeopleMemory(id, note, entry, "quote")) return false;
+  memo().peopleMeta[id].find(r => r.text === note).quote = quote;
+  return true;
+}
+function capturePeopleMemories(gmEntry, playerEntry) {
+  if (!gmEntry || gmEntry.failed || gmEntry.live || gmEntry.x) return;
+  for (const quote of (gmEntry.t.match(/[^。！？\n]+[。！？]?/g) || [])) {
+    if (quote.length > 160 || !/答应|承诺|约定|保证|许诺|和解|原谅|决裂|信任|救过|救了|救下|告诉|得知|读完|看完/.test(quote)) continue;
+    for (const id of quotedMemorySpeakers(quote)) recordPeopleQuote(id, quote.trim(), gmEntry);
+  }
+  if (!playerEntry || playerEntry.retry || playerEntry.x) return;
+  for (const f of factsOf().filter(f => f.kind === "promise" && f.source === "you" && f.logIndex === state.log.indexOf(playerEntry))) {
+    for (const id of entryMemoryAudience(playerEntry)) recordPeopleQuote(id, f.text, playerEntry);
+  }
+}
+function indexPeopleMemory() {
+  const m = ensurePeopleMemory(); if (m.peopleVersion === 1) return;
+  for (let i = 0; i < state.log.length; i++) {
+    const e = state.log[i]; if (e.k === "gm") capturePeopleMemories(e, state.log[i - 1]?.k === "you" ? state.log[i - 1] : null);
+  }
+  m.peopleVersion = 1;
+}
+function selectPeopleMemories(action = "", mode, hidden = new Set()) {
+  const active = new Set(memoryAudience()), focusWho = state.camp?.talk || SCENES[state.scene].with;
+  const ids = MEM_IDS.filter(id => state.memory?.people[id]?.length).sort((a, b) => {
+    const priority = id => (id === focusWho ? 4 : 0) + (action.includes(PEOPLE[id].name) ? 3 : 0) + (active.has(id) ? 2 : 0);
+    return priority(b) - priority(a);
+  });
+  const ranked = new Map(ids.map(id => {
+    const records = peopleMemories(id).filter(r => r.status !== "superseded" && !hidden.has(r.text));
+    const scores = memoryScores(action, records.map(r => r.text)), focus = new Set(state.memory?.peopleFocus?.[id] || []);
+    return [id, records.map((r, i) => ({ r, i, score: scores[i] + (scores[i] >= RECALL_MIN ? 5000 : 0) + (r.pinned ? 10000 : 0) + (r.status === "open" ? 1000 : 0) + (focus.has(r.text) ? 5 : 0) + (r.kind === "relationship" ? 3 : 0) + i / Math.max(1, records.length) }))
+      .sort((a, b) => b.score - a.score || b.i - a.i).map(row => row.r)];
+  }));
+  const budget = mode === "narrate" ? 2200 : mode === "memory" ? 4500 : 6500, selected = []; let size = 0;
+  // 轮流取各人的重点，避免某个人的长档案占满整轮上下文。
+  for (let n = 0; n < MEM_MAX; n++) for (const id of ids) {
+    const r = ranked.get(id)[n]; if (!r) continue;
+    const cost = r.text.length + PEOPLE[id].name.length + 50;
+    if (size + cost > budget) continue;
+    selected.push({ id, record: r }); size += cost;
+  }
+  return selected;
+}
+function peopleMemoryLines(action, mode, hidden = new Set()) {
+  const selected = selectPeopleMemories(action, mode, hidden); if (!selected.length) return "";
+  return selected.map(({ id, record: r }) => `· ${PEOPLE[id].name}（${id}）[${r.status === "open" ? "待办" : r.status === "resolved" ? "已解决" : PEOPLE_MEMORY_KINDS[r.kind]}] ${r.text}`).join("\n")
+    + "\n（以上是本轮重点，其他经历仍在长期档案；只有对应角色知情。未取出不代表没发生。）";
+}
+function updatePeopleMemory(id, text, change) {
+  const m = ensurePeopleMemory(), r = m.peopleMeta[id]?.find(r => r.text === text);
+  if (!r) return false;
+  if (["recorded", "open", "resolved", "superseded"].includes(change.status)) r.status = change.status;
+  if (typeof change.pinned === "boolean") r.pinned = change.pinned;
+  save(); return true;
+}
 const LINE_TAG = { gm: "GM：", you: "玩家：", roll: "检定：", sys: "系统：", cb: "战斗：" };
 const entryLine = e => (LINE_TAG[e.k] || "") + e.t.slice(0, 1200);
 const storyPool = () => state.log.filter(e => e.t && !e.live && !e.failed && !e.m && e.k !== "chapter" && e.k !== "cb");
@@ -2815,26 +2942,26 @@ function recordTurnFacts(proposed, gmEntry, playerEntry) {
     const quote = f.quote.trim(), entry = [gmEntry, playerEntry].find(e => e?.t?.includes(quote));
     addFact(f.kind, f.who || "player", quote, entry);
   }
+  capturePeopleMemories(gmEntry, playerEntry);
 }
-function remember(id, note) {
+function remember(id, note, entry = null, origin = "event") {
   note = str(note, 50).trim();
   if (!MEM_IDS.includes(id) || !note) return false;
-  const l = (memo().people[id] ||= []);
-  if (l.includes(note)) return false;
-  l.push(note); if (l.length > MEM_MAX) l.shift();
+  if (!appendPeopleMemory(id, note, entry, origin)) return false;
   if (sensitiveTurn) { const m = memo(); m.sensitive ||= []; if (!m.sensitive.includes(note)) m.sensitive.push(note.slice(0, 50)); }
   return true;
 }
 function memoryPrompt(chunk) {
   const m = memo(), p = state.player;
-  const old = MEM_IDS.filter(id => m.people[id]?.length).map(id => `${id}（${PEOPLE[id].name}）：${m.people[id].join("；")}`).join("\n");
+  const old = peopleMemoryLines(chunk.map(e => e.t).join("\n"), "memory");
   const ch = chapterLines(chunk.map(e => e.t).join("\n"), "memory");
   return `你是跑团游戏《醉龙酒馆：龙誓》的记录员。玩家角色叫${p.name}（${p.gender}，${RACES[p.race].name}${CLASSES[p.cls].name}）。根据【旧的前情提要】和【新发生的剧情】，写出更新后的前情提要，并整理每个角色记得的事。
 
 要求：
 - summary：更新后的前情提要，最多 900 字，按时间顺序，用“你”指玩家。必须保留：做过的重要选择、许下的承诺、撒过的谎、得到的线索和秘密、和每个人关系的变化、还没解决的事。战斗只写结果，不写过程；闲聊省略。旧提要里的要点不要丢。【往事】里已经写进章节纪要的内容不用重复，从提要里删掉，只写往事之后或往事没写到的事。
-- people：角色记忆。键只能用这些 id：${MEM_IDS.map(id => id + "（" + PEOPLE[id].name + "）").join("、")}。每人最多 8 条，每条不超过 40 字，从这个角色的角度写他亲身经历或知道的、关于玩家的要紧事（例如“你在教团面前护住了小汤姆”“你答应帮他还清欠老鳗的债”），也可以写他对玩家的印象。把已有记忆和新剧情合并去重，过时的删掉，最重要的放前面。没有变化的角色可以省略。
-- 只输出一个 JSON 对象，不要任何其他文字：{"summary":"……","people":{"vex":["……","……"]}}
+- people：仅挑选本轮重点，键只能用这些 id：${MEM_IDS.map(id => id + "（" + PEOPLE[id].name + "）").join("、")}。每人最多 8 条，必须照录【已有角色记忆】中的条目，不改写、不编造；优先未完承诺、尚未解决的矛盾、关系转折和本轮话题。未选中的经历仍保存在长期档案，不删除。没有变化的角色可以省略。
+- recovered：可选的旧事摘录，每条为 {"id":"角色id","quote":"新剧情中的连续原文摘句"}，最多12条、每句6–160字。只补这个角色亲历或被明确告知的内容，不能因提到了某个人的名字就认定他知道；不摘问句、假设或失败内容。程序会验证原文和知情范围，没有可靠来源就省略。
+- 只输出一个 JSON 对象，不要任何其他文字：{"summary":"……","people":{"vex":["已有档案中的重点原句"]},"recovered":[]}
 
 【往事（已写好的章节纪要，不会再改）】
 ${ch || "（还没有）"}
@@ -2842,7 +2969,7 @@ ${ch || "（还没有）"}
 【旧的前情提要】
 ${m.summary || "（无，这是第一次整理）"}
 
-【各角色已有的记忆】
+【已有角色记忆】
 ${old || "（无）"}
 
 【新发生的剧情】
@@ -2888,8 +3015,8 @@ async function writeChapter() {
   const sens = PRIVATE_SCENES.has(String(id).split("#")[0]) || entries.some(e => e.x);
   const mopt = { memory: true, ...(sens && privReady() ? { priv: true } : {}) };
   const out = await narrate(chapterPrompt(id, text, sens), () => {}, new AbortController().signal, mopt);
-  logModel("章节纪要", narrateTarget(mopt), mopt);
   if (st !== state) return;
+  logModel("章节纪要", narrateTarget(mopt), mopt);
   const body = str(splitReply(out)[0].replace(/^[#\s*「」【】]*纪要[:：]?/, "").trim(), 900);
   const m = memo();
   if (!body || m.chapters.some(c => c.id === id)) return;
@@ -2907,28 +3034,34 @@ async function summarize() {
   for (const e of pool.slice(0, keep)) { const l = entryLine(e).length; if (c + l > SUM_CHUNK && chunk.length) break; chunk.push(e); c += l; }
   if (!chunk.length) return;
   memBusy = true;
-  const st = state, before = JSON.stringify(memo().people);
+  const st = state, before = JSON.stringify(ensurePeopleMemory().people);
   const sens = chunk.some(e => e.x);
   const mopt = { memory: true, ...(sens && privReady() ? { priv: true } : {}) };
   try {
     const text = await narrate(memoryPrompt(chunk), () => {}, new AbortController().signal, mopt);
-    logModel("前情提要", narrateTarget(mopt), mopt);
     if (st !== state) return;
+    logModel("前情提要", narrateTarget(mopt), mopt);
     const a = text.indexOf("{"), b = text.lastIndexOf("}");
     const d = JSON.parse(text.slice(a, b + 1));
     // 往事已经覆盖全部内容时，提要可以是空的
     if (typeof d.summary !== "string" || (!d.summary.trim() && !memo().chapters.length)) throw new Error("提要为空");
-    const m = memo(), old = JSON.parse(before);
+    const m = ensurePeopleMemory(), old = JSON.parse(before);
     m.summary = str(d.summary.trim(), 1600);
     if (d.people && typeof d.people === "object") for (const [id, list] of Object.entries(d.people)) {
       if (!MEM_IDS.includes(id) || !Array.isArray(list)) continue;
-      const l = [...new Set(list.map(x => str(x, 50).trim()).filter(Boolean))].slice(0, 8);
+      const known = new Set(m.people[id] || []);
+      const l = [...new Set(list.filter(x => typeof x === "string" && known.has(x)))].slice(0, 8);
       if (!l.length) continue;
       // 整理期间说书人新记下的条目，接在整理结果后面
       const fresh = (m.people[id] || []).filter(x => !(old[id] || []).includes(x) && !l.includes(x));
-      m.people[id] = [...l, ...fresh].slice(-MEM_MAX);
+      m.peopleFocus[id] = [...l, ...fresh].slice(-MEM_MAX);
       // 这批记忆来自私密场景：整理后的新条目也算私密，切回主说书人时不交给它
       if (sens) { m.sensitive ||= []; for (const t of [...l, ...fresh]) if (!m.sensitive.includes(t)) m.sensitive.push(t); m.sensitive = m.sensitive.slice(-300); }
+    }
+    for (const r of (Array.isArray(d.recovered) ? d.recovered : []).slice(0, 12)) {
+      if (!r || typeof r.quote !== "string") continue;
+      const entry = chunk.find(e => e.t.includes(r.quote) && memoryKnows(r.id, e));
+      if (entry) recordPeopleQuote(r.id, r.quote, entry);
     }
     for (const e of chunk) e.m = 1;
     save();
@@ -2956,6 +3089,7 @@ const ERR = {
 // s：发生在哪个场景，章节纪要按它分；v：第几次来这一场（第一幕的港口和地点可以反复去，每次单独写一章）
 function push(k, t, extra) {
   const e = Object.assign({ k, t, s: state.scene }, extra || {}), v = state.visits?.[state.scene];
+  if (k === "you" || k === "gm") e.knownBy = memoryAudience();
   if (v > 1) e.v = v;
   if (sensitiveTurn) e.x = 1; // 私密轮次的内容：主说书人只看中性版
   state.log.push(e); return e;
@@ -3284,7 +3418,7 @@ async function gm(action, shown, mode, forcePriv = false) {
     entry.t = narr; delete entry.live;
     const issues = [];
     const changes = reviewKeys ? { flags: saveRecord(data.flags) ? Object.fromEntries(Object.entries(data.flags).filter(([key]) => reviewKeys.includes(key))) : data.flags } : data;
-    applyGM(changes, mode, issues);
+    applyGM(changes, mode, issues, entry);
     if (mode !== "narrate" && mode !== "review") state.turns++;
     if (mode !== "narrate" && mode !== "review") recordTurnFacts(data.facts, entry, playerEntry);
     if (mode !== "narrate") {
@@ -3322,7 +3456,7 @@ async function gm(action, shown, mode, forcePriv = false) {
   }
 }
 
-function applyGM(d, mode, issues = []) {
+function applyGM(d, mode, issues = [], memoryEntry = null) {
   const notes = [], inCb = !!state.combat, loc0 = state.location;
   const block = (key, reason) => { if (issues.length < 6) issues.push({ key: String(key).slice(0, 100), reason: String(reason).slice(0, 160) }); };
   const wantCamp = !inCb && !state.camp && d.camp === true && mode !== "morning"; // 睡醒后不能自动再扎营
@@ -3476,7 +3610,7 @@ function applyGM(d, mode, issues = []) {
   }
   // memory
   for (const r of (Array.isArray(d.remember) ? d.remember : []).slice(0, 2)) {
-    if (r && remember(r.id, r.note)) { notes.push([`${PEOPLE[r.id].name} 会记住这件事`, ""]); toast(`${PEOPLE[r.id].name} 会记住这件事`); }
+    if (r && memoryKnows(r.id, memoryEntry) && remember(r.id, r.note, memoryEntry, "turn")) { notes.push([`${PEOPLE[r.id].name} 会记住这件事`, ""]); toast(`${PEOPLE[r.id].name} 会记住这件事`); }
   }
   // romance, intimacy, relations, supplies
   if (mode !== "narrate") applyIntimacy(d, notes);
@@ -4019,8 +4153,8 @@ const ROMANCE = {
 const ROMANCE_ORDER = ["none", "hint", "together", "vowed"];
 // 角色底线（设定集“赞同度、羁绊与恋爱”）：noLie 被发现撒谎就不接受告白；poly 接受多人恋爱需要的赞同度
 const ROMANCE_RULES = {
-  selene: { noLie: true, poly: 80 }, vex: { poly: 0 }, kassian: { poly: 60 }, borin: { poly: 60 },
-  lyra: { noLie: true, poly: 80 }, naia: { poly: 0 },
+  selene: { noLie: true, poly: 40 }, vex: { poly: 0 }, kassian: { poly: 60 }, borin: { poly: 60 },
+  lyra: { noLie: true, poly: 40 }, naia: { poly: 0 },
 };
 /* 亲密系统：与赞同、恋爱阶段分开记录。value 0–100，count 是次数，positions 是已发生的方式。
    方式不按数值解锁；具体内容由说书人写，代码只记录数值、次数、方式和受孕结果。 */
@@ -6032,9 +6166,35 @@ function openSheet(focus) {
   });
 }
 function memList(id) {
-  const l = memo().people[id] || [];
-  if (!l.length) return el("div", "label", "还没有特别记住什么。");
-  const ul = el("ul", "mem"); for (const n of l) ul.append(el("li", null, n)); return ul;
+  const box = el("div"); let all = false;
+  const draw = () => {
+    box.replaceChildren(); const records = peopleMemories(id);
+    if (!records.length) { box.append(el("div", "label", "还没有特别记住什么。")); return; }
+    const focused = selectPeopleMemories().filter(row => row.id === id).map(row => row.record);
+    const shown = all ? records.slice().reverse() : focused.length ? focused : records.slice(-MEM_MAX).reverse();
+    box.append(el("div", "note", `长期档案 ${records.length} 条 · ${all ? "全部记录" : "当前重点 " + shown.length + " 条"}。整理只挑重点，不删除旧事。`));
+    const ul = el("ul", "mem");
+    for (const r of shown) {
+      const li = el("li"), status = r.status === "open" ? "【待办】" : r.status === "resolved" ? "【已解决】" : r.status === "superseded" ? "【已被后续取代】" : "";
+      li.append(el("span", null, `${r.pinned ? "★ " : ""}${status}${r.text}`));
+      const detail = el("details"), summary = el("summary", "label", "出处与提醒"); detail.append(summary);
+      const source = Number.isInteger(r.logIndex) ? state.log[r.logIndex] : null;
+      const verified = source && !source.failed && !source.live && source.s === r.scene && r.quote && source.t.includes(r.quote);
+      detail.append(el("div", "meta", r.origin === "legacy" ? "旧存档保留的记忆，原始出处未定位。" : `${SCENES[r.scene]?.title || r.scene || "剧情记录"} · ${r.origin === "event" ? "程序事件记录" : verified ? "有剧情原文" : "当时记录（原文位置已变化）"}`));
+      if (verified) detail.append(el("p", "recap", r.quote));
+      const row = el("div", "row"), control = (label, change) => {
+        const b = el("button", "btn small", label); b.type = "button"; b.onclick = () => { updatePeopleMemory(id, r.text, change); draw(); }; row.append(b);
+      };
+      control(r.pinned ? "取消重点" : "设为重点", { pinned: !r.pinned });
+      if (["promise", "conflict"].includes(r.kind)) control(r.status === "open" ? "标为已解决" : "恢复待办", { status: r.status === "open" ? "resolved" : "open" });
+      control(r.status === "superseded" ? "恢复为记录" : "已被后续取代", { status: r.status === "superseded" ? "recorded" : "superseded" });
+      detail.append(row, el("div", "meta", "只调整记忆提醒，不结算任务或改变关系。")); li.append(detail); ul.append(li);
+    }
+    box.append(ul);
+    if (records.length > shown.length || all) {
+      const b = el("button", "btn small", all ? "只看当前重点" : `查看全部 ${records.length} 条长期记忆`); b.type = "button"; b.onclick = () => { all = !all; draw(); }; box.append(b);
+    }
+  }; draw(); return box;
 }
 function journalSearch(query, limit = 50) {
   const terms = String(query).trim().toLowerCase().split(/\s+/).filter(Boolean);
@@ -6621,6 +6781,7 @@ window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude
 if (LOCAL_GPT) refreshChatgptStatus(); else { chatgpt.known = true; chatgpt.error = "chatgpt_unavailable"; }
 diskInit();
 </script>
+
 
 
 
