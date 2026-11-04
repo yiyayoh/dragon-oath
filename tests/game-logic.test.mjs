@@ -1278,6 +1278,29 @@ test('回复格式容错：没有 @@@ 也能取到结尾 JSON，普通叙述里�
   });
 });
 
+test('一键切换说书人：本机 ChatGPT 切到私密接口，没配好时不生效', () => {
+  const run = game();
+  const result = run(`(() => {
+    pref.api = 'chatgpt';
+    pref.priv = { on: true, base: 'https://api.deepseek.com/v1', model: 'deepseek-flash', key: 'k', note: '' };
+    const first = toggleNarrator();
+    const deep = { api: pref.api, base: pref.base, model: pref.model, key: pref.key, on: onPrivateNarrator() };
+    pref.api = 'openai'; pref.base = 'https://api.openai.com/v1'; pref.model = 'gpt-4o';
+    const other = onPrivateNarrator();
+    const second = toggleNarrator();
+    const replaced = { api: pref.api, model: pref.model };
+    pref.priv.key = '';
+    const third = toggleNarrator();
+    return { first, deep, other, second, replaced, third };
+  })()`);
+  assert.equal(result.first, true);
+  assert.deepEqual(result.deep, { api: 'openai', base: 'https://api.deepseek.com/v1', model: 'deepseek-flash', key: 'k', on: true });
+  assert.equal(result.other, false);
+  assert.equal(result.second, true);
+  assert.deepEqual(result.replaced, { api: 'openai', model: 'deepseek-flash' });
+  assert.equal(result.third, false);
+});
+
 test('补救招募：漏招的莉拉能补进队伍并补记笔记被抄，已入队/已死时无效', () => {
   const run = game();
   const result = run(`(() => {
@@ -1950,6 +1973,7 @@ test('烬王优先使用完整龙角版，加载失败可回退原图，其余�
   const run=game();const r=run(`(()=>{state=newGame(freshDraft());failed.clear();const im={};portrait(im,'emberking','neutral');const current=im.src;im.onerror();const fallback=im.src;const other={};portrait(other,'hestia','neutral');state.player.portraitData='data:image/png;base64,test';const player={};portrait(player,'player');return {current,fallback,other:other.src,player:player.src};})()`);
   assert.deepEqual(r,{current:'portraits/emberking_neutral_v3.webp',fallback:'portraits/emberking_neutral.webp',other:'portraits/hestia_neutral.webp',player:'data:image/png;base64,test'});
 });
+
 
 
 

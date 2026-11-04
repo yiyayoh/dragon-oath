@@ -301,6 +301,7 @@ h1, h2, h3 { text-wrap: balance; }
     <div class="menu" id="menu" hidden>
       <button class="btn small" type="button" id="mSheet">角色</button>
       <button class="btn small" type="button" id="mJournal">日志</button>
+      <button class="btn small" type="button" id="mNarrator" hidden>全部用 DeepSeek</button>
       <button class="btn small" type="button" id="mSave">存档</button>
       <button class="btn small" type="button" id="mSettings">设置</button>
     </div>
@@ -3128,6 +3129,19 @@ function privTurn(action) {
   return privScene() || !!(state?.camp?.talk && isLover(state.camp.talk)) || PRIVATE_WORDS.test(String(action || ""));
 }
 const safeView = () => !(sensitiveTurn || pref.explicitOk); // 主说书人是否只能看中性版
+// 一键切换主说书人：本机 ChatGPT ⇄ 私密接口（DeepSeek）。只改浏览器里的偏好，不动存档
+function onPrivateNarrator() {
+  const p = privCfg();
+  return privReady() && pref.api === "openai" && pref.base === p.base && pref.model === p.model;
+}
+function toggleNarrator() {
+  const p = privCfg();
+  if (!privReady()) { toast("先在设置里配好“私密场景说书人”", "down"); return false; }
+  if (onPrivateNarrator()) { pref.api = LOCAL_GPT ? "chatgpt" : "openai"; toast("已切回主说书人", "up"); }
+  else { pref.api = "openai"; pref.base = p.base; pref.model = p.model; pref.key = p.key; toast(`整局已改用 ${p.model}`, "up"); }
+  savePref(); renderPlay();
+  return true;
+}
 function narrateTarget(opts = {}) {
   if (opts.priv && privReady()) return "priv";
   if (pref.api === "chatgpt") return "chatgpt";
@@ -5936,6 +5950,8 @@ function renderNarratorStatus() {
 }
 function renderPlay() {
   const p = state.player, sc = SCENES[state.scene];
+  const nb = $("mNarrator"); // 一键切换说书人：本机 ChatGPT ⇄ 私密接口
+  if (nb) { const deep = onPrivateNarrator(); nb.hidden = !(LOCAL_GPT && privReady()); nb.textContent = deep ? "切回本机 ChatGPT" : `全部用 ${privCfg().model}`; nb.title = deep ? "把主说书人切回本机 ChatGPT" : "把整局说书人改成设置里的私密接口（DeepSeek）"; }
   $("where").textContent = `${sc.title} · ${state.location}`;
 
   // rail
@@ -6760,6 +6776,7 @@ $("mJournal").onclick = openJournal;
 $("mSave").onclick = () => openSaves(false);
 $("mLoad").onclick = () => openSaves(true);
 $("mSettings").onclick = openSettings;
+$("mNarrator").onclick = toggleNarrator;
 $("stopBtn").onclick = () => ctl && ctl.abort();
 $("retryBtn").onclick = () => {
   if (!lastAction) return;
@@ -6805,6 +6822,7 @@ window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude
 if (LOCAL_GPT) refreshChatgptStatus(); else { chatgpt.known = true; chatgpt.error = "chatgpt_unavailable"; }
 diskInit();
 </script>
+
 
 
 
